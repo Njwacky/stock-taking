@@ -1,0 +1,79 @@
+/* White theme overrides */
+body {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+/* Ensure content areas have white background */
+body > *,
+.container,
+.content-wrapper,
+.main-content {
+    background-color: #ffffff !important;
+}
+
+/* Update text colors for better contrast */
+body,
+.navbar,
+.footer,
+.app-footer,
+.card,
+.panel,
+.modal-content {
+    color: #333333 !important;
+}
+
+/* Update links for better visibility */
+a {
+    color: #0066cc !important;
+}
+
+a:hover {
+    color: #004d99 !important;
+    text-decoration: underline !important;
+}
+
+/* Form elements */
+input,
+select,
+textarea,
+.form-control {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border: 1px solid #cccccc !important;
+}
+
+/* Tables */
+table {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+th, td {
+    border-color: #dddddd !important;
+}
+
+/* Cards and panels */
+.card,
+.panel,
+.modal-content {
+    background-color: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+/* Navigation */
+.navbar {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #0066cc !important;
+    border-color: #0052a3 !important;
+}
+
+.btn-primary:hover {
+    background-color: #004d99 !important;
+    border-color: #003d7a !important;
+}

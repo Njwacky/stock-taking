@@ -1,0 +1,133 @@
+/* Footer Styles */
+.app-footer {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 2rem 1rem 1rem;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 0 1rem;
+}
+
+.footer-links-group {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+}
+
+.footer-link {
+    color: #bdc3c7;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.footer-link:hover {
+    color: #3498db;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.footer-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.footer-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #bdc3c7;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.footer-contact-item:hover {
+    color: #3498db;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.footer-contact-item i {
+    font-size: 1.2rem;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom p {
+    margin: 0.3rem 0;
+    color: #95a5a6;
+    font-size: 0.85rem;
+}
+
+.footer-bottom p:last-child {
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .footer-links-group,
+    .footer-contacts {
+        flex-direction: row;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .link-label {
+        display: none;
+    }
+
+    .footer-link i,
+    .footer-contact-item i {
+        font-size: 1.4rem;
+    }
+
+    .footer-bottom {
+        font-size: 0.75rem;
+        padding-bottom: 1rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .app-footer {
+        background-color: #1a252f;
+    }
+
+    .footer-link,
+    .footer-contact-item {
+        color: #bdc3c7;
+    }
+
+    .footer-link:hover,
+    .footer-contact-item:hover {
+        color: #3498db;
+    }
+}

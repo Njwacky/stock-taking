@@ -1,0 +1,205 @@
+{
+  "project_name": "Stock Management System",
+  "project_description": "Django-based stock management system with user authentication, kit tracking, QR code generation, and bulk operations.",
+  "technologies": [
+    "Django 5.2+",
+    "Python",
+    "SQLite",
+    "QR Code generation",
+    "Bootstrap/FontAwesome",
+    "JavaScript"
+  ],
+  "key_features": {
+    "user_management": {
+      "description": "User registration and management with clock number validation",
+      "validation_rules": {
+        "clock_number": {
+          "type": "integer",
+          "min_value": 1,
+          "max_value": 9999,
+          "unique": true,
+          "validation": "Both client-side and server-side validation implemented"
+        }
+      },
+      "user_types": ["Regular User", "Superuser"],
+      "permissions": {
+        "superuser": ["Add kits", "Delete kits", "Manage users", "Bulk delete kits"],
+        "regular_user": ["View profile", "View own kits"]
+      }
+    },
+    "kit_management": {
+      "description": "Comprehensive kit tracking and management system",
+      "kit_types": [
+        "feets",
+        "vhb_18",
+        "vhb_12",
+        "vhb_7",
+        "pi_strips",
+        "rivnut_8",
+        "rivnut_6",
+        "rivnut_5",
+        "rivnut_4"
+      ],
+      "operations": {
+        "add_kits": "Form-based kit addition with user selection and quantity input",
+        "delete_single_kit": "Password-protected single kit deletion",
+        "bulk_delete_kits": "Multi-select bulk deletion with password confirmation"
+      }
+    },
+    "dashboard_features": {
+      "description": "Interactive dashboard with filtering, sorting, and statistics",
+      "filtering": {
+        "by_user": "Filter kits by specific user",
+        "by_search": "Search by kit type or username"
+      },
+      "sorting": {
+        "options": ["Date", "Name", "User", "Quantity"],
+        "order": ["Ascending", "Descending"]
+      },
+      "statistics": "Most received kits with total quantities and user counts",
+      "pagination": "20 kits per page with navigation controls"
+    },
+    "profile_system": {
+      "description": "User profile pages with QR code generation",
+      "features": [
+        "Display user information and clock number",
+        "Show all user's kits with details",
+        "Generate QR codes linking to profile pages",
+        "Print-optimized layout for profile pages",
+        "Dynamic profile access (own profile vs. other users)"
+      ],
+      "qr_codes": {
+        "generation": "Automatic QR code generation for each user",
+        "content": "Links to user's profile page",
+        "display": "Shown on profile pages and dashboard"
+      }
+    },
+    "bulk_delete_functionality": {
+      "description": "Multi-select bulk deletion system for kits",
+      "access": "Only available to superusers",
+      "features": {
+        "selection": {
+          "individual_selection": "Checkboxes for each kit row",
+          "select_all": "Master checkbox to select/deselect all kits",
+          "visual_feedback": "Row highlighting when selected",
+          "counter": "Real-time count of selected kits"
+        },
+        "bulk_actions_bar": {
+          "display": "Appears when kits are selected",
+          "information": "Shows number of selected kits",
+          "actions": ["Delete Selected", "Cancel"],
+          "styling": "Yellow warning theme with smooth animations"
+        },
+        "confirmation": {
+          "password_required": "Superuser password confirmation required",
+          "preview_page": "Shows all kits to be deleted before confirmation",
+          "warning_messages": "Clear warnings about permanent deletion",
+          "preservation": "Maintains filters and sorting after deletion"
+        },
+        "user_interface": {
+          "checkbox_styling": "Custom styled checkboxes with hover effects",
+          "row_highlighting": "Selected rows get blue highlighting",
+          "responsive_design": "Works on mobile and desktop",
+          "animations": "Smooth transitions for better user experience"
+        }
+      },
+      "implementation_details": {
+        "backend": "Django view handling bulk delete POST requests",
+        "frontend": "JavaScript for selection management and form submission",
+        "templates": "Dashboard with bulk actions bar and confirmation page",
+        "css": "Custom styling for bulk actions components",
+        "security": "Password protection and CSRF protection"
+      }
+    }
+  },
+  "design_system": {
+    "color_scheme": {
+      "primary": "#007bff (Blue)",
+      "dashboard": "Blue gradient theme",
+      "add_items": "Pink gradient theme (#d81b60)",
+      "manage_users": "Green gradient theme",
+      "register": "Yellow gradient theme",
+      "bulk_actions": "Yellow warning theme (#ffc107)",
+      "delete_actions": "Red gradient theme (#dc3545)"
+    },
+    "components": {
+      "forms": "Modern card-based layout with gradients and shadows",
+      "tables": "Styled tables with hover effects and responsive design",
+      "buttons": "Gradient buttons with hover animations",
+      "cards": "Modern card components with smooth transitions",
+      "navigation": "Clean navigation with responsive design"
+    },
+    "responsive_design": {
+      "mobile_first": "Optimized for mobile devices",
+      "breakpoints": "768px for tablet/desktop transitions",
+      "flexbox_grid": "Modern CSS Grid and Flexbox layouts",
+      "touch_friendly": "Large touch targets for mobile users"
+    }
+  },
+  "file_structure": {
+    "django_app": "stockT/",
+    "templates": "stockT/templates/",
+    "static_files": "static/",
+    "database": "SQLite (db.sqlite3)",
+    "requirements": ["requirements.txt", "requirements.json"],
+    "configuration": "app_conf/"
+  },
+  "recent_improvements": [
+    "Fixed clock number validation with proper min/max validators",
+    "Added comprehensive QR code generation for profiles",
+    "Implemented print-optimized profile pages",
+    "Redesigned add items form with modern card-based layout",
+    "Added bulk delete functionality for kits",
+    "Improved dashboard with dynamic profile buttons",
+    "Enhanced user interface with better visual feedback",
+    "Added comprehensive statistics and sorting features"
+  ],
+  "development_notes": {
+    "css_organization": "All CSS moved to external style.css file",
+    "inline_css_avoidance": "No inline CSS should be added to HTML templates",
+    "javascript_enhancements": "Progressive enhancement with vanilla JavaScript",
+    "accessibility": "ARIA labels and keyboard navigation support",
+    "performance": "Optimized database queries and efficient rendering"
+  },
+  "ai_assistant_rules": {
+    "safety": [
+      "Never exfiltrate secrets or credentials",
+      "Do not perform external network calls without explicit authorization"
+    ],
+    "development_practices": [
+      "Run the test suite after non-trivial changes and commit only passing changes",
+      "Do not modify existing tests to make changes pass unless requested",
+      "Prefer minimal, incremental diffs with clear commit messages"
+    ],
+    "communication": [
+      "Include a short summary for each automated change",
+      "Provide reproducible commands (PowerShell) to run tests and verification steps",
+      "Ask at most one clarifying question if essential"
+    ],
+    "privacy": [
+      "Avoid printing or logging user-sensitive data",
+      "Redact any secrets in messages or logs"
+    ],
+    "security": [
+      "Enforce permission and validation checks server-side",
+      "When adding dependencies, update requirements manifest and explain the reason"
+    ]
+  },
+  "ai_usage_guidelines": {
+    "when_to_use": [
+      "Adding new features to the stock management system",
+      "Modifying existing functionality",
+      "Fixing bugs or issues",
+      "Improving user interface",
+      "Adding new kit types or user fields"
+    ],
+    "coding_standards": {
+      "python": "Follow PEP 8, use Django best practices",
+      "html": "Use Django template tags, semantic HTML5",
+      "css": "Use external style.css file, follow BEM naming",
+      "javascript": "Vanilla JS, avoid jQuery unless necessary"
+    },
+    "testing": "Test all features thoroughly before deployment",
+    "documentation": "Update this AI guide when making significant changes"
+  }
+}

@@ -1,0 +1,616 @@
+/* Developer Page Styles - Modern Professional Portfolio */
+
+/* Main container */
+.dev-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #ffffff;
+    min-height: calc(100vh - 200px);
+}
+
+/* Header Section */
+.dev-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 50px;
+    padding: 40px 0;
+    border-bottom: 3px solid #f0f0f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 40px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.dev-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-30px, -30px) rotate(180deg); }
+}
+
+.dev-avatar {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: white;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+}
+
+.dev-title h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.dev-subtitle {
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+    opacity: 0.95;
+    font-weight: 300;
+    position: relative;
+    z-index: 1;
+}
+
+.dev-location {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.dev-location i {
+    color: #ffd700;
+}
+
+/* Section Headers */
+.dev-about h2,
+.dev-projects h2,
+.dev-skills h2,
+.dev-contact h2 {
+    color: #333;
+    font-size: 2rem;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.dev-about h2::after,
+.dev-projects h2::after,
+.dev-skills h2::after,
+.dev-contact h2::after {
+    content: '';
+    flex: 1;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, transparent 100%);
+    border-radius: 2px;
+}
+
+.dev-about h2 i,
+.dev-projects h2 i,
+.dev-skills h2 i,
+.dev-contact h2 i {
+    color: #667eea;
+    font-size: 1.8rem;
+}
+
+/* About Section */
+.dev-about {
+    margin-bottom: 50px;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border-left: 5px solid #667eea;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.dev-about p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #555;
+    margin: 0;
+}
+
+/* Projects Section */
+.dev-projects {
+    margin-bottom: 50px;
+}
+
+.project-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.project-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.project-card:hover::before {
+    transform: scaleY(1);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.project-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.project-header h3 i {
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+.project-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.project-desc {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.project-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tech-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
+    transition: all 0.2s ease;
+}
+
+.tech-tag:hover {
+    background: #1976d2;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Skills Section */
+.dev-skills {
+    margin-bottom: 50px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.skill-item {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.skill-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.skill-item:hover::before {
+    opacity: 1;
+}
+
+.skill-item i {
+    font-size: 2rem;
+    color: #667eea;
+    position: relative;
+    z-index: 1;
+}
+
+.skill-item span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    position: relative;
+    z-index: 1;
+}
+
+/* Contact Section */
+.dev-contact {
+    margin-bottom: 30px;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.contact-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.contact-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.contact-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: white;
+}
+
+.contact-card:hover::before {
+    opacity: 1;
+}
+
+.contact-card:hover i,
+.contact-card:hover span {
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+.contact-card i {
+    font-size: 1.8rem;
+    color: #667eea;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.contact-card span {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dev-container {
+        padding: 15px;
+    }
+    
+    .dev-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 30px 20px;
+    }
+    
+    .dev-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
+    }
+    
+    .dev-title h1 {
+        font-size: 2rem;
+    }
+    
+    .dev-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .dev-about h2,
+    .dev-projects h2,
+    .dev-skills h2,
+    .dev-contact h2 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .dev-about h2::after,
+    .dev-projects h2::after,
+    .dev-skills h2::after,
+    .dev-contact h2::after {
+        width: 100%;
+        height: 2px;
+    }
+    
+    .dev-about {
+        padding: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .project-card {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .project-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .project-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .skills-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .skill-item {
+        padding: 20px;
+    }
+    
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .contact-card {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dev-container {
+        padding: 10px;
+    }
+    
+    .dev-header {
+        padding: 25px 15px;
+    }
+    
+    .dev-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+    
+    .dev-title h1 {
+        font-size: 1.8rem;
+    }
+    
+    .dev-subtitle {
+        font-size: 1rem;
+    }
+    
+    .dev-location {
+        font-size: 0.9rem;
+    }
+    
+    .dev-about h2,
+    .dev-projects h2,
+    .dev-skills h2,
+    .dev-contact h2 {
+        font-size: 1.3rem;
+    }
+    
+    .dev-about {
+        padding: 15px;
+    }
+    
+    .project-card {
+        padding: 15px;
+    }
+    
+    .project-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .project-badge {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+    }
+    
+    .project-desc {
+        font-size: 0.95rem;
+    }
+    
+    .skill-item {
+        padding: 15px;
+    }
+    
+    .skill-item i {
+        font-size: 1.5rem;
+    }
+    
+    .skill-item span {
+        font-size: 1rem;
+    }
+    
+    .contact-card {
+        padding: 15px;
+    }
+    
+    .contact-card i {
+        font-size: 1.5rem;
+    }
+    
+    .contact-card span {
+        font-size: 0.9rem;
+    }
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Loading animation for images */
+.dev-avatar i,
+.project-header i,
+.dev-about h2 i,
+.dev-projects h2 i,
+.dev-skills h2 i,
+.dev-contact h2 i,
+.skill-item i,
+.contact-card i {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger animation for project cards */
+.project-card {
+    animation: slideInLeft 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.project-card:nth-child(1) { animation-delay: 0.1s; }
+.project-card:nth-child(2) { animation-delay: 0.2s; }
+.project-card:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Stagger animation for skill items */
+.skill-item {
+    animation: slideInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.skill-item:nth-child(1) { animation-delay: 0.1s; }
+.skill-item:nth-child(2) { animation-delay: 0.2s; }
+.skill-item:nth-child(3) { animation-delay: 0.3s; }
+.skill-item:nth-child(4) { animation-delay: 0.4s; }
+.skill-item:nth-child(5) { animation-delay: 0.5s; }
+.skill-item:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

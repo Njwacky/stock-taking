@@ -1,0 +1,708 @@
+/* Most Received Kits Dashboard Section Styles - Pie Chart Version */
+
+/* Why Register Section Styles - Carousel Version */
+.why-register-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin: 20px 40px;
+    padding: 20px;
+    animation: statsFadeIn 0.8s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Carousel Container */
+.carousel-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.carousel-track {
+    flex: 1;
+    overflow: hidden;
+    margin: 0 40px;
+}
+
+.why-register-cards {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    gap: 20px;
+}
+
+/* Smaller Cards for Carousel */
+.register-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 200px;
+    max-width: 200px;
+    flex-shrink: 0;
+    animation: cardFadeIn 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.register-card:nth-child(1) { animation-delay: 0.1s; }
+.register-card:nth-child(2) { animation-delay: 0.2s; }
+.register-card:nth-child(3) { animation-delay: 0.3s; }
+.register-card:nth-child(4) { animation-delay: 0.4s; }
+.register-card:nth-child(5) { animation-delay: 0.5s; }
+.register-card:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.register-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Smaller Card Icon */
+.card-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Smaller Card Text */
+.register-card h4 {
+    color: #2c3e50;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+.register-card p {
+    color: #6c757d;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    margin: 0;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.carousel-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.carousel-prev {
+    left: 5px;
+}
+
+.carousel-next {
+    right: 5px;
+}
+
+/* Carousel Dots */
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dot.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scale(1.2);
+}
+
+.dot:hover {
+    background: #bbb;
+}
+
+.dot.active:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Register CTA Buttons */
+.register-cta {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.register-btn, .login-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    animation: ctaFadeIn 0.8s ease-out 0.7s both;
+}
+
+@keyframes ctaFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.register-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.register-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.login-btn {
+    background: transparent;
+    color: #667eea;
+    border-color: #667eea;
+}
+
+.login-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Responsive design for carousel */
+@media (max-width: 768px) {
+    .carousel-track {
+        margin: 0 35px;
+    }
+    
+    .register-card {
+        min-width: 160px;
+        max-width: 160px;
+        padding: 12px;
+    }
+    
+    .card-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .register-card h4 {
+        font-size: 0.8rem;
+    }
+    
+    .register-card p {
+        font-size: 0.7rem;
+    }
+    
+    .carousel-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+    
+    .register-btn, .login-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+    
+    .register-cta {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .register-btn, .login-btn {
+        width: 100%;
+        max-width: 200px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .carousel-track {
+        margin: 0 30px;
+    }
+    
+    .register-card {
+        min-width: 140px;
+        max-width: 140px;
+        padding: 10px;
+    }
+    
+    .card-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    
+    .register-card h4 {
+        font-size: 0.75rem;
+    }
+    
+    .register-card p {
+        font-size: 0.65rem;
+    }
+    
+    .carousel-btn {
+        width: 25px;
+        height: 25px;
+        font-size: 0.7rem;
+    }
+    
+    .dot {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .register-btn, .login-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+/* High contrast mode support for carousel */
+@media (prefers-contrast: high) {
+    .register-card {
+        border: 2px solid #333;
+    }
+    
+    .register-card h4 {
+        color: #000;
+        font-weight: 700;
+    }
+    
+    .register-card p {
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .carousel-btn {
+        border: 2px solid #000;
+    }
+    
+    .login-btn {
+        border-width: 2px;
+    }
+    
+    .dot {
+        border: 1px solid #333;
+    }
+}
+
+/* Reduced motion support for carousel */
+@media (prefers-reduced-motion: reduce) {
+    .why-register-cards {
+        transition: none;
+    }
+    
+    .register-card,
+    .register-btn,
+    .login-btn,
+    .carousel-btn {
+        animation: none;
+        transition: none;
+    }
+    
+    .register-card:hover {
+        transform: none;
+    }
+    
+    .carousel-btn:hover {
+        transform: translateY(-50%);
+    }
+    
+    .register-btn:hover,
+    .login-btn:hover {
+        transform: none;
+    }
+    
+    .dot {
+        transition: none;
+    }
+}
+
+/* Main container for the Most Received Kits statistics */
+.dashboard-stats {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin: 20px 40px;
+    padding: 20px;
+    animation: statsFadeIn 0.8s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes statsFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header section with title and icon */
+.stats-header {
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.stats-header h3 {
+    color: #2c3e50;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.stats-header h3 i {
+    color: #667eea;
+    font-size: 1.3rem;
+    animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Pie chart container */
+.pie-chart-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    position: relative;
+    z-index: 2;
+    flex-wrap: wrap;
+}
+
+/* Canvas for pie chart */
+#kitsPieChart {
+    flex-shrink: 0;
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+}
+
+/* Chart legend container */
+.chart-legend {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Custom scrollbar for legend */
+.chart-legend::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chart-legend::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.chart-legend::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chart-legend::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Individual legend item */
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    transition: all 0.3s ease;
+    animation: legendSlideIn 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.legend-item:nth-child(1) { animation-delay: 0.1s; }
+.legend-item:nth-child(2) { animation-delay: 0.2s; }
+.legend-item:nth-child(3) { animation-delay: 0.3s; }
+.legend-item:nth-child(4) { animation-delay: 0.4s; }
+.legend-item:nth-child(5) { animation-delay: 0.5s; }
+.legend-item:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes legendSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Legend color indicator */
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Legend text container */
+.legend-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Legend kit type label */
+.legend-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+}
+
+/* Legend quantity and percentage */
+.legend-value {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Empty state styling */
+.dashboard-stats.empty .pie-chart-container::after {
+    content: 'No data available';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #6c757d;
+    font-style: italic;
+    font-size: 1rem;
+    text-align: center;
+    width: 100%;
+}
+
+/* Loading state for chart */
+#kitsPieChart.loading {
+    position: relative;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Responsive design adjustments */
+@media (max-width: 768px) {
+    .dashboard-stats {
+        margin: 15px 20px;
+        padding: 15px;
+    }
+    
+    .stats-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .pie-chart-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    #kitsPieChart {
+        max-width: 250px;
+        max-height: 250px;
+    }
+    
+    .chart-legend {
+        width: 100%;
+        max-height: 250px;
+        min-width: auto;
+    }
+    
+    .legend-item {
+        padding: 6px 10px;
+    }
+    
+    .legend-label {
+        font-size: 0.85rem;
+    }
+    
+    .legend-value {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-stats {
+        margin: 10px 15px;
+        padding: 12px;
+    }
+    
+    .stats-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    #kitsPieChart {
+        max-width: 200px;
+        max-height: 200px;
+    }
+    
+    .chart-legend {
+        max-height: 200px;
+        gap: 6px;
+    }
+    
+    .legend-item {
+        padding: 5px 8px;
+        gap: 8px;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .legend-label {
+        font-size: 0.8rem;
+    }
+    
+    .legend-value {
+        font-size: 0.7rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .legend-item {
+        border: 2px solid #333;
+    }
+    
+    .legend-label {
+        color: #000;
+        font-weight: 700;
+    }
+    
+    .legend-value {
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .stats-header h3 {
+        color: #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-stats,
+    .legend-item,
+    .stats-header h3 i {
+        animation: none;
+        transition: none;
+    }
+    
+    .legend-item:hover {
+        transform: none;
+    }
+}

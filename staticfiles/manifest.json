@@ -1,0 +1,39 @@
+{
+  "name": "Summer Life Stock Tracker",
+  "short_name": "Stock Tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#3498db",
+  "description": "Efficient stock and inventory management system for tracking items and kits",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "images/light_blue.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "inventory", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Add Stock Items",
+      "short_name": "Add Stock",
+      "description": "Add new stock items to inventory",
+      "url": "/add-items/"
+    },
+    {
+      "name": "Track Stock Usage",
+      "short_name": "Track Usage",
+      "description": "Monitor and track stock usage",
+      "url": "/stock-usage/"
+    },
+    {
+      "name": "View Dashboard",
+      "short_name": "Dashboard",
+      "description": "View stock overview and analytics",
+      "url": "/"
+    }
+  ]
+}

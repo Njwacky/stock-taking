@@ -1,0 +1,47 @@
+Django>=4.2,<5.0
+qrcode[pil]>=7.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+django-filter>=23.0
+
+# Database (Production)
+psycopg2-binary>=2.8.0
+
+# Email Services
+django-anymail>=8.0.0
+
+# Caching
+redis>=4.0.0
+django-redis>=5.0.0
+
+# File Storage
+boto3>=1.20.0  # For AWS S3
+django-storages>=1.12.0
+
+# Monitoring
+sentry-sdk>=1.5.0
+django-debug-toolbar>=3.2.0
+
+# Testing
+pytest>=7.0.0
+pytest-django>=4.4.0
+factory-boy>=3.2.0
+coverage>=6.0.0
+
+# PDF Generation (for profile PDF download feature)
+# Note: jsPDF and html2canvas are client-side JS libraries loaded via CDN; not Python packages
+
+# Additional utilities
+Pillow>=8.0.0  # For image processing (already included in qrcode[pil])
+python-decouple>=3.6  # For environment variables
+gunicorn>=20.0.0  # WSGI server
+whitenoise>=6.0.0  # Static file serving
+user-agents>=2.2.0  # For user agent parsing in analytics middleware
+requests>=2.25.0  # For HTTP requests (FCM service)
+
+# Chart.js is loaded via CDN for dashboard charts
+# No additional package needed as it's used via CDN
+
+# Social Authentication
+# django-allauth removed: social auth is not used in this deployment
+python-decouple>=3.6  # Already included above, but needed for environment variables

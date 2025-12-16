@@ -1,0 +1,7 @@
+# Analytics System Dependencies
+# Install with: pip install -r analytics_requirements.txt
+
+# User agent parsing
+pyyaml>=6.0
+ua-parser>=0.18.0
+user-agents>=2.2.0

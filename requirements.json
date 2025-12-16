@@ -1,0 +1,425 @@
+{
+  "task": "Fix clock number validation to prevent values < 4 and add profile functionality with QR codes",
+  "changes_required": [
+    {
+      "file": "stockT/models.py",
+      "field": "clock_number",
+      "issue": "max_length=4 is incorrect for IntegerField",
+      "fix": "Replace with MinValueValidator and MaxValueValidator",
+      "specific_changes": [
+        "Remove max_length=4 from IntegerField",
+        "Add MinValueValidator(1)",
+        "Add MaxValueValidator(9999)"
+      ]
+    },
+    {
+      "file": "stockT/forms.py",
+      "field": "clock_number",
+      "issue": "No validation constraints",
+      "fix": "Add form validation",
+      "specific_changes": [
+        "Add NumberInput widget with min=1, max=9999",
+        "Add clean_clock_number validation method"
+      ]
+    },
+    {
+      "file": "stockT/templates/register.html",
+      "field": "clock_number input",
+      "issue": "type='text' allows any input",
+      "fix": "Change to type='number' with validation attributes",
+      "specific_changes": [
+        "Change type from 'text' to 'number'",
+        "Add min='1' and max='9999' attributes",
+        "Keep existing class='form-control'",
+        "Keep existing styling and layout",
+        "Add error message display"
+      ]
+    }
+  ],
+  "additional_requirements": [
+    {
+      "feature": "QR Code Generation",
+      "description": "Add QR code for each clock that links to their profile page",
+      "location": "User profile pages and dashboard",
+      "implementation": [
+        "Generate QR codes containing profile URLs",
+        "Display QR codes on user profiles",
+        "Add qrcode library to dependencies"
+      ]
+    },
+    {
+      "feature": "Profile Page Creation",
+      "description": "Create profile page first with full validation and nice CSS",
+      "location": "New profile page template",
+      "implementation": [
+        "Create profile template with nice CSS styling",
+        "Add profile form validation",
+        "Display user information and clock number",
+        "Include QR code on profile page"
+      ]
+    }
+  ],
+  "do_not_change": [
+    { "area": "CSS styling", "details": "Preserve all existing CSS classes, styles, and layout", "location": "static/css" },
+    { "area": "Form structure", "details": "Keep existing form structure, labels, and button styling" },
+    { "area": "Other form fields", "details": "Do not modify username or password fields" },
+    { "area": "Template layout", "details": "Preserve container structure, spacing, and overall design" }
+  ],
+  "validation_requirements": { "min_value": 1, "max_value": 9999, "field_type": "integer", "client_side_validation": true, "server_side_validation": true },
+  "additional_notes": "add qr code for each tock that links to their profile page",
+  "location": "createprofile page first with full validation with nice css",
+  "external_css_tracking": {
+    "css_file": "static/style.css",
+    "status": "all_inline_css_moved_to_external",
+    "last_updated": "2025-10-10",
+    "moved_from_templates": ["stockT/templates/base.html","stockT/templates/register.html","stockT/templates/dashboard.html","stockT/templates/add_items.html","stockT/templates/confirm_kit_delete.html"],
+    "added_css_classes": ["calc-hint","clock-number-label","clock-number-info","hidden-qty-input","dashboard-header","dashboard-actions","profile-btn","user-filter-wrapper","profile-link-btn","confirm-delete-container","confirm-delete-header","confirm-delete-content","kit-info","kit-details","warning-message","password-confirmation","confirm-delete-alert","confirm-delete-alert-success","confirm-delete-alert-error","confirm-delete-form","form-label","form-actions","cancel-btn","delete-confirm-btn","logged-in-as","action-buttons","btn-track","btn-edit","btn-delete","remaining-badge"],
+    "note": "All inline CSS has been successfully moved to external style.css file. No more inline CSS should be added to HTML templates.",
+    "additional_css_files": {
+      "stock-usage-tracking.css": {
+        "location": "static/css/stock-usage-tracking.css",
+        "purpose": "Dedicated styles for stock usage tracking system",
+        "classes": ["tracking-header-badge","kit-preselected-alert","usage-form-section","usage-form-label","usage-form-control","usage-helper-text","quantity-max-indicator","usage-submit-btn","recent-usage-card","recent-usage-item","usage-status-badge","usage-status-pending","usage-status-approved","usage-status-completed","usage-status-rejected","admin-quick-access","tracking-card","tracking-card-header","tracking-card-body","usage-empty-state","usage-loading"],
+        "features": ["Pre-selection styling","Form validation indicators","Status badges","Responsive design","Print styles"],
+        "created": "2025-10-10"
+      }
+    }
+  },
+  "print_functionality": {
+    "feature": "Profile Page Print Optimization",
+    "description": "Added print-specific CSS and JavaScript to make user profile pages printable",
+    "implementation": ["Added comprehensive @media print CSS styles to external style.css","Optimized layout for black and white printing","Removed unnecessary elements (navigation, buttons, etc.)","Added proper page breaks and print formatting","Included print date/time functionality","Added JavaScript for print date attribution","Created extra_js block in base.html template"],
+    "print_features": ["Hides navigation and non-essential elements","Optimizes colors for print (black text on white background)","Adjusts font sizes and spacing for print media","Ensures QR codes print properly","Adds print date and time attribution","Prevents page breaks within important sections","Maintains readable layout when printed"],
+    "files_modified": ["static/style.css","stockT/templates/profile.html","stockT/templates/base.html"],
+    "last_updated": "2025-09-15"
+  },
+  "profile_page_fix": {
+    "issue": "Profile page was only showing superuser profile instead of selected user from dashboard",
+    "description": "Fixed profile view logic to properly handle user selection from dashboard filter",
+    "fix_applied": ["Updated profile view function in views.py to properly handle user_id parameter","Fixed logic to show correct user profile when selected from dashboard","Improved QR code generation to use appropriate URLs for different users","Added proper conditional logic for current user vs other users"],
+    "files_modified": ["stockT/views.py - Fixed profile view logic"],
+    "last_updated": "2025-09-16"
+  },
+  "dashboard_profile_button_fix": {
+    "issue": "Dashboard 'My Profile' button always showed current user's profile regardless of user filter selection",
+    "description": "Made dashboard profile button dynamic to show selected user's profile when user filter is applied",
+    "fix_applied": ["Modified dashboard template to check for selected_user_id parameter","Added conditional logic to change button text and link based on user selection","Button now shows 'Selected User Profile' when user is filtered, 'My Profile' otherwise","Button links to profile_with_id when user is selected, profile when no user is selected"],
+    "files_modified": ["stockT/templates/dashboard.html - Updated profile button logic"],
+    "last_updated": "2025-09-16"
+  },
+  "duplicate_profile_button_removal": { "issue": "Removed duplicate profile button next to user dropdown", "last_updated": "2025-09-16" },
+  "add_stock_form_redesign": { "issue": "Redesigned add stock form for better UX", "last_updated": "2025-09-16" },
+  "dashboard_selection_count_implementation": { "issue": "Implemented selection count and bulk actions", "last_updated": "2025-09-22" },
+  "most_received_kits_fix": { "issue": "Fixed pie chart display using Chart.js", "last_updated": "2025-09-22" },
+  "password_reset_request_system": {
+    "feature": "Password Reset Request System",
+    "description": "Users cannot change passwords themselves. They submit a request with username + clock number, and admin/manager receives notification to reset it.",
+    "implementation": {
+      "user_flow": [
+        "User clicks 'Forgot Password?' on login page",
+        "User enters username and clock number",
+        "System validates and creates PasswordResetRequest",
+        "User sees message to contact manager/admin",
+        "User receives notification on dashboard after admin processes request"
+      ],
+      "admin_flow": [
+        "Admin/Manager sees notification icon (bell) with red badge count in navbar",
+        "Badge pulses to draw attention",
+        "Admin clicks Notifications to view all pending requests",
+        "Admin can either Reset Password (redirects to edit user) or Reject request",
+        "After password reset, request is marked as 'approved' and user is notified"
+      ],
+      "notification_system": [
+        "Notification icon in navbar with animated red badge",
+        "Badge shows count of pending password reset requests",
+        "Only visible to admin/manager/superuser roles",
+        "Context processor adds pending_reset_count to all templates"
+      ]
+    },
+    "files_created": [
+      "stockT/templates/forgot_password.html - User-facing password reset request form",
+      "stockT/templates/notifications.html - Admin/Manager notification dashboard",
+      "stockT/context_processors.py - Adds pending reset count to all templates"
+    ],
+    "files_modified": [
+      "stockT/models.py - Added PasswordResetRequest model",
+      "stockT/views.py - Added forgot_password, notifications, reject_reset_request views",
+      "stockT/views.py - Updated edit_user to handle password reset requests",
+      "stockT/urls.py - Added 3 new URL patterns for password reset flow",
+      "stockT/templates/base.html - Added notification bell icon with badge to navbar",
+      "stockT/templates/login.html - Added 'Forgot Password?' link",
+      "app_conf/settings.py - Registered context processor",
+      "static/navbar.css - Added notification badge styles with pulse animation"
+    ],
+    "database_changes": [
+      "Migration 0012_passwordresetrequest.py - Created PasswordResetRequest table",
+      "Fields: user, username, clock_number, status, requested_at, processed_at, processed_by, notes"
+    ],
+    "security_features": [
+      "Users cannot change their own passwords",
+      "Requires username AND clock number validation",
+      "Admin must enter their password to approve reset",
+      "All requests are logged with timestamps and processor info",
+      "Status tracking: pending, approved, rejected"
+    ],
+    "last_updated": "2025-10-08"
+  },
+  "requirements_dependencies_update": {
+    "issue": "Missing JavaScript dependencies for PDF generation functionality in requirements.txt",
+    "description": "Added jsPDF and html2canvas used for profile PDF download",
+    "files_modified": ["requirements.txt","requirements.json"],
+    "dependencies_added": { "jsPDF": ">=2.5.1","html2canvas": ">=1.4.1" },
+    "last_updated": "2025-10-01"
+  },
+  "python_dependencies": [
+    "Django>=4.2,<5.0",
+    "qrcode[pil]>=7.0",
+    "djangorestframework>=3.14.0",
+    "django-cors-headers>=4.0.0",
+    "django-filter>=23.0",
+    "psycopg2-binary>=2.8.0",
+    "django-anymail>=8.0.0",
+    "redis>=4.0.0",
+    "django-redis>=5.0.0",
+    "boto3>=1.20.0",
+    "django-storages>=1.12.0",
+    "sentry-sdk>=1.5.0",
+    "django-debug-toolbar>=3.2.0",
+    "pytest>=7.0.0",
+    "pytest-django>=4.4.0",
+    "factory-boy>=3.2.0",
+    "coverage>=6.0.0",
+    "jsPDF>=2.5.1",
+    "html2canvas>=1.4.1",
+    "Pillow>=8.0.0",
+    "python-decouple>=3.6",
+    "gunicorn>=20.0.0",
+    "whitenoise>=6.0.0"
+  ],
+  "comments_suggestions_system": {
+    "feature": "User Comments and Suggestions System",
+    "description": "Allow all users to submit comments, suggestions, bug reports, and questions. Monitored by admin, managers, and supervisors.",
+    "implementation": {
+      "user_flow": [
+        "User clicks floating action button (FAB) to access comments",
+        "User selects category (Bug, Feature, Improvement, Question, Other)",
+        "User enters subject and detailed message",
+        "System creates UserComment with 'pending' status",
+        "User can view their own submitted comments and responses"
+      ],
+      "admin_flow": [
+        "Admin/Manager/Supervisor sees notification badge for pending comments",
+        "Can view all comments filtered by status and category",
+        "Can respond to comments with admin_response field",
+        "Can change status (Pending, Reviewed, Resolved, Dismissed)",
+        "All actions are timestamped and tracked"
+      ]
+    },
+    "files_created": [
+      "stockT/templates/submit_comment.html - User comment submission form",
+      "stockT/templates/view_comments.html - Admin comment management dashboard",
+      "stockT/templates/my_comments.html - User's own comments view"
+    ],
+    "files_modified": [
+      "stockT/models.py - Added UserComment model",
+      "stockT/views.py - Added comment views",
+      "stockT/urls.py - Added comment URL patterns",
+      "stockT/templates/base.html - Added FAB for calculator and comments",
+      "requirements.json - Documented comments system"
+    ],
+    "database_changes": [
+      "UserComment table with fields: user, category, subject, message, status, created_at, reviewed_at, reviewed_by, admin_response"
+    ],
+    "access_control": [
+      "All authenticated users can submit comments",
+      "Users can only view their own comments",
+      "Admin/Manager/Supervisor can view and manage all comments",
+      "Permission: view_all_comments, manage_comments"
+    ],
+    "last_updated": "2025-10-08"
+  },
+  "floating_action_buttons": {
+    "description": "FAB menu for calculator and comments - not in navbar",
+    "buttons": [
+      "Calculator - Opens draggable calculator popup",
+      "Comments/Suggestions - Opens comment submission form"
+    ],
+    "location": "Fixed bottom-right corner of screen",
+    "style": "Material Design FAB with expandable menu"
+  },
+  "stock_usage_tracking_system": {
+    "feature": "Stock Usage Tracking with Signal-Based Automatic Deletion",
+    "description": "Allows users to log stock usage and request deletion even when supervisors are not around. Uses Django signals to automatically process approved requests and delete/reduce stock quantities.",
+    "implementation": {
+      "user_flow": [
+        "User navigates to 'Track Usage' page from navigation menu",
+        "User enters clock number (must match account)",
+        "User selects kit type and quantity used",
+        "User optionally adds purpose and feedback about stock quality",
+        "System creates StockUsage record with status='pending'",
+        "User can view their usage history and track status"
+      ],
+      "admin_flow": [
+        "Admin sees notification badge on 'Track Usage' menu link",
+        "Admin sees alert box on tracking page with pending count",
+        "Admin clicks 'Review Pending' to see all pending requests",
+        "Admin reviews request details including user feedback",
+        "Admin approves or rejects with optional admin notes",
+        "Upon approval, signal automatically deletes/reduces stock",
+        "Admin can view complete history with filters"
+      ],
+      "signal_processing": [
+        "handle_stock_usage_approval - Fires when status changes to 'approved'",
+        "Automatically deletes kit if quantity matches usage",
+        "Automatically reduces kit quantity if partial usage",
+        "Updates usage record (stock_deleted=True, status='completed')",
+        "Logs all actions to django.log with detailed information",
+        "log_kit_deletion - Maintains audit trail when kits are deleted",
+        "notify_on_stock_usage - Logs new usage requests and feedback"
+      ]
+    },
+    "files_created": [
+      "STOCK_USAGE_TRACKING_GUIDE.md - Complete technical documentation",
+      "STOCK_USAGE_QUICK_GUIDE.md - User-friendly quick reference",
+      "test_stock_usage_system.py - Automated test script",
+      "STOCK_USAGE_IMPLEMENTATION_SUMMARY.md - Implementation overview"
+    ],
+    "files_modified": [
+      "stockT/signals.py - Enhanced signal receivers with comprehensive logging",
+      "stockT/templates/base.html - Added 'Track Usage' navigation link with badge",
+      "stockT/context_processors.py - Added pending_stock_usage_count processor",
+      "app_conf/settings.py - Registered pending_stock_usage_count context processor",
+      "stockT/templates/stock_usage_tracking.html - Added admin alert box"
+    ],
+    "files_already_existed": [
+      "stockT/models.py - StockUsage model (already implemented)",
+      "stockT/views.py - stock_usage_tracking, stock_usage_history, review_stock_usage views",
+      "stockT/urls.py - URL patterns for tracking system",
+      "stockT/templates/stock_usage_tracking.html - Main tracking page",
+      "stockT/templates/stock_usage_history.html - History with filters",
+      "stockT/templates/review_stock_usage.html - Admin review page",
+      "stockT/templates/delete_stock_after_usage.html - Manual deletion fallback"
+    ],
+    "database_schema": {
+      "model": "StockUsage",
+      "fields": [
+        "user - ForeignKey to User who used the stock",
+        "clock_number - CharField for verification",
+        "kit - ForeignKey to Kit (nullable)",
+        "kit_type - ForeignKey to KitType",
+        "kit_type_name - CharField stored for history",
+        "quantity_used - IntegerField",
+        "usage_date - DateTimeField auto_now_add",
+        "feedback - TextField optional user feedback",
+        "purpose - CharField optional purpose",
+        "status - CharField (pending/approved/rejected/completed)",
+        "reviewed_by - ForeignKey to admin who reviewed",
+        "reviewed_at - DateTimeField when reviewed",
+        "admin_notes - TextField optional admin notes",
+        "stock_deleted - BooleanField whether stock was deleted"
+      ]
+    },
+    "signal_receivers": {
+      "handle_stock_usage_approval": {
+        "trigger": "post_save on StockUsage when status='approved'",
+        "action": "Automatically delete or reduce stock quantity",
+        "logging": "INFO level for successful operations, WARNING for issues, ERROR for failures"
+      },
+      "log_kit_deletion": {
+        "trigger": "pre_delete on Kit",
+        "action": "Update related StockUsage records and log deletion",
+        "logging": "INFO level with kit details"
+      },
+      "notify_on_stock_usage": {
+        "trigger": "post_save on StockUsage when created=True",
+        "action": "Log new usage request with feedback",
+        "logging": "INFO level with user and quantity details",
+        "extensible": "Prepared for email notifications (commented TODO)"
+      }
+    },
+    "notification_system": {
+      "context_processor": "pending_stock_usage_count",
+      "provides": "pending_usage_count variable to all templates",
+      "visible_to": "Admin and Manager roles only",
+      "display_locations": [
+        "Navigation menu badge on 'Track Usage' link",
+        "Alert box on stock usage tracking page"
+      ]
+    },
+    "security_features": [
+      "Clock number verification (must match user account)",
+      "Admin/Manager approval required for all deletions",
+      "Complete audit trail in logs/django.log",
+      "Status tracking for accountability",
+      "Permission checks (only admins can review)",
+      "Password confirmation for manual deletion fallback"
+    ],
+    "logging": {
+      "logger_name": "stockT.signals",
+      "log_file": "logs/django.log",
+      "log_levels": {
+        "INFO": "Normal operations (creation, deletion, reduction)",
+        "WARNING": "Issues (no kit, insufficient quantity)",
+        "ERROR": "Failures during processing"
+      },
+      "log_format": "[ACTION] Details with user, quantity, approver info"
+    },
+    "urls": [
+      "/tracking/ - Main stock usage tracking page (all users)",
+      "/tracking/history/ - View usage history with filters",
+      "/tracking/review/<id>/ - Review specific usage (admin only)",
+      "/tracking/delete/<id>/ - Manual stock deletion fallback (admin only)"
+    ],
+    "permissions": {
+      "all_users": [
+        "Log their own stock usage",
+        "View their own usage history",
+        "Provide feedback about stock quality"
+      ],
+      "admins_managers": [
+        "Review all usage requests",
+        "Approve or reject requests",
+        "View all usage history with filters",
+        "Manual stock deletion (fallback)",
+        "See notification badges and counts"
+      ]
+    },
+    "benefits": [
+      "Self-service stock usage logging anytime",
+      "Automatic processing after approval (no manual deletion)",
+      "Complete audit trail for accountability",
+      "Feedback system for stock quality issues",
+      "Notification system for admins",
+      "Works even when supervisors are not around"
+    ],
+    "future_enhancements": {
+      "email_notifications": "Code prepared in signals.py (commented TODO)",
+      "sms_notifications": "Integrate with Twilio or similar",
+      "auto_approval": "For trusted users after X successful requests",
+      "batch_approval": "Approve multiple requests at once",
+      "usage_analytics": "Dashboard showing usage trends and patterns"
+    },
+    "testing": {
+      "automated_test": "test_stock_usage_system.py",
+      "test_coverage": [
+        "User usage logging with valid clock number",
+        "Clock number validation",
+        "Admin approval workflow",
+        "Automatic stock deletion via signals",
+        "Partial quantity reduction",
+        "Complete kit deletion",
+        "Status transitions",
+        "Logging verification"
+      ],
+      "system_check": "All Django checks passed (0 issues)"
+    },
+    "documentation": {
+      "technical_guide": "STOCK_USAGE_TRACKING_GUIDE.md",
+      "user_guide": "STOCK_USAGE_QUICK_GUIDE.md",
+      "implementation_summary": "STOCK_USAGE_IMPLEMENTATION_SUMMARY.md",
+      "test_script": "test_stock_usage_system.py"
+    },
+    "last_updated": "2025-10-10",
+    "status": "Complete and ready for production"
+  }
+}
