@@ -1,5 +1,11 @@
 """Template context processors for the stockT application."""
 from .models import ContactInfo, PasswordResetRequest, StockUsage
+from .workspace import registration_open
+
+
+def workspace_context(request):
+    """Expose single-workspace state (e.g. whether signup is still open)."""
+    return {'registration_open': registration_open()}
 
 
 def pending_reset_requests(request):

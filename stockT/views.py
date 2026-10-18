@@ -7,9 +7,13 @@ JavaScript contracts (static/js/*.js).
 import json
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.auth import authenticate, get_user_model, login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,8 +24,10 @@ from django.views.decorators.http import require_POST
 
 from .analytics_service import AnalyticsService
 from .forms import (
+    AddUserForm,
     ContactInfoForm,
     EditUserForm,
+    LimitedEditUserForm,
     ProfileForm,
     RegisterForm,
     StockUsageForm,
@@ -38,6 +44,7 @@ from .models import (
     User,
     UserComment,
 )
+from .workspace import registration_open
 
 User = get_user_model()
 
@@ -84,18 +91,18 @@ SORT_FIELDS = {
 # Dashboard
 # ---------------------------------------------------------------------------
 
-def dashboard(request):
-    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
-    if not request.user.is_authenticated:
-        return render(request, 'dashboard.html', {'public_view': True})
+def _filtered_kits(request):
+    """Apply the dashboard's user/search/sort/order filters.
 
+    Shared by the dashboard table and the CSV export so an export always
+    matches exactly what the table shows.
+    """
     kits = _kits_queryset(request)
 
     user_filter = request.GET.get('user', '')
     search = request.GET.get('search', '').strip()
     sort = SORT_FIELDS.get(request.GET.get('sort', 'timestamp'), 'timestamp')
     order = 'asc' if request.GET.get('order', 'desc') == 'asc' else 'desc'
-    page_number = request.GET.get('page', '1')
 
     if user_filter:
         if user_filter.isdigit():
@@ -112,6 +119,56 @@ def dashboard(request):
         )
 
     kits = kits.order_by(('-' if order == 'desc' else '') + sort)
+    filters = {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')}
+    return kits, filters
+
+
+@login_required
+def export_kits_csv(request):
+    """Download the kit table as CSV (same filters and scope as the dashboard)."""
+    import csv
+
+    from django.http import HttpResponse
+
+    kits, filters = _filtered_kits(request)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    filename = f'stock_export_{timezone.localtime().date().isoformat()}.csv'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # BOM so Excel opens UTF-8 correctly.
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'ID', 'Kit Type', 'Code', 'Quantity', 'Condition', 'User',
+        'Location', 'Expiration Date', 'Added By', 'Added At', 'Last Updated', 'Notes',
+    ])
+    for kit in kits.select_related('user', 'kit_type_fk', 'created_by'):
+        writer.writerow([
+            kit.id,
+            kit.kit_type_name,
+            kit.kit_type_fk.code if kit.kit_type_fk else '',
+            kit.quantity,
+            kit.get_condition_display(),
+            kit.user.username,
+            kit.location or '',
+            kit.expiration_date.isoformat() if kit.expiration_date else '',
+            kit.created_by.username if kit.created_by else '',
+            timezone.localtime(kit.timestamp).strftime('%Y-%m-%d %H:%M'),
+            timezone.localtime(kit.last_updated).strftime('%Y-%m-%d %H:%M'),
+            kit.notes or '',
+        ])
+    return response
+
+
+def dashboard(request):
+    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
+    if not request.user.is_authenticated:
+        return render(request, 'dashboard.html', {'public_view': True})
+
+    kits, filters = _filtered_kits(request)
+    page_number = request.GET.get('page', '1')
 
     if request.method == 'POST' and request.POST.get('action') == 'bulk_delete' and _is_manager(request.user):
         ids = request.POST.getlist('kit_ids')
@@ -129,7 +186,7 @@ def dashboard(request):
         'paginator': paginator,
         'kit_stats': _kit_stats(),
         'users': User.objects.filter(is_active=True).order_by('username') if _is_manager(request.user) else [],
-        'filters': {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')},
+        'filters': filters,
     }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -148,18 +205,57 @@ def dashboard(request):
 # ---------------------------------------------------------------------------
 
 def register(request):
+    """
+    One-time workspace setup.
+
+    This app has exactly ONE workspace and only ONE person ever registers:
+    the first registrant becomes the workspace Superadmin (owner). After that
+    public registration closes forever and the Superadmin adds people from
+    Manage Users -> Add User.
+    """
     if request.user.is_authenticated:
         return redirect('dashboard')
+    if not registration_open():
+        messages.info(
+            request,
+            'Registration is closed. This workspace already has an owner — '
+            'ask the Superadmin to add your account.',
+        )
+        return redirect('login')
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        login(request, user)
-        messages.success(request, 'Welcome! Your account has been created.')
+        with transaction.atomic():
+            # Re-check inside the transaction so only one registrant can win.
+            if not registration_open():
+                messages.info(
+                    request,
+                    'Registration is closed. This workspace already has an owner — '
+                    'ask the Superadmin to add your account.',
+                )
+                return redirect('login')
+            user = form.save(commit=False)
+            user.role = User.ROLE_ADMIN
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+        # Multiple auth backends are configured, so the backend must be explicit.
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(
+            request,
+            'Welcome! Your workspace is ready. '
+            'Add your people under Manage Users → Add User.',
+        )
         return redirect('dashboard')
     return render(request, 'register.html', {'form': form})
 
 
 def logout_confirm(request):
+    """Confirm-and-logout: POST actually logs the user out (this was broken —
+    the view used to just re-render the page and never called auth.logout)."""
+    if request.method == 'POST':
+        auth_logout(request)
+        messages.success(request, 'You have been logged out.')
+        return redirect('login')
     return render(request, 'logout_confirm.html')
 
 
@@ -179,6 +275,145 @@ def password_reset_request(request):
             return redirect('login')
         messages.error(request, 'No account matches that username and clock number.')
     return render(request, 'password_reset_request.html')
+
+
+@login_required
+def manage_reset_requests(request):
+    """Managers process password reset requests here (approve sets a new
+    password; reject closes the request)."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    requests_qs = PasswordResetRequest.objects.select_related('user', 'processed_by')
+    return render(request, 'manage_reset_requests.html', {'requests': requests_qs})
+
+
+@login_required
+@require_POST
+def process_reset_request(request, reset_id):
+    """Approve (set new password) or reject a password reset request."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    reset = get_object_or_404(PasswordResetRequest, id=reset_id)
+    if reset.status != PasswordResetRequest.STATUS_PENDING:
+        messages.info(request, 'That request has already been processed.')
+        return redirect('manage_reset_requests')
+
+    action = request.POST.get('action')
+    if action == 'reject':
+        reset.status = PasswordResetRequest.STATUS_REJECTED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(request, f'Reset request for {reset.username} rejected.')
+        return redirect('manage_reset_requests')
+
+    if action == 'approve':
+        password = request.POST.get('new_password') or ''
+        confirm = request.POST.get('confirm_password') or ''
+        if not password or password != confirm:
+            messages.error(request, 'Passwords do not match (or are empty).')
+            return redirect('manage_reset_requests')
+        try:
+            validate_password(password, user=reset.user)
+        except ValidationError as exc:
+            messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+            return redirect('manage_reset_requests')
+        reset.user.set_password(password)
+        reset.user.save(update_fields=['password'])
+        reset.status = PasswordResetRequest.STATUS_APPROVED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(
+            request,
+            f'Password updated for {reset.username}. Share it with them securely.',
+        )
+        return redirect('manage_reset_requests')
+
+    messages.error(request, 'Unknown action.')
+    return redirect('manage_reset_requests')
+
+
+@login_required
+@require_POST
+def set_user_password(request, user_id):
+    """Admins set a member's password directly (e.g. new starter on the phone)."""
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can set passwords.')
+        return redirect('manage_users')
+    target = get_object_or_404(User, id=user_id)
+    password = request.POST.get('new_password') or ''
+    confirm = request.POST.get('confirm_password') or ''
+    if not password or password != confirm:
+        messages.error(request, 'Passwords do not match (or are empty).')
+        return redirect('edit_user', user_id=target.id)
+    try:
+        validate_password(password, user=target)
+    except ValidationError as exc:
+        messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+        return redirect('edit_user', user_id=target.id)
+    target.set_password(password)
+    target.save(update_fields=['password'])
+    messages.success(request, f'Password updated for {target.username}.')
+    return redirect('edit_user', user_id=target.id)
+
+
+@login_required
+def change_password(request):
+    """Let any user change their own password."""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Keep the session alive across the password change.
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, 'Your password has been changed.')
+            return redirect('profile')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'change_password.html', {'form': form})
+
+
+# ---------------------------------------------------------------------------
+# Kit types
+# ---------------------------------------------------------------------------
+
+@login_required
+def manage_kit_types(request):
+    """Manage the stock kit types used by Add Stock / Track Usage / Distribute."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage kit types.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = (request.POST.get('name') or '').strip()
+            code = (request.POST.get('code') or '').strip()
+            description = (request.POST.get('description') or '').strip()
+            unit = (request.POST.get('unit_of_measure') or 'pieces').strip() or 'pieces'
+            if not name or not code:
+                messages.error(request, 'Name and code are required.')
+            elif KitType.objects.filter(Q(name__iexact=name) | Q(code__iexact=code)).exists():
+                messages.error(request, 'A kit type with that name or code already exists.')
+            else:
+                KitType.objects.create(
+                    name=name, code=code, description=description or None,
+                    unit_of_measure=unit, created_by=request.user,
+                )
+                messages.success(request, f'Kit type “{name}” added.')
+        elif action == 'toggle':
+            kit_type = get_object_or_404(KitType, id=request.POST.get('kit_type_id'))
+            kit_type.is_active = not kit_type.is_active
+            kit_type.save(update_fields=['is_active'])
+            messages.success(request, f'Kit type “{kit_type.name}” {"activated" if kit_type.is_active else "deactivated"}.')
+        return redirect('manage_kit_types')
+
+    kit_types = KitType.objects.order_by('name')
+    return render(request, 'manage_kit_types.html', {'kit_types': kit_types})
 
 
 def custom_404(request, exception=None):
@@ -383,15 +618,38 @@ def manage_users(request):
 
 
 @login_required
+def add_user(request):
+    """
+    Add a person to the workspace.
+
+    Only the workspace Superadmin and administrators can add people —
+    there is no public self-registration after the workspace is set up.
+    """
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can add people to the workspace.')
+        return redirect('manage_users')
+    form = AddUserForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        messages.success(
+            request,
+            f'{user.username} has been added to the workspace as {user.get_role_display()}.',
+        )
+        return redirect('manage_users')
+    return render(request, 'add_user.html', {'form': form})
+
+
+@login_required
 def edit_user(request, user_id):
     if not _is_manager(request.user):
         messages.error(request, 'You do not have permission to edit users.')
         return redirect('dashboard')
     target = get_object_or_404(User, id=user_id)
 
-    # Only admins can change roles or staff status.
+    # Only admins can change roles or staff status. Managers use a restricted
+    # form WITHOUT role/is_staff fields so they cannot escalate privileges.
     if not request.user.is_admin:
-        restricted = EditUserForm(request.POST or None, instance=target)
+        restricted = LimitedEditUserForm(request.POST or None, instance=target)
         if request.method == 'POST':
             if restricted.is_valid():
                 restricted.save()
@@ -557,10 +815,11 @@ def delete_stock_usage(request, usage_id):
 def stock_distribution(request):
     """Distribute stock to users, verified with the distributor's password.
 
-    Access is limited to managers and supervisors (the "Manager & Supervisor
-    Stock Assignment Portal"); admins and regular users are redirected.
+    Access is limited to managers, supervisors and administrators (the
+    workspace Superadmin must have access to every portal); regular users
+    are redirected.
     """
-    if request.user.role not in (User.ROLE_MANAGER, User.ROLE_SUPERVISOR):
+    if not request.user.is_supervisor:
         messages.error(request, 'Access denied. This portal is for managers and supervisors only.')
         return redirect('dashboard')
 

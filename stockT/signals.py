@@ -21,8 +21,10 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
     """Process approved stock usage requests.
 
     When a StockUsage is saved with status='approved':
-      - the referenced kit's quantity is reduced by quantity_used
-      - the kit is deleted entirely when all of its stock is used
+      - the linked kit's quantity is reduced by quantity_used
+      - with no linked kit, the usage is applied FIFO across the user's
+        active kits of the same type (oldest first)
+      - kits fully consumed are deleted entirely
       - the usage is marked as 'completed' with stock_deleted=True
     """
     if instance.status != StockUsage.STATUS_APPROVED:
@@ -48,7 +50,25 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
     kit = instance.kit
     try:
         if kit is not None:
-            if instance.quantity_used >= kit.quantity:
+            kits = [kit]
+        elif instance.kit_type_id:
+            # No kit linked explicitly (the tracking form only picks a type):
+            # apply the usage to the user's active kits of that type, oldest
+            # first (FIFO), so the reduction can span several kits.
+            kits = list(Kit.objects.filter(
+                user=instance.user,
+                kit_type_fk=instance.kit_type,
+                is_active=True,
+            ).order_by('timestamp'))
+        else:
+            kits = []
+
+        remaining = instance.quantity_used
+        for kit in kits:
+            if remaining <= 0:
+                break
+            take = min(kit.quantity, remaining)
+            if take >= kit.quantity:
                 # Full depletion -> delete the kit entirely.
                 kit_id = kit.id
                 kit.delete()
@@ -56,12 +76,13 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                     'Stock usage #%s deleted kit #%s (all stock used)', instance.id, kit_id
                 )
             else:
-                kit.quantity -= instance.quantity_used
+                kit.quantity -= take
                 kit.save(update_fields=['quantity', 'last_updated'])
                 logger.info(
                     'Stock usage #%s reduced kit #%s to %s',
                     instance.id, kit.id, kit.quantity,
                 )
+            remaining -= take
     except Exception:
         logger.exception('Failed to process stock deletion for usage #%s', instance.id)
         return

@@ -16,13 +16,15 @@
     <h1>Stock Management System</h1>
     <p>Track kits, monitor stock usage and manage inventory in one place.</p>
     <div class="hero-actions">
-        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started</a>
+        {% if registration_open %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Set Up Workspace</a>
+        {% endif %}
         <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Login</a>
     </div>
 </div>
 
 <section class="why-register">
-    <h2>Why Register?</h2>
+    <h2>{% if registration_open %}Why Register?{% else %}One Workspace. Your Team.{% endif %}</h2>
     <div class="carousel-container">
         <div class="why-register-cards">
             <div class="register-card-item"><i class="fas fa-clipboard-list"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>
@@ -40,7 +42,10 @@
 {% else %}
 <div class="dashboard-header">
     <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-    <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
+    <div>
+        <a href="{% url 'export_kits_csv' %}?{{ request.GET.urlencode }}" class="btn btn-secondary"><i class="fas fa-download"></i> Export CSV</a>
+        <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
+    </div>
 </div>
 
 <div class="dashboard-stats">

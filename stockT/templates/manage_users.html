@@ -12,9 +12,14 @@
 <div class="manage-users-container">
     <div class="dashboard-header">
         <h1><i class="fas fa-users-gear"></i> Manage Users</h1>
-        {% if user.is_superuser %}
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-user-shield"></i> Create Admin</a>
-        {% endif %}
+        <div>
+            {% if user.is_admin %}
+            <a href="{% url 'add_user' %}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add User</a>
+            {% endif %}
+            {% if user.is_superuser %}
+            <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-user-shield"></i> Create Admin</a>
+            {% endif %}
+        </div>
     </div>
 
     <form method="get" class="dashboard-controls">

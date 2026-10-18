@@ -1,31 +1,38 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Register - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/register.css' %}">
-{% endblock %}
+{% block title %}Set Up Workspace - Stock Management System{% endblock %}
 
 {% block content %}
-<div class="register-container">
-    <div class="register-card">
-        <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+<div class="auth-container">
+    <div class="auth-card auth-card-wide">
+        <h1><i class="fas fa-layer-group"></i> Set Up Your Workspace</h1>
+        <p class="auth-lead">
+            This app runs <strong>one shared workspace</strong>. Register once to create
+            it and manage your team. After that, registration closes and you add
+            your people yourself.
+        </p>
         <form method="post" class="register-form">
             {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="field-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
             {% for field in form %}
             <div class="form-group">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
+                {% if field.help_text %}<small class="form-help">{{ field.help_text }}</small>{% endif %}
                 {% if field.errors %}
                 <div class="field-errors">{{ field.errors }}</div>
                 {% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <i class="fas fa-rocket"></i> Create Workspace
+            </button>
         </form>
         <div class="login-links">
-            Already have an account? <a href="{% url 'login' %}">Login</a>
+            Workspace already set up? <a href="{% url 'login' %}">Login</a>
         </div>
     </div>
 </div>
