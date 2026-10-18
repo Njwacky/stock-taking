@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.removeEventListener('keydown', trapFocus);
     }
 
-    // Toggle mobile menu
+    // Toggle mobile menu (guarded against touchend + click double firing)
     function toggleMobileMenu() {
         if (navLinks.classList.contains('active')) {
             closeMobileMenu();
@@ -143,19 +143,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    let lastToggleTime = 0;
+    function toggleMobileMenuGuarded() {
+        const now = Date.now();
+        if (now - lastToggleTime < 500) return;
+        lastToggleTime = now;
+        toggleMobileMenu();
+    }
+
     // Initialize mobile menu if elements exist
     if (mobileMenuBtn && navLinks) {
         // Mobile menu button click handler
         mobileMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            toggleMobileMenu();
+            toggleMobileMenuGuarded();
         });
         // Touch support for mobile
         mobileMenuBtn.addEventListener('touchend', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            toggleMobileMenu();
+            toggleMobileMenuGuarded();
         });
         // Close menu when clicking on a navigation link
         const navLinkElements = navLinks.querySelectorAll('.nav-link');

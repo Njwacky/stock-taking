@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Most Received Kits - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/most-received-kits.css' %}">
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <h1><i class="fas fa-ranking-star"></i> Most Received Kits</h1>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Kit Type</th>
+                <th>Total Quantity</th>
+                <th>Users Holding</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in kit_stats %}
+            <tr>
+                <td>{{ stat.kit_type|default:"Unassigned" }}</td>
+                <td>{{ stat.total_quantity }}</td>
+                <td>{{ stat.user_count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="empty-state">No stock data yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

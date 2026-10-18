@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard-controls.css' %}">
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/most-received-kits.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if public_view %}
+<div class="hero-section">
+    <h1>Stock Management System</h1>
+    <p>Track kits, monitor stock usage and manage inventory in one place.</p>
+    <div class="hero-actions">
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Login</a>
+    </div>
+</div>
+
+<section class="why-register">
+    <h2>Why Register?</h2>
+    <div class="carousel-container">
+        <div class="why-register-cards">
+            <div class="register-card-item"><i class="fas fa-clipboard-list"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>
+            <div class="register-card-item"><i class="fas fa-chart-pie"></i><h3>Insights</h3><p>See what stock you have at a glance.</p></div>
+            <div class="register-card-item"><i class="fas fa-qrcode"></i><h3>QR Profile</h3><p>Share your profile with a scannable code.</p></div>
+            <div class="register-card-item"><i class="fas fa-comments"></i><h3>Feedback</h3><p>Report bugs and request features.</p></div>
+            <div class="register-card-item"><i class="fas fa-mobile-screen"></i><h3>PWA</h3><p>Install the app on any device.</p></div>
+            <div class="register-card-item"><i class="fas fa-shield-halved"></i><h3>Secure</h3><p>Role-based access keeps data safe.</p></div>
+        </div>
+        <div class="carousel-dots">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+    </div>
+</section>
+{% else %}
+<div class="dashboard-header">
+    <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+    <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
+</div>
+
+<div class="dashboard-stats">
+    <h2>Most Received Kits</h2>
+    <div class="chart-wrapper">
+        <canvas id="kitsPieChart" width="320" height="320"></canvas>
+        <div id="chartLegend" class="chart-legend"></div>
+    </div>
+    {{ kit_stats|json_script:"kitStatsData" }}
+</div>
+
+<form id="filter-form" method="get" class="dashboard-controls">
+    {% if user.is_manager %}
+    <select name="user" class="form-control">
+        <option value="">All users</option>
+        {% for u in users %}
+        <option value="{{ u.username }}" {% if filters.user == u.username %}selected{% endif %}>{{ u.username }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+    <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ filters.search }}">
+    <select name="sort" class="form-control">
+        <option value="timestamp" {% if filters.sort == 'timestamp' %}selected{% endif %}>Date</option>
+        <option value="quantity" {% if filters.sort == 'quantity' %}selected{% endif %}>Quantity</option>
+        <option value="kit_type" {% if filters.sort == 'kit_type' %}selected{% endif %}>Kit Type</option>
+        <option value="condition" {% if filters.sort == 'condition' %}selected{% endif %}>Condition</option>
+    </select>
+    <select name="order" class="form-control">
+        <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descending</option>
+        <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascending</option>
+    </select>
+    <button type="submit" class="btn btn-secondary"><i class="fas fa-filter"></i> Filter</button>
+</form>
+
+<form id="bulk-delete-form" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="bulk_delete">
+    <div id="bulk-actions-bar" class="bulk-actions-bar">
+        <span id="selected-count">0</span> selected
+        {% if user.is_manager %}
+        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Selected</button>
+        {% endif %}
+    </div>
+
+    <div id="table-container">
+        {% include 'partials/kit_table.html' %}
+    </div>
+</form>
+
+<div id="pagination-container">
+    {% include 'partials/pagination.html' %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

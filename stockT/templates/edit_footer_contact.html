@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Contact - Stock Management System{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h1><i class="fas fa-address-book"></i> Edit Contact</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                {{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% else %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% endif %}
+                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+        </form>
+        <div class="login-links"><a href="{% url 'manage_footer_contacts' %}">Back to contacts</a></div>
+    </div>
+</div>
+{% endblock %}

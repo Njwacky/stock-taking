@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Offline - Stock Management System{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <h1><i class="fas fa-wifi"></i></h1>
+    <p>You are currently offline. Please check your connection and try again.</p>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Retry</a>
+</div>
+{% endblock %}

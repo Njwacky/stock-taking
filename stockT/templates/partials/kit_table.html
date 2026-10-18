@@ -1,0 +1,28 @@
+<table class="data-table">
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th>Kit Type</th>
+            <th>Quantity</th>
+            <th>Condition</th>
+            {% if user.is_manager %}<th>User</th>{% endif %}
+            <th>Location</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for kit in kits %}
+        <tr>
+            <td><input type="checkbox" class="kit-checkbox" name="kit_ids" value="{{ kit.id }}"></td>
+            <td>{{ kit.kit_type_name }}</td>
+            <td>{{ kit.quantity }}</td>
+            <td><span class="condition-badge condition-{{ kit.condition }}">{{ kit.get_condition_display }}</span></td>
+            {% if user.is_manager %}<td><a href="{% url 'user_profile' kit.user.id %}">{{ kit.user.username }}</a></td>{% endif %}
+            <td>{{ kit.location|default:"-" }}</td>
+            <td>{{ kit.timestamp|date:"Y-m-d" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty-state">No stock items found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

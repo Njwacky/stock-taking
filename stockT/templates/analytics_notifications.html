@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Usage Milestones - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-trophy"></i> Usage Milestones</h1>
+        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie"></i> Back to Analytics</a>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Reached</th>
+                <th>Type</th>
+                <th>Threshold</th>
+                <th>Message</th>
+                <th>Notified</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for milestone in milestones %}
+            <tr>
+                <td>{{ milestone.achieved_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ milestone.milestone_type }}</td>
+                <td>{{ milestone.threshold }}</td>
+                <td>{{ milestone.message|default:"-" }}</td>
+                <td>{% if milestone.notified %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="empty-state">No milestones achieved yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

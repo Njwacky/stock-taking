@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Admin - Stock Management System{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h1><i class="fas fa-user-shield"></i> Create Administrator</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" id="id_username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="id_email">Email</label>
+                <input type="email" name="email" id="id_email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="id_clock_number">Clock Number</label>
+                <input type="text" name="clock_number" id="id_clock_number" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" id="id_password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Create Admin</button>
+        </form>
+        <div class="login-links"><a href="{% url 'manage_admins' %}">Back to admin list</a></div>
+    </div>
+</div>
+{% endblock %}

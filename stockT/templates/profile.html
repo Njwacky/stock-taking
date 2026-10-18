@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar"><i class="fas fa-user-circle"></i></div>
+            <div>
+                <h1>{{ profile_user.first_name }} {{ profile_user.last_name|default:profile_user.username }}</h1>
+                <p class="text-muted">@{{ profile_user.username }} &middot; <span class="role-badge role-{{ profile_user.role }}">{{ profile_user.role_display }}</span></p>
+            </div>
+        </div>
+
+        <div class="profile-details">
+            <p><strong><i class="fas fa-id-card"></i> Clock Number:</strong> {{ profile_user.clock_number|default:"-" }}</p>
+            <p><strong><i class="fas fa-building"></i> Department:</strong> {{ profile_user.department|default:"-" }}</p>
+            <p><strong><i class="fas fa-envelope"></i> Email:</strong> {{ profile_user.email|default:"-" }}</p>
+            <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ profile_user.phone_number|default:"-" }}</p>
+            <p><strong><i class="fas fa-calendar"></i> Joined:</strong> {{ profile_user.date_joined|date:"Y-m-d" }}</p>
+        </div>
+
+        <div class="profile-actions">
+            <button onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
+            {% if own_profile %}
+            <a href="{% url 'dashboard' %}" class="btn btn-primary"><i class="fas fa-chart-line"></i> My Dashboard</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-qr">
+        <h2>Profile QR Code</h2>
+        {% if qr_data_uri %}
+        <img src="{{ qr_data_uri }}" alt="Profile QR Code" class="qr-image">
+        {% endif %}
+        <p class="text-muted">Scan to open this profile.</p>
+    </div>
+</div>
+{% endblock %}

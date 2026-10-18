@@ -1,7 +1,9 @@
 /* Dashboard Page Specific Styles */
 
 /* Loading Overlay */
-.loading-overlay {
+/* Loading overlay (created dynamically with id="loading-overlay") */
+.loading-overlay,
+#loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
