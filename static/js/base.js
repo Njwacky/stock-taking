@@ -60,7 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileMenuBtn.setAttribute('aria-expanded', 'false');
     }
     if (navLinks) {
-        navLinks.setAttribute('aria-hidden', 'true');
+        // Only hide the drawer from screen readers while it is actually
+        // closed on mobile — on desktop the menu is always visible.
+        if (window.innerWidth <= 768) {
+            navLinks.setAttribute('aria-hidden', 'true');
+        } else {
+            navLinks.removeAttribute('aria-hidden');
+        }
     }
 
     // Create overlay element
@@ -196,22 +202,52 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
                 closeMobileMenu();
             }
+            if (navLinks) {
+                if (window.innerWidth > 768) {
+                    navLinks.removeAttribute('aria-hidden');
+                } else if (!navLinks.classList.contains('active')) {
+                    navLinks.setAttribute('aria-hidden', 'true');
+                }
+            }
         });
     } else {
         console.warn('Mobile menu elements not found');
     }
 
-    // Auto-hide notifications after 5 seconds
-    setTimeout(() => {
-        const alerts = document.querySelectorAll('.notification');
-        alerts.forEach(alert => {
-            alert.style.opacity = '0';
-            alert.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.remove();
-                }
-            }, 500);
+    // Flash messages: dismiss button + auto-hide after 6 seconds
+    function dismissAlert(alert) {
+        if (!alert || alert.dataset.dismissing === '1') return;
+        alert.dataset.dismissing = '1';
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateY(-6px)';
+        alert.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        setTimeout(() => {
+            if (alert.parentNode) alert.remove();
+        }, 360);
+    }
+
+    document.querySelectorAll('.alert').forEach(alert => {
+        const closeBtn = alert.querySelector('.alert-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => dismissAlert(alert));
+        }
+        if (alert.hasAttribute('data-auto-dismiss')) {
+            setTimeout(() => dismissAlert(alert), 6000);
+        }
+    });
+
+    // Highlight the nav link of the current page
+    (function highlightCurrentNav() {
+        const path = window.location.pathname;
+        if (!navLinks) return;
+        navLinks.querySelectorAll('.nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('http')) return;
+            // Exact match, or section match (e.g. /edit-user/5/ under /manage-users/)
+            if (path === href || (href !== '/' && path.startsWith(href))) {
+                link.classList.add('active');
+                link.setAttribute('aria-current', 'page');
+            }
         });
-    }, 5000);
+    })();
 });

@@ -17,6 +17,20 @@ class RegisterForm(UserCreationForm):
             'username', 'first_name', 'last_name', 'email',
             'clock_number', 'department', 'phone_number',
         )
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. jsmith', 'autofocus': True}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@company.com'}),
+            'clock_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digits only'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.setdefault('class', 'form-control')
+        self.fields['password2'].widget.attrs.setdefault('class', 'form-control')
 
     def clean_clock_number(self):
         return _validate_clock_number(self.cleaned_data.get('clock_number'))
