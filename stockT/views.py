@@ -189,7 +189,7 @@ def register(request):
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(
             request,
-            'Welcome! Your workspace is ready and you are its Superadmin. '
+            'Welcome! Your workspace is ready. '
             'Add your people under Manage Users → Add User.',
         )
         return redirect('dashboard')

@@ -20,52 +20,70 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar" role="navigation">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <nav class="navbar" role="navigation" aria-label="Primary">
         <a href="{% url 'dashboard' %}" class="nav-brand">
             <i class="fas fa-boxes-stacked"></i>
             <span>Stock Tracker</span>
         </a>
-        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Open navigation menu">
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
-        </button>
+        {% comment %}
+        Primary navigation is five destinations and nothing else (blaqVibe
+        pattern): Dashboard · Add Stock · Track Usage · Distribute · Calculator.
+        Everything that is a utility — Profile, Notifications, Manage Users,
+        Analytics, Admins — lives in the account menu. On mobile the row
+        becomes a horizontal pill scroller; there is no hamburger drawer.
+        {% endcomment %}
         <div id="navLinks" class="nav-links">
-            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line"></i> Dashboard</a>
             {% if user.is_authenticated %}
-            <a class="nav-link" href="{% url 'add_items' %}"><i class="fas fa-plus"></i> Add Stock</a>
-            <a class="nav-link" href="{% url 'stock_usage_tracking' %}">
-                <i class="fas fa-clipboard-list"></i> Track Usage
-                {% if pending_stock_usage_count %}
-                <span class="badge">{{ pending_stock_usage_count }}</span>
-                {% endif %}
-            </a>
-            <a class="nav-link" href="{% url 'stock_distribution' %}"><i class="fas fa-share-nodes"></i> Distribute</a>
-            <a class="nav-link" href="{% url 'inventory_calculator' %}"><i class="fas fa-calculator"></i> Calculator</a>
-            {% if user.is_manager %}
-            <a class="nav-link" href="{% url 'manage_users' %}"><i class="fas fa-users-gear"></i> Manage Users</a>
-            <a class="nav-link" href="{% url 'manage_comments' %}"><i class="fas fa-comments"></i> Feedback</a>
-            <a class="nav-link" href="{% url 'analytics_dashboard' %}"><i class="fas fa-chart-pie"></i> Analytics</a>
-            {% endif %}
-            {% if user.is_superuser %}
-            <a class="nav-link" href="{% url 'manage_admins' %}"><i class="fas fa-user-shield"></i> Admins</a>
-            {% endif %}
-            <a class="nav-link" href="{% url 'notifications' %}">
-                <i class="fas fa-bell"></i>
-                {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
-            </a>
-            <a class="nav-link" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Profile</a>
-            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus"></i> Add Stock</a>
+            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list"></i> Track Usage</a>
+            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes"></i> Distribute</a>
+            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator"></i> Calculator</a>
+
+            <div class="nav-user" id="navUser">
+                <button type="button" id="navUserBtn" class="nav-user-btn" aria-haspopup="true" aria-expanded="false">
+                    <span class="nav-avatar" aria-hidden="true">{{ user.username|first|upper }}</span>
+                    <span class="nav-user-name">{{ user.username }}</span>
+                    {% if pending_reset_requests_count or pending_stock_usage_count %}
+                    <span class="nav-badge">{{ pending_reset_requests_count|add:pending_stock_usage_count }}</span>
+                    {% endif %}
+                    <span class="nav-caret" aria-hidden="true">&#9662;</span>
+                </button>
+                <div class="nav-menu" id="navMenu" role="menu">
+                    <a role="menuitem" href="{% url 'profile' %}"{% if request.path == '/profile/' %} aria-current="page"{% endif %}><i class="fas fa-id-badge"></i> Profile</a>
+                    <a role="menuitem" href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
+                        <i class="fas fa-bell"></i> Notifications
+                        {% if pending_reset_requests_count or pending_stock_usage_count %}
+                        <span class="nav-badge">{{ pending_reset_requests_count|add:pending_stock_usage_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a role="menuitem" href="{% url 'my_comments' %}"{% if '/comments/my' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comment-dots"></i> My Feedback</a>
+                    {% if user.is_manager %}
+                    <div class="nav-menu-sep"></div>
+                    <a role="menuitem" href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}><i class="fas fa-users-gear"></i> Manage Users</a>
+                    <a role="menuitem" href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path or '/comments/update' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comments"></i> Review Feedback</a>
+                    <a role="menuitem" href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path %} aria-current="page"{% endif %}><i class="fas fa-chart-pie"></i> Analytics</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <div class="nav-menu-sep"></div>
+                    <a role="menuitem" href="{% url 'manage_admins' %}"{% if '/admin/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-user-shield"></i> Admins</a>
+                    <a role="menuitem" href="{% url 'manage_footer_contacts' %}"{% if '/footer/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-address-book"></i> Manage Footer</a>
+                    {% endif %}
+                    <div class="nav-menu-sep"></div>
+                    <a role="menuitem" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+                </div>
+            </div>
             {% else %}
-            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
+            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
             {% if registration_open %}
-            <a class="nav-link" href="{% url 'register' %}"><i class="fas fa-user-shield"></i> Set Up Workspace</a>
+            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-shield"></i> Set Up Workspace</a>
             {% endif %}
             {% endif %}
         </div>
     </nav>
 
-    <main class="main-content">
+    <main class="main-content" id="main">
         {% if messages %}
         <div class="messages-container" role="status" aria-live="polite">
             {% for message in messages %}

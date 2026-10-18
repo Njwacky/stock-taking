@@ -35,10 +35,14 @@
    Page layout
    -------------------------------------------------------------------------- */
 
+/* The header is STICKY in normal flow (blaqVibe lesson): it always reserves
+   exactly its own height, so no body padding compensation to keep in sync —
+   the old fixed navbar + body{padding-top} pairing left a grey band above the
+   bar on desktop and broke when the bar wrapped. */
 body {
     background: var(--page-bg);
     color: var(--text);
-    padding-top: 0; /* navbar is sticky on desktop — no spacer needed */
+    padding-top: 0;
 }
 
 .main-content {
@@ -52,13 +56,324 @@ body {
 }
 
 @media (max-width: 768px) {
-    /* Mobile navbar is fixed — reserve its height */
-    body {
-        padding-top: 66px;
-    }
-
     .main-content {
         padding: 16px 14px 48px;
+    }
+}
+
+/* Skip link — keyboard users jump straight to content */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 12000;
+    padding: 10px 14px;
+    background: #fff;
+    color: var(--secondary);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 0 0 10px 0;
+}
+
+.skip-link:focus {
+    left: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation — blaqVibe pattern: five primary destinations as pills, all
+   utilities in the avatar account menu, no hamburger drawer. The mobile row
+   is a horizontal pill scroller; the header stays sticky in normal flow.
+   -------------------------------------------------------------------------- */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    margin-bottom: 0;
+    overflow: visible; /* the account menu must not be clipped */
+    animation: none;
+}
+
+/* the old shine sweep needs overflow:hidden — drop it */
+.navbar::before {
+    display: none;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    transform: none;
+}
+
+/* Active pill inverts (blaqVibe): solid white on the gradient */
+.nav-link[aria-current="page"] {
+    background: #fff;
+    color: var(--secondary);
+    border-color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.nav-link i {
+    font-size: 0.92em;
+}
+
+.nav-pill-btn {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.nav-pill-accent {
+    background: #fff;
+    color: var(--secondary);
+    border-color: #fff;
+    font-weight: 700;
+}
+
+/* Account menu — utilities live here, not in the pill row */
+.nav-user {
+    position: relative;
+    margin-left: auto; /* pinned right; pills stay next to the brand */
+}
+
+.nav-user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.nav-user-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-user-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.nav-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.nav-user-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-caret {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.nav-badge {
+    background: var(--danger);
+    color: #fff;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.nav-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    min-width: 230px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 16px 48px rgba(16, 24, 40, 0.22);
+    z-index: 1100;
+}
+
+.nav-menu.open {
+    display: block;
+}
+
+.nav-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.nav-menu a:hover {
+    background: #f1f5f9;
+    color: var(--text);
+}
+
+.nav-menu a[aria-current="page"] {
+    background: #eef2ff;
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.nav-menu a i {
+    width: 18px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.nav-menu a[aria-current="page"] i {
+    color: var(--primary-dark);
+}
+
+.nav-menu .nav-badge {
+    margin-left: auto;
+}
+
+.nav-menu-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 4px;
+}
+
+/* Mobile: brand row + horizontal pill scroller (no drawer, no burger).
+   The explicit position/left/width/height/background resets override the
+   legacy drawer rules in navbar.css (fixed panel parked at left:-280px) —
+   without them the pill row would inherit the off-screen drawer geometry. */
+@media (max-width: 900px) {
+    .navbar {
+        position: sticky;
+        top: 0;
+        left: auto;
+        width: auto;
+        border-radius: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .nav-brand {
+        align-self: flex-start;
+    }
+
+    .nav-links {
+        position: static;
+        top: auto;
+        left: auto;
+        width: 100%;
+        height: auto;
+        background: transparent;
+        box-shadow: none;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 0 2px;
+    }
+
+    .nav-links::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-link {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        font-size: 12.5px;
+        min-height: 0;
+        min-width: 0;
+        margin: 0;
+        width: auto;
+    }
+
+    /* Account stays pinned at the right end of the pill row */
+    .nav-user {
+        flex: 0 0 auto;
+        margin-left: auto;
+        padding-left: 6px;
+    }
+
+    .nav-user-name {
+        max-width: 90px;
+    }
+
+    .nav-menu {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        left: auto;
+        width: min(280px, calc(100vw - 24px));
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-user-name {
+        display: none;
+    }
+
+    .nav-user-btn {
+        padding: 4px 10px 4px 4px;
     }
 }
 
