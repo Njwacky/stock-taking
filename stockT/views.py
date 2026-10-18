@@ -91,18 +91,18 @@ SORT_FIELDS = {
 # Dashboard
 # ---------------------------------------------------------------------------
 
-def dashboard(request):
-    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
-    if not request.user.is_authenticated:
-        return render(request, 'dashboard.html', {'public_view': True})
+def _filtered_kits(request):
+    """Apply the dashboard's user/search/sort/order filters.
 
+    Shared by the dashboard table and the CSV export so an export always
+    matches exactly what the table shows.
+    """
     kits = _kits_queryset(request)
 
     user_filter = request.GET.get('user', '')
     search = request.GET.get('search', '').strip()
     sort = SORT_FIELDS.get(request.GET.get('sort', 'timestamp'), 'timestamp')
     order = 'asc' if request.GET.get('order', 'desc') == 'asc' else 'desc'
-    page_number = request.GET.get('page', '1')
 
     if user_filter:
         if user_filter.isdigit():
@@ -119,6 +119,56 @@ def dashboard(request):
         )
 
     kits = kits.order_by(('-' if order == 'desc' else '') + sort)
+    filters = {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')}
+    return kits, filters
+
+
+@login_required
+def export_kits_csv(request):
+    """Download the kit table as CSV (same filters and scope as the dashboard)."""
+    import csv
+
+    from django.http import HttpResponse
+
+    kits, filters = _filtered_kits(request)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    filename = f'stock_export_{timezone.localtime().date().isoformat()}.csv'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # BOM so Excel opens UTF-8 correctly.
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'ID', 'Kit Type', 'Code', 'Quantity', 'Condition', 'User',
+        'Location', 'Expiration Date', 'Added By', 'Added At', 'Last Updated', 'Notes',
+    ])
+    for kit in kits.select_related('user', 'kit_type_fk', 'created_by'):
+        writer.writerow([
+            kit.id,
+            kit.kit_type_name,
+            kit.kit_type_fk.code if kit.kit_type_fk else '',
+            kit.quantity,
+            kit.get_condition_display(),
+            kit.user.username,
+            kit.location or '',
+            kit.expiration_date.isoformat() if kit.expiration_date else '',
+            kit.created_by.username if kit.created_by else '',
+            timezone.localtime(kit.timestamp).strftime('%Y-%m-%d %H:%M'),
+            timezone.localtime(kit.last_updated).strftime('%Y-%m-%d %H:%M'),
+            kit.notes or '',
+        ])
+    return response
+
+
+def dashboard(request):
+    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
+    if not request.user.is_authenticated:
+        return render(request, 'dashboard.html', {'public_view': True})
+
+    kits, filters = _filtered_kits(request)
+    page_number = request.GET.get('page', '1')
 
     if request.method == 'POST' and request.POST.get('action') == 'bulk_delete' and _is_manager(request.user):
         ids = request.POST.getlist('kit_ids')
@@ -136,7 +186,7 @@ def dashboard(request):
         'paginator': paginator,
         'kit_stats': _kit_stats(),
         'users': User.objects.filter(is_active=True).order_by('username') if _is_manager(request.user) else [],
-        'filters': {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')},
+        'filters': filters,
     }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

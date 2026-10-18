@@ -42,7 +42,10 @@
 {% else %}
 <div class="dashboard-header">
     <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-    <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
+    <div>
+        <a href="{% url 'export_kits_csv' %}?{{ request.GET.urlencode }}" class="btn btn-secondary"><i class="fas fa-download"></i> Export CSV</a>
+        <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
+    </div>
 </div>
 
 <div class="dashboard-stats">

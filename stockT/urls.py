@@ -16,6 +16,7 @@ urlpatterns = [
 
     # Stock items
     path('add-items/', views.add_items, name='add_items'),
+    path('export/kits.csv', views.export_kits_csv, name='export_kits_csv'),
     path('get_user_kits/<int:user_id>/', views.get_user_kits, name='get_user_kits'),
     path('get_kit_types_for_edit/', views.get_kit_types_for_edit, name='get_kit_types_for_edit'),
     path('update_kit/<int:kit_id>/', views.update_kit, name='update_kit'),
