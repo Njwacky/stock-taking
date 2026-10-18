@@ -99,6 +99,7 @@ TEMPLATES = [
                 'stockT.context_processors.pending_reset_requests',
                 'stockT.context_processors.footer_contacts',
                 'stockT.context_processors.pending_stock_usage_count',
+                'stockT.context_processors.workspace_context',
             ],
         },
     },
@@ -162,8 +163,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'stockT', 'static'),
 ]
+# Only include app-level static dir when it exists (avoids staticfiles.W004).
+_app_static = os.path.join(BASE_DIR, 'stockT', 'static')
+if os.path.isdir(_app_static):
+    STATICFILES_DIRS.append(_app_static)
    
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -205,6 +209,10 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Logging Configuration
+# Ensure the log directory exists before handlers are created, otherwise
+# Django crashes at startup with FileNotFoundError.
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

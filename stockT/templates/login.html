@@ -27,8 +27,10 @@
             <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
         <div class="login-links">
-            <a href="{% url 'register' %}">Create an account</a>
+            {% if registration_open %}
+            <a href="{% url 'register' %}">Set up your workspace</a>
             &middot;
+            {% endif %}
             <a href="{% url 'password_reset_request' %}">Forgot password?</a>
         </div>
     </div>

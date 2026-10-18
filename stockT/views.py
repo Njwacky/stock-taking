@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,8 +21,10 @@ from django.views.decorators.http import require_POST
 
 from .analytics_service import AnalyticsService
 from .forms import (
+    AddUserForm,
     ContactInfoForm,
     EditUserForm,
+    LimitedEditUserForm,
     ProfileForm,
     RegisterForm,
     StockUsageForm,
@@ -38,6 +41,7 @@ from .models import (
     User,
     UserComment,
 )
+from .workspace import registration_open
 
 User = get_user_model()
 
@@ -148,13 +152,46 @@ def dashboard(request):
 # ---------------------------------------------------------------------------
 
 def register(request):
+    """
+    One-time workspace setup.
+
+    This app has exactly ONE workspace and only ONE person ever registers:
+    the first registrant becomes the workspace Superadmin (owner). After that
+    public registration closes forever and the Superadmin adds people from
+    Manage Users -> Add User.
+    """
     if request.user.is_authenticated:
         return redirect('dashboard')
+    if not registration_open():
+        messages.info(
+            request,
+            'Registration is closed. This workspace already has an owner — '
+            'ask the Superadmin to add your account.',
+        )
+        return redirect('login')
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        login(request, user)
-        messages.success(request, 'Welcome! Your account has been created.')
+        with transaction.atomic():
+            # Re-check inside the transaction so only one registrant can win.
+            if not registration_open():
+                messages.info(
+                    request,
+                    'Registration is closed. This workspace already has an owner — '
+                    'ask the Superadmin to add your account.',
+                )
+                return redirect('login')
+            user = form.save(commit=False)
+            user.role = User.ROLE_ADMIN
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+        # Multiple auth backends are configured, so the backend must be explicit.
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(
+            request,
+            'Welcome! Your workspace is ready and you are its Superadmin. '
+            'Add your people under Manage Users → Add User.',
+        )
         return redirect('dashboard')
     return render(request, 'register.html', {'form': form})
 
@@ -383,15 +420,38 @@ def manage_users(request):
 
 
 @login_required
+def add_user(request):
+    """
+    Add a person to the workspace.
+
+    Only the workspace Superadmin and administrators can add people —
+    there is no public self-registration after the workspace is set up.
+    """
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can add people to the workspace.')
+        return redirect('manage_users')
+    form = AddUserForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        messages.success(
+            request,
+            f'{user.username} has been added to the workspace as {user.get_role_display()}.',
+        )
+        return redirect('manage_users')
+    return render(request, 'add_user.html', {'form': form})
+
+
+@login_required
 def edit_user(request, user_id):
     if not _is_manager(request.user):
         messages.error(request, 'You do not have permission to edit users.')
         return redirect('dashboard')
     target = get_object_or_404(User, id=user_id)
 
-    # Only admins can change roles or staff status.
+    # Only admins can change roles or staff status. Managers use a restricted
+    # form WITHOUT role/is_staff fields so they cannot escalate privileges.
     if not request.user.is_admin:
-        restricted = EditUserForm(request.POST or None, instance=target)
+        restricted = LimitedEditUserForm(request.POST or None, instance=target)
         if request.method == 'POST':
             if restricted.is_valid():
                 restricted.save()
@@ -557,10 +617,11 @@ def delete_stock_usage(request, usage_id):
 def stock_distribution(request):
     """Distribute stock to users, verified with the distributor's password.
 
-    Access is limited to managers and supervisors (the "Manager & Supervisor
-    Stock Assignment Portal"); admins and regular users are redirected.
+    Access is limited to managers, supervisors and administrators (the
+    workspace Superadmin must have access to every portal); regular users
+    are redirected.
     """
-    if request.user.role not in (User.ROLE_MANAGER, User.ROLE_SUPERVISOR):
+    if not request.user.is_supervisor:
         messages.error(request, 'Access denied. This portal is for managers and supervisors only.')
         return redirect('dashboard')
 

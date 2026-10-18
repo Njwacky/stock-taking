@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class RegisterForm(UserCreationForm):
-    """Registration form including clock number validation."""
+    """One-time workspace setup form: the first registrant becomes Superadmin."""
 
     class Meta:
         model = User
@@ -19,14 +19,47 @@ class RegisterForm(UserCreationForm):
         )
 
     def clean_clock_number(self):
-        clock_number = (self.cleaned_data.get('clock_number') or '').strip()
-        if not clock_number:
-            raise forms.ValidationError('A clock number is required.')
-        if not clock_number.isdigit():
-            raise forms.ValidationError('Clock number must contain digits only.')
-        if User.objects.filter(clock_number=clock_number).exists():
-            raise forms.ValidationError('This clock number is already registered.')
-        return clock_number
+        return _validate_clock_number(self.cleaned_data.get('clock_number'))
+
+
+def _validate_clock_number(clock_number):
+    clock_number = (clock_number or '').strip()
+    if not clock_number:
+        raise forms.ValidationError('A clock number is required.')
+    if not clock_number.isdigit():
+        raise forms.ValidationError('Clock number must contain digits only.')
+    if User.objects.filter(clock_number=clock_number).exists():
+        raise forms.ValidationError('This clock number is already registered.')
+    return clock_number
+
+
+class AddUserForm(UserCreationForm):
+    """Form used by the Superadmin/admin to add a person to the workspace."""
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = (
+            'username', 'first_name', 'last_name', 'email',
+            'clock_number', 'department', 'phone_number', 'role',
+        )
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'clock_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'role': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.setdefault('class', 'form-control')
+        self.fields['password2'].widget.attrs.setdefault('class', 'form-control')
+
+    def clean_clock_number(self):
+        return _validate_clock_number(self.cleaned_data.get('clock_number'))
 
 
 class UserCommentForm(forms.ModelForm):
@@ -108,3 +141,26 @@ class EditUserForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def clean_clock_number(self):
+        clock_number = (self.cleaned_data.get('clock_number') or '').strip()
+        if clock_number and not clock_number.isdigit():
+            raise forms.ValidationError('Clock number must contain digits only.')
+        if clock_number and User.objects.filter(clock_number=clock_number).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('This clock number is already registered.')
+        return clock_number
+
+
+class LimitedEditUserForm(EditUserForm):
+    """
+    Manager-limited edit form.
+
+    Excludes role/is_staff so a manager can never escalate their own (or
+    anyone's) privileges by posting privileged fields.
+    """
+
+    class Meta(EditUserForm.Meta):
+        fields = (
+            'username', 'first_name', 'last_name', 'email',
+            'clock_number', 'department', 'phone_number', 'is_active',
+        )

@@ -787,3 +787,10 @@
         transform: rotate(360deg);
     }
 }
+
+/* Workspace setup lead paragraph on the register page */
+.register-lead {
+    margin: 0 0 1.25rem;
+    color: #555;
+    line-height: 1.5;
+}

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Register - Stock Management System{% endblock %}
+{% block title %}Set Up Workspace - Stock Management System{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/register.css' %}">
@@ -10,7 +10,12 @@
 {% block content %}
 <div class="register-container">
     <div class="register-card">
-        <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+        <h1><i class="fas fa-user-shield"></i> Set Up Your Workspace</h1>
+        <p class="register-lead">
+            This app runs <strong>one shared workspace</strong>. Register once to create
+            it — you become the <strong>Superadmin</strong>. After that, registration
+            closes and you add your people yourself.
+        </p>
         <form method="post" class="register-form">
             {% csrf_token %}
             {% for field in form %}
@@ -22,10 +27,10 @@
                 {% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
+            <button type="submit" class="btn btn-primary btn-block">Create Workspace &amp; Become Superadmin</button>
         </form>
         <div class="login-links">
-            Already have an account? <a href="{% url 'login' %}">Login</a>
+            Workspace already set up? <a href="{% url 'login' %}">Login</a>
         </div>
     </div>
 </div>
