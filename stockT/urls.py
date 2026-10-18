@@ -10,6 +10,9 @@ urlpatterns = [
     # Auth
     path('register/', views.register, name='register'),
     path('password-reset/request/', views.password_reset_request, name='password_reset_request'),
+    path('password-reset/manage/', views.manage_reset_requests, name='manage_reset_requests'),
+    path('password-reset/process/<int:reset_id>/', views.process_reset_request, name='process_reset_request'),
+    path('change-password/', views.change_password, name='change_password'),
 
     # Stock items
     path('add-items/', views.add_items, name='add_items'),
@@ -22,7 +25,11 @@ urlpatterns = [
     path('manage-users/', views.manage_users, name='manage_users'),
     path('manage-users/add/', views.add_user, name='add_user'),
     path('edit-user/<int:user_id>/', views.edit_user, name='edit_user'),
+    path('edit-user/<int:user_id>/set-password/', views.set_user_password, name='set_user_password'),
     path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
+
+    # Kit types
+    path('kit-types/', views.manage_kit_types, name='manage_kit_types'),
 
     # Profiles
     path('profile/', views.profile, name='profile'),

@@ -59,8 +59,14 @@
                         {% endif %}
                     </a>
                     <a role="menuitem" href="{% url 'my_comments' %}"{% if '/comments/my' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comment-dots"></i> My Feedback</a>
+                    <a role="menuitem" href="{% url 'change_password' %}"{% if '/change-password' in request.path %} aria-current="page"{% endif %}><i class="fas fa-lock"></i> Change Password</a>
                     {% if user.is_manager %}
                     <div class="nav-menu-sep"></div>
+                    <a role="menuitem" href="{% url 'manage_reset_requests' %}"{% if '/password-reset/manage' in request.path or '/password-reset/process' in request.path %} aria-current="page"{% endif %}>
+                        <i class="fas fa-key"></i> Password Resets
+                        {% if pending_reset_requests_count %}<span class="nav-badge">{{ pending_reset_requests_count }}</span>{% endif %}
+                    </a>
+                    <a role="menuitem" href="{% url 'manage_kit_types' %}"{% if '/kit-types' in request.path %} aria-current="page"{% endif %}><i class="fas fa-boxes-stacked"></i> Kit Types</a>
                     <a role="menuitem" href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}><i class="fas fa-users-gear"></i> Manage Users</a>
                     <a role="menuitem" href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path or '/comments/update' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comments"></i> Review Feedback</a>
                     <a role="menuitem" href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path %} aria-current="page"{% endif %}><i class="fas fa-chart-pie"></i> Analytics</a>

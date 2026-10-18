@@ -150,7 +150,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Users are in Durban — show local wall-clock times, not UTC.
+TIME_ZONE = 'Africa/Johannesburg'
 
 USE_I18N = True
 

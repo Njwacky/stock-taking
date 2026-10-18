@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Password Resets - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="manage-users-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-key"></i> Password Reset Requests</h1>
+        <a href="{% url 'notifications' %}" class="btn btn-secondary"><i class="fas fa-bell"></i> Notifications</a>
+    </div>
+
+    <p class="text-muted">
+        When someone forgets their password they submit a request with their username and
+        clock number. Approve it with a new temporary password and share it with them
+        securely — they can then change it under <strong>Change Password</strong>.
+    </p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Clock #</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Processed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in requests %}
+            <tr>
+                <td><a href="{% url 'user_profile' r.user.id %}">{{ r.username }}</a></td>
+                <td>{{ r.clock_number }}</td>
+                <td>{{ r.requested_at|date:"Y-m-d H:i" }}</td>
+                <td><span class="status-badge status-{% if r.status == 'approved' %}approved{% elif r.status == 'rejected' %}rejected{% else %}pending{% endif %}">{{ r.get_status_display }}</span></td>
+                <td>
+                    {% if r.processed_at %}
+                    {{ r.processed_at|date:"Y-m-d H:i" }}<br><small class="text-muted">by {{ r.processed_by.username|default:"-" }}</small>
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% if r.status == 'pending' %}
+                    <form method="post" action="{% url 'process_reset_request' r.id %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="password" name="new_password" class="form-control" placeholder="New password" required style="width:150px;display:inline-block">
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm" required style="width:130px;display:inline-block">
+                        <button type="submit" name="action" value="approve" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Reject</button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-state">No password reset requests.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

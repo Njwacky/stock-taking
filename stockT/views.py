@@ -7,8 +7,11 @@ JavaScript contracts (static/js/*.js).
 import json
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.auth import authenticate, get_user_model, login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, F, Q, Sum
@@ -197,6 +200,12 @@ def register(request):
 
 
 def logout_confirm(request):
+    """Confirm-and-logout: POST actually logs the user out (this was broken —
+    the view used to just re-render the page and never called auth.logout)."""
+    if request.method == 'POST':
+        auth_logout(request)
+        messages.success(request, 'You have been logged out.')
+        return redirect('login')
     return render(request, 'logout_confirm.html')
 
 
@@ -216,6 +225,145 @@ def password_reset_request(request):
             return redirect('login')
         messages.error(request, 'No account matches that username and clock number.')
     return render(request, 'password_reset_request.html')
+
+
+@login_required
+def manage_reset_requests(request):
+    """Managers process password reset requests here (approve sets a new
+    password; reject closes the request)."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    requests_qs = PasswordResetRequest.objects.select_related('user', 'processed_by')
+    return render(request, 'manage_reset_requests.html', {'requests': requests_qs})
+
+
+@login_required
+@require_POST
+def process_reset_request(request, reset_id):
+    """Approve (set new password) or reject a password reset request."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    reset = get_object_or_404(PasswordResetRequest, id=reset_id)
+    if reset.status != PasswordResetRequest.STATUS_PENDING:
+        messages.info(request, 'That request has already been processed.')
+        return redirect('manage_reset_requests')
+
+    action = request.POST.get('action')
+    if action == 'reject':
+        reset.status = PasswordResetRequest.STATUS_REJECTED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(request, f'Reset request for {reset.username} rejected.')
+        return redirect('manage_reset_requests')
+
+    if action == 'approve':
+        password = request.POST.get('new_password') or ''
+        confirm = request.POST.get('confirm_password') or ''
+        if not password or password != confirm:
+            messages.error(request, 'Passwords do not match (or are empty).')
+            return redirect('manage_reset_requests')
+        try:
+            validate_password(password, user=reset.user)
+        except ValidationError as exc:
+            messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+            return redirect('manage_reset_requests')
+        reset.user.set_password(password)
+        reset.user.save(update_fields=['password'])
+        reset.status = PasswordResetRequest.STATUS_APPROVED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(
+            request,
+            f'Password updated for {reset.username}. Share it with them securely.',
+        )
+        return redirect('manage_reset_requests')
+
+    messages.error(request, 'Unknown action.')
+    return redirect('manage_reset_requests')
+
+
+@login_required
+@require_POST
+def set_user_password(request, user_id):
+    """Admins set a member's password directly (e.g. new starter on the phone)."""
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can set passwords.')
+        return redirect('manage_users')
+    target = get_object_or_404(User, id=user_id)
+    password = request.POST.get('new_password') or ''
+    confirm = request.POST.get('confirm_password') or ''
+    if not password or password != confirm:
+        messages.error(request, 'Passwords do not match (or are empty).')
+        return redirect('edit_user', user_id=target.id)
+    try:
+        validate_password(password, user=target)
+    except ValidationError as exc:
+        messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+        return redirect('edit_user', user_id=target.id)
+    target.set_password(password)
+    target.save(update_fields=['password'])
+    messages.success(request, f'Password updated for {target.username}.')
+    return redirect('edit_user', user_id=target.id)
+
+
+@login_required
+def change_password(request):
+    """Let any user change their own password."""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Keep the session alive across the password change.
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, 'Your password has been changed.')
+            return redirect('profile')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'change_password.html', {'form': form})
+
+
+# ---------------------------------------------------------------------------
+# Kit types
+# ---------------------------------------------------------------------------
+
+@login_required
+def manage_kit_types(request):
+    """Manage the stock kit types used by Add Stock / Track Usage / Distribute."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage kit types.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = (request.POST.get('name') or '').strip()
+            code = (request.POST.get('code') or '').strip()
+            description = (request.POST.get('description') or '').strip()
+            unit = (request.POST.get('unit_of_measure') or 'pieces').strip() or 'pieces'
+            if not name or not code:
+                messages.error(request, 'Name and code are required.')
+            elif KitType.objects.filter(Q(name__iexact=name) | Q(code__iexact=code)).exists():
+                messages.error(request, 'A kit type with that name or code already exists.')
+            else:
+                KitType.objects.create(
+                    name=name, code=code, description=description or None,
+                    unit_of_measure=unit, created_by=request.user,
+                )
+                messages.success(request, f'Kit type “{name}” added.')
+        elif action == 'toggle':
+            kit_type = get_object_or_404(KitType, id=request.POST.get('kit_type_id'))
+            kit_type.is_active = not kit_type.is_active
+            kit_type.save(update_fields=['is_active'])
+            messages.success(request, f'Kit type “{kit_type.name}” {"activated" if kit_type.is_active else "deactivated"}.')
+        return redirect('manage_kit_types')
+
+    kit_types = KitType.objects.order_by('name')
+    return render(request, 'manage_kit_types.html', {'kit_types': kit_types})
 
 
 def custom_404(request, exception=None):

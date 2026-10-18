@@ -9,7 +9,26 @@
 
 {% block content %}
 <div class="comments-container">
-    <h1><i class="fas fa-bell"></i> Notifications</h1>
+    <div class="dashboard-header">
+        <h1><i class="fas fa-bell"></i> Notifications</h1>
+        {% if user.is_manager %}
+        <a href="{% url 'manage_reset_requests' %}" class="btn btn-primary">
+            <i class="fas fa-key"></i> Password Resets
+            {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
+        </a>
+        {% endif %}
+    </div>
+
+    {% if user.is_manager and pending_reset_requests_count %}
+    <div class="alert alert-warning" style="margin-bottom:18px">
+        <i class="alert-icon fas fa-triangle-exclamation"></i>
+        <span class="alert-text">
+            <strong>{{ pending_reset_requests_count }} password reset request{{ pending_reset_requests_count|pluralize }}</strong>
+            waiting for a decision.
+        </span>
+        <a href="{% url 'manage_reset_requests' %}" class="btn btn-warning btn-sm">Review</a>
+    </div>
+    {% endif %}
 
     {% for notification in notifications %}
     <div class="comment-admin-item {% if user not in notification.read_by.all %}unread{% endif %}">
