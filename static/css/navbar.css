@@ -22,7 +22,7 @@
     box-shadow: 0 4px 20px var(--navbar-shadow);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 10001;
     overflow: hidden;
     animation: navbarSlideDown 0.6s ease-out;
 }
@@ -38,7 +38,7 @@
     justify-content: center;
     align-items: center;
     gap: 4px;
-    z-index: 9998;
+    z-index: 10010;
     transition: all 0.3s ease;
     position: fixed;
     top: 15px;
@@ -83,7 +83,34 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 10007;
     transition: all 0.3s ease;
+}
+
+/* Brand link */
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    z-index: 10011;
+}
+
+.nav-brand:hover {
+    color: var(--navbar-accent);
+    text-decoration: none;
+}
+
+.nav-brand i {
+    font-size: 1.35rem;
 }
 
 @keyframes navbarSlideDown {
@@ -250,7 +277,7 @@
 .dashboard-controls-container {
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 10000;
     background: linear-gradient(135deg, var(--navbar-primary) 0%, var(--navbar-secondary) 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     padding: 15px 0;
@@ -349,19 +376,19 @@
         position: fixed;
         top: 15px;
         left: 15px;
-        z-index: 9998;
+        z-index: 10010;
     }
 
     .navbar {
         flex-direction: row;
-        padding: 15px 20px;
+        padding: 15px 20px 15px 70px;
         gap: 15px;
         position: fixed;
         top: 0;
         left: 0;
         width: auto;
         align-items: center;
-        z-index: 1001;
+        z-index: 10001;
         transform: translateY(0);
         transition: transform 0.3s ease, z-index 0.3s ease;
         background: linear-gradient(135deg, var(--navbar-primary) 0%, var(--navbar-secondary) 100%);
@@ -372,7 +399,7 @@
     
     /* Increase navbar z-index when menu is open */
     .navbar.menu-open {
-        z-index: 1004;
+        z-index: 10009;
     }
 
     /* Hide navbar when scrolling down */
@@ -393,7 +420,7 @@
         gap: 15px;
         box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
         transition: left 0.3s ease, transform 0.3s ease;
-        z-index: 1000;
+        z-index: 10007;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
@@ -401,7 +428,7 @@
     .nav-links.active {
         left: 0;
         transform: translateX(0);
-        z-index: 1003;
+        z-index: 10008;
     }
 
     .nav-link {
@@ -486,7 +513,7 @@
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
+        z-index: 10006;
         opacity: 0;
         transition: opacity 0.3s ease;
         -webkit-tap-highlight-color: transparent;
@@ -530,7 +557,7 @@
     }
 
     .navbar {
-        padding: 12px 15px;
+        padding: 12px 15px 12px 64px;
         gap: 12px;
     }
 
@@ -616,7 +643,7 @@
 /* Hamburger menu for very small screens if needed */
 @media (max-width: 360px) {
     .navbar {
-        padding: 15px 0;
+        padding: 15px 15px 15px 64px;
     }
 
     .nav-link {
