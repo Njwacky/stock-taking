@@ -13,6 +13,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+try:
+    from decouple import config as _env_config
+except ImportError:  # pragma: no cover - python-decouple is optional
+    _env_config = None
+
+
+def _env(name, default=None):
+    """Read a setting from the environment, falling back to .env via python-decouple."""
+    value = os.environ.get(name)
+    if value is not None:
+        return value
+    if _env_config is not None:
+        try:
+            return _env_config(name, default=default)
+        except Exception:
+            pass
+    return default
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,10 +40,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n_02mpt7_tgzrk4$zy-rx&-m=*#zp0iupq3ng339u+6*r92$ky'
+# Provided via environment/.env; the fallback is for local development only.
+SECRET_KEY = _env('SECRET_KEY', 'django-insecure-dev-only-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = str(_env('DEBUG', 'True')).lower() in ('1', 'true', 'yes', 'on')
 
 import os
 

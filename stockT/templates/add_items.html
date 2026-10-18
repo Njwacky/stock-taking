@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Stock - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/add-items.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="add-items-container">
+    <h1><i class="fas fa-plus"></i> Add Stock Items</h1>
+
+    <form method="post" id="addItemsForm">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="user">Assign to user</label>
+            {% if can_select_user %}
+            <select name="user" id="user" class="form-control" required>
+                {% for u in target_users %}
+                <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <select name="user" id="user" class="form-control" disabled>
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            </select>
+            <input type="hidden" name="user" value="{{ user.id }}">
+            {% endif %}
+        </div>
+
+        <div class="kit-type-grid">
+            {% for kit_type in kit_types %}
+            <div class="kit-type-card item-card">
+                <label class="kit-type-label">
+                    <input type="checkbox" class="modern-checkbox" data-kit-type="{{ kit_type.id }}">
+                    <span class="kit-type-name">{{ kit_type.name }}</span>
+                    <span class="kit-type-code">{{ kit_type.code }}</span>
+                </label>
+                <div class="kit-type-fields">
+                    <div class="form-group">
+                        <label>Quantity ({{ kit_type.unit_of_measure }})</label>
+                        <input type="number" name="quantity_{{ kit_type.id }}" class="form-control quantity-input"
+                               min="0" value="0" data-kit-name="{{ kit_type.name }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Condition</label>
+                        <select name="condition_{{ kit_type.id }}" class="form-control detail-select">
+                            <option value="new">New</option>
+                            <option value="good">Good</option>
+                            <option value="fair">Fair</option>
+                            <option value="poor">Poor</option>
+                            <option value="damaged">Damaged</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" name="location_{{ kit_type.id }}" class="form-control detail-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea name="notes_{{ kit_type.id }}" class="form-control detail-textarea" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Expiration</label>
+                        <input type="date" name="expiration_{{ kit_type.id }}" class="form-control detail-input">
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="empty-state">No kit types configured yet.</p>
+            {% endfor %}
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i> <span>Add Items</span>
+        </button>
+    </form>
+
+    {% if can_select_user %}
+    <section id="existingKitsSection" class="existing-kits-section">
+        <h2><i class="fas fa-boxes-stacked"></i> Existing Kits
+            <span id="selectedUserName"></span>
+        </h2>
+        <div class="kits-toolbar">
+            <input type="text" id="kitSearchInput" class="form-control" placeholder="Search kits...">
+            <select id="kitFilterSelect" class="form-control">
+                <option value="">All types</option>
+                {% for kit_type in kit_types %}
+                <option value="{{ kit_type.code }}">{{ kit_type.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><i class="fas fa-rotate"></i> Refresh</button>
+        </div>
+        <div id="kitsListContainer"></div>
+        <div id="kitsEmptyState" style="display:none" class="empty-state">
+            No existing kits for this user.
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<!-- Edit modal -->
+<div id="kitEditModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <h3>Edit Kit</h3>
+        <div id="kitEditModalBody"></div>
+        <div class="modal-actions">
+            <button type="button" id="saveKitChangesBtn" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete modal -->
+<div id="kitDeleteModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <h3>Delete Kit</h3>
+        <p>Are you sure you want to delete this kit? This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button type="button" id="confirmKitDeleteBtn" class="btn btn-danger">Delete</button>
+            <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/add_items.js' %}"></script>
+{% endblock %}

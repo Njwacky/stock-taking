@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Submit Feedback - Stock Management System{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <div class="login-card" style="max-width:640px">
+        <h1><i class="fas fa-comment-dots"></i> Submit Feedback</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Feedback</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Feedback - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <h1><i class="fas fa-comments"></i> Manage Feedback</h1>
+
+    <div class="dashboard-controls">
+        <a href="{% url 'manage_comments' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+        <a href="{% url 'manage_comments' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
+        <a href="{% url 'manage_comments' %}?status=reviewed" class="btn btn-sm {% if status_filter == 'reviewed' %}btn-primary{% else %}btn-secondary{% endif %}">Reviewed</a>
+        <a href="{% url 'manage_comments' %}?status=resolved" class="btn btn-sm {% if status_filter == 'resolved' %}btn-primary{% else %}btn-secondary{% endif %}">Resolved</a>
+        <a href="{% url 'manage_comments' %}?status=dismissed" class="btn btn-sm {% if status_filter == 'dismissed' %}btn-primary{% else %}btn-secondary{% endif %}">Dismissed</a>
+    </div>
+
+    {% for comment in comments %}
+    <div class="comment-admin-item">
+        <div class="comment-admin-header">
+            <strong>{{ comment.subject }}</strong>
+            <span class="status-badge status-{{ comment.status }}">{{ comment.get_status_display }}</span>
+        </div>
+        <p class="text-muted">
+            {{ comment.get_category_display }} &middot; {{ comment.user.username }} &middot; {{ comment.created_at|date:"Y-m-d H:i" }}
+        </p>
+        <p>{{ comment.message }}</p>
+        {% if comment.admin_response %}
+        <div class="admin-response"><strong>Response:</strong> {{ comment.admin_response }}</div>
+        {% endif %}
+        <form method="post" action="{% url 'update_comment_status' comment.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="form-group">
+                <input type="text" name="admin_response" class="form-control" placeholder="Admin response..."
+                       value="{{ comment.admin_response|default:'' }}">
+            </div>
+            <div class="form-actions">
+                <button type="submit" name="status" value="reviewed" class="btn btn-secondary btn-sm">Mark Reviewed</button>
+                <button type="submit" name="status" value="resolved" class="btn btn-success btn-sm">Resolve</button>
+                <button type="submit" name="status" value="dismissed" class="btn btn-danger btn-sm">Dismiss</button>
+            </div>
+        </form>
+    </div>
+    {% empty %}
+    <p class="empty-state">No feedback found.</p>
+    {% endfor %}
+</div>
+{% endblock %}

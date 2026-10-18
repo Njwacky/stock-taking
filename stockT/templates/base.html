@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Stock Management System{% endblock %}</title>
+    <link rel="manifest" href="{% url 'manifest' %}">
+    <meta name="theme-color" content="#3498db">
+    <link rel="icon" type="image/png" href="{% static 'images/light_blue.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar" role="navigation">
+        <div class="nav-container">
+            <a href="{% url 'dashboard' %}" class="nav-brand">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Stock Tracker</span>
+            </a>
+            <button id="mobileMenuBtn" class="mobile-menu-btn" type="button">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <ul id="navLinks" class="nav-links">
+                <li><a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                {% if user.is_authenticated %}
+                <li><a class="nav-link" href="{% url 'add_items' %}"><i class="fas fa-plus"></i> Add Stock</a></li>
+                <li>
+                    <a class="nav-link" href="{% url 'stock_usage_tracking' %}">
+                        <i class="fas fa-clipboard-list"></i> Track Usage
+                        {% if pending_stock_usage_count %}
+                        <span class="badge">{{ pending_stock_usage_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li><a class="nav-link" href="{% url 'stock_distribution' %}"><i class="fas fa-share-nodes"></i> Distribute</a></li>
+                <li><a class="nav-link" href="{% url 'inventory_calculator' %}"><i class="fas fa-calculator"></i> Calculator</a></li>
+                {% if user.is_manager %}
+                <li><a class="nav-link" href="{% url 'manage_users' %}"><i class="fas fa-users-gear"></i> Manage Users</a></li>
+                <li><a class="nav-link" href="{% url 'manage_comments' %}"><i class="fas fa-comments"></i> Feedback</a></li>
+                <li><a class="nav-link" href="{% url 'analytics_dashboard' %}"><i class="fas fa-chart-pie"></i> Analytics</a></li>
+                {% endif %}
+                {% if user.is_superuser %}
+                <li><a class="nav-link" href="{% url 'manage_admins' %}"><i class="fas fa-user-shield"></i> Admins</a></li>
+                {% endif %}
+                <li>
+                    <a class="nav-link" href="{% url 'notifications' %}">
+                        <i class="fas fa-bell"></i>
+                        {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
+                    </a>
+                </li>
+                <li><a class="nav-link" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Profile</a></li>
+                <li><a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a></li>
+                {% else %}
+                <li><a class="nav-link" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a></li>
+                <li><a class="nav-link" href="{% url 'register' %}"><i class="fas fa-user-plus"></i> Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-boxes-stacked"></i> Stock Tracker</h3>
+                <p>Efficient stock and inventory management.</p>
+            </div>
+            {% if footer_contacts %}
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <ul class="footer-contacts">
+                    {% for contact in footer_contacts %}
+                    <li><strong>{{ contact.label }}:</strong> {{ contact.value }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            <div class="footer-section">
+                <h3>Links</h3>
+                <ul>
+                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'my_comments' %}">My Feedback</a></li>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <li><a href="{% url 'manage_footer_contacts' %}">Manage Footer</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Stock Management System</p>
+        </div>
+    </footer>
+
+    {% if user.is_authenticated %}
+    <!-- Floating feedback widget -->
+    <button id="floatingCommentBtn" class="floating-comment-btn" title="Send feedback">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+    <div id="floatingCommentPanel" class="floating-comment-panel">
+        <div class="floating-panel-header">
+            <h4><i class="fas fa-comment-dots"></i> Feedback</h4>
+            <button id="floatingPanelClose" class="floating-panel-close">&times;</button>
+        </div>
+        <div class="floating-tabs">
+            <button class="floating-tab active" data-tab="submit" type="button">Submit</button>
+            <button class="floating-tab" data-tab="myComments" type="button">My Feedback</button>
+        </div>
+        <div id="submitTab" class="floating-tab-content active">
+            <form id="floatingCommentForm" method="post" action="{% url 'submit_comment' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <select name="category" class="form-control" required>
+                        <option value="">Category...</option>
+                        <option value="bug">Bug Report</option>
+                        <option value="feature">Feature Request</option>
+                        <option value="improvement">Improvement</option>
+                        <option value="question">Question</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="subject" class="form-control" placeholder="Subject" maxlength="200" required>
+                </div>
+                <div class="form-group">
+                    <textarea name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane"></i> Send</button>
+            </form>
+        </div>
+        <div id="myCommentsTab" class="floating-tab-content">
+            <div id="userCommentsList"></div>
+            <a href="{% url 'my_comments' %}" class="btn btn-link btn-sm">View all feedback &rarr;</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/base.js' %}"></script>
+    {% if user.is_authenticated %}<script src="{% static 'js/floating-comment.js' %}"></script>{% endif %}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{% url "service_worker" %}').catch(() => {});
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

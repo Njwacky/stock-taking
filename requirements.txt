@@ -1,4 +1,4 @@
-Django>=4.2,<5.0
+Django>=5.2,<6.0
 qrcode[pil]>=7.0
 djangorestframework>=3.14.0
 django-cors-headers>=4.0.0
@@ -44,4 +44,3 @@ requests>=2.25.0  # For HTTP requests (FCM service)
 
 # Social Authentication
 # django-allauth removed: social auth is not used in this deployment
-python-decouple>=3.6  # Already included above, but needed for environment variables

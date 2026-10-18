@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Contact - Stock Management System{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h1><i class="fas fa-trash"></i> Delete Contact</h1>
+        <p>Are you sure you want to delete <strong>{{ contact.label }}</strong> ({{ contact.value }})?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{% url 'manage_footer_contacts' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

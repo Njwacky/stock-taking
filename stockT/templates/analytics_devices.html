@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Devices - Stock Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-mobile-screen"></i> Tracked Devices</h1>
+        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie"></i> Back to Analytics</a>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Device</th>
+                <th>Browser</th>
+                <th>OS</th>
+                <th>User</th>
+                <th>Sessions</th>
+                <th>Last Seen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for device in devices %}
+            <tr>
+                <td>{{ device.device_type|default:"Unknown" }}</td>
+                <td>{{ device.browser|default:"-" }}</td>
+                <td>{{ device.os|default:"-" }}</td>
+                <td>{{ device.user.username|default:"Anonymous" }}</td>
+                <td>{{ device.total_sessions }}</td>
+                <td>{{ device.last_seen|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-state">No devices tracked yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
