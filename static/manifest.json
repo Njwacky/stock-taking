@@ -27,7 +27,7 @@
       "name": "Track Stock Usage",
       "short_name": "Track Usage",
       "description": "Monitor and track stock usage",
-      "url": "/stock-usage/"
+      "url": "/tracking/"
     },
     {
       "name": "View Dashboard",

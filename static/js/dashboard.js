@@ -25,6 +25,18 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateSelection);
     });
     
+    // Bind select-all checkbox
+    const selectAllCheckbox = document.getElementById('select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', toggleSelectAll);
+    }
+    
+    // Bind filter form to use AJAX instead of full page reload
+    const filterForm = document.getElementById('filter-form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', loadDashboardData);
+    }
+    
     // Initialize pie chart if user is authenticated and data exists
     initializePieChart();
     

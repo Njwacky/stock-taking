@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             kitEditModalBody.innerHTML = kitDetails;
             saveKitChangesBtn.style.display = 'none';
-            $('#kitEditModal').modal('show');
+            kitEditModal.style.display = 'flex';
         }
     }
 
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             kitEditModalBody.innerHTML = editForm;
             saveKitChangesBtn.style.display = 'inline-block';
-            $('#kitEditModal').modal('show');
+            kitEditModal.style.display = 'flex';
             
             // Load kit types for the dropdown
             loadKitTypesForEdit(kit.kit_type_code);
@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderKitsList(currentUserKits);
                 
                 // Close modal
-                $('#kitEditModal').modal('hide');
+                kitEditModal.style.display = 'none';
                 
                 // Show success message
                 showSuccess('Kit updated successfully!');
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('deleteKitQuantity').textContent = kit.quantity;
             document.getElementById('deleteKitOwner').textContent = selectedUserName.textContent;
             
-            $('#kitDeleteModal').modal('show');
+            kitDeleteModal.style.display = 'flex';
         }
     }
 
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderKitsList(currentUserKits);
                 
                 // Close modal
-                $('#kitDeleteModal').modal('hide');
+                kitDeleteModal.style.display = 'none';
                 
                 // Show success message
                 showSuccess('Kit deleted successfully!');
@@ -612,6 +612,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
+    // Modal close buttons
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+    
+    // Close modals when clicking outside
+    [kitEditModal, kitDeleteModal].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+        }
+    });
+    
     // Make functions globally available
     window.viewKit = viewKit;
     window.editKit = editKit;

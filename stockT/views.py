@@ -429,20 +429,24 @@ def offline(request):
 
 
 def service_worker(request):
-    from django.http import FileResponse
+    from django.http import FileResponse, Http404
     from django.conf import settings
     import os
     path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
+    if not os.path.exists(path):
+        raise Http404('Service worker not found')
     response = FileResponse(open(path, 'rb'), content_type='application/javascript')
     response['Service-Worker-Allowed'] = '/'
     return response
 
 
 def manifest(request):
-    from django.http import FileResponse
+    from django.http import FileResponse, Http404
     from django.conf import settings
     import os
     path = os.path.join(settings.BASE_DIR, 'static', 'manifest.json')
+    if not os.path.exists(path):
+        raise Http404('Manifest not found')
     return FileResponse(open(path, 'rb'), content_type='application/manifest+json')
 
 
@@ -558,9 +562,18 @@ def update_kit(request, kit_id):
         else:
             errors['kit_type'] = 'Unknown kit type.'
 
-    for field in ('condition', 'location', 'notes'):
+    for field in ('location', 'notes'):
         if field in request.POST:
             setattr(kit, field, request.POST.get(field) or None)
+    if 'condition' in request.POST:
+        condition = request.POST.get('condition')
+        valid_conditions = [c[0] for c in Kit.CONDITION_CHOICES]
+        if condition in valid_conditions:
+            kit.condition = condition
+        else:
+            errors['condition'] = 'Invalid condition value.'
+    if 'is_active' in request.POST:
+        kit.is_active = request.POST.get('is_active') in ('on', 'true', 'True', '1')
     if 'expiration_date' in request.POST:
         value = request.POST.get('expiration_date') or None
         kit.expiration_date = value
