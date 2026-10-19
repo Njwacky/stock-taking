@@ -2,9 +2,9 @@
 
 /* CSS Variables for consistent controls theming */
 :root {
-    --controls-primary: #667eea;
-    --controls-secondary: #764ba2;
-    --controls-accent: #ffd700;
+    --controls-primary: #2E6347;
+    --controls-secondary: #78352E;
+    --controls-accent: #18B864;
     --controls-bg: rgba(255, 255, 255, 0.98);
     --controls-border: rgba(102, 126, 234, 0.2);
     --controls-shadow: rgba(0, 0, 0, 0.15);
@@ -456,9 +456,9 @@
 
 /* CSS Variables for consistent controls theming */
 :root {
-    --controls-primary: #667eea;
-    --controls-secondary: #764ba2;
-    --controls-accent: #ffd700;
+    --controls-primary: #2E6347;
+    --controls-secondary: #78352E;
+    --controls-accent: #18B864;
     --controls-bg: rgba(255, 255, 255, 0.98);
     --controls-border: rgba(102, 126, 234, 0.2);
     --controls-shadow: rgba(0, 0, 0, 0.15);

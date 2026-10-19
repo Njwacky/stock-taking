@@ -1,5 +1,45 @@
 // Base functionality for all pages
 document.addEventListener('DOMContentLoaded', function() {
+    const themeToggle = document.querySelector('[data-theme-toggle]');
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+
+    function setTheme(theme, persist) {
+        const isDark = theme === 'dark';
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            themeToggle.setAttribute(
+                'aria-label',
+                isDark ? 'Switch to light mode' : 'Switch to dark mode'
+            );
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-moon', !isDark);
+                icon.classList.toggle('fa-sun', isDark);
+            }
+        }
+        if (themeColor) {
+            themeColor.setAttribute('content', isDark ? '#1d1918' : '#2E6347');
+        }
+        if (persist) {
+            try {
+                localStorage.setItem('stock-theme', isDark ? 'dark' : 'light');
+            } catch (error) {
+                console.warn('Could not save the theme preference:', error);
+            }
+        }
+    }
+
+    setTheme(document.documentElement.dataset.theme, false);
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const nextTheme = document.documentElement.dataset.theme === 'dark'
+                ? 'light'
+                : 'dark';
+            setTheme(nextTheme, true);
+        });
+    }
+
     // -----------------------------------------------------------------
     // Account menu (blaqVibe pattern): toggle on the avatar button, close
     // on any outside click. Escape dismisses and hands focus back —

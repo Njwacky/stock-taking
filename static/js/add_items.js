@@ -26,6 +26,30 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentEditingKitId = null;
     let currentDeletingKitId = null;
 
+    const htmlEscapes = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => htmlEscapes[character]);
+    }
+
+    kitsListContainer.addEventListener('click', function(event) {
+        const button = event.target.closest('[data-kit-action]');
+        if (!button || !kitsListContainer.contains(button)) return;
+
+        const kitId = Number(button.dataset.kitId);
+        if (!Number.isSafeInteger(kitId) || kitId <= 0) return;
+
+        if (button.dataset.kitAction === 'view') viewKit(kitId);
+        if (button.dataset.kitAction === 'edit') editKit(kitId);
+        if (button.dataset.kitAction === 'delete') deleteKit(kitId);
+    });
+
     // Tape calculation function
     function calculateTapeLength(quantity, tapeWidth) {
         // Convert width from mm to meters for calculation
@@ -259,43 +283,43 @@ document.addEventListener('DOMContentLoaded', function() {
         kitsEmptyState.hidden = true;
 
         const kitsHTML = kits.map(kit => `
-            <div class="kit-item ${!kit.is_active ? 'inactive' : ''}" data-kit-id="${kit.id}" data-kit-type="${kit.kit_type_code}">
+            <div class="kit-item ${!kit.is_active ? 'inactive' : ''}" data-kit-id="${escapeHtml(kit.id)}" data-kit-type="${escapeHtml(kit.kit_type_code)}">
                 <div class="kit-info-main">
                     <div class="kit-type-name">
-                        ${kit.kit_type}
+                        ${escapeHtml(kit.kit_type)}
                         ${!kit.is_active ? '<span class="badge badge-secondary">Inactive</span>' : ''}
                     </div>
                     <div class="kit-meta">
                         <div class="kit-meta-item">
                             <i class="fa fa-cubes"></i>
-                            <span>Quantity: ${kit.quantity}</span>
+                            <span>Quantity: ${escapeHtml(kit.quantity)}</span>
                         </div>
                         <div class="kit-meta-item">
                             <i class="fa fa-calendar"></i>
-                            <span>Added: ${formatDate(kit.timestamp)}</span>
+                            <span>Added: ${escapeHtml(formatDate(kit.timestamp))}</span>
                         </div>
                         <div class="kit-meta-item">
-                            <span class="condition-badge condition-${kit.condition}">${kit.condition}</span>
+                            <span class="condition-badge condition-${escapeHtml(kit.condition)}">${escapeHtml(kit.condition)}</span>
                         </div>
                     </div>
                     ${kit.location || kit.notes || kit.expiration_date ? `
                         <div class="kit-details-preview">
-                            ${kit.location ? `<div><i class="fa fa-map-marker-alt"></i> ${kit.location}</div>` : ''}
-                            ${kit.expiration_date ? `<div><i class="fa fa-calendar-alt"></i> Expires: ${formatDate(kit.expiration_date)}</div>` : ''}
-                            ${kit.notes ? `<div><i class="fa fa-sticky-note"></i> ${kit.notes}</div>` : ''}
+                            ${kit.location ? `<div><i class="fa fa-map-marker-alt"></i> ${escapeHtml(kit.location)}</div>` : ''}
+                            ${kit.expiration_date ? `<div><i class="fa fa-calendar-alt"></i> Expires: ${escapeHtml(formatDate(kit.expiration_date))}</div>` : ''}
+                            ${kit.notes ? `<div><i class="fa fa-sticky-note"></i> ${escapeHtml(kit.notes)}</div>` : ''}
                         </div>
                     ` : ''}
                 </div>
                 <div class="kit-actions">
-                    <button type="button" class="kit-action-btn kit-view-btn" onclick="viewKit(${kit.id})" title="View kit details">
+                    <button type="button" class="kit-action-btn kit-view-btn" data-kit-action="view" data-kit-id="${escapeHtml(kit.id)}" title="View kit details">
                         <i class="fa fa-eye"></i>
                         View
                     </button>
-                    <button type="button" class="kit-action-btn kit-edit-btn" onclick="editKit(${kit.id})" title="Edit kit">
+                    <button type="button" class="kit-action-btn kit-edit-btn" data-kit-action="edit" data-kit-id="${escapeHtml(kit.id)}" title="Edit kit">
                         <i class="fa fa-edit"></i>
                         Edit
                     </button>
-                    <button type="button" class="kit-action-btn kit-delete-btn" onclick="deleteKit(${kit.id})" title="Delete kit">
+                    <button type="button" class="kit-action-btn kit-delete-btn" data-kit-action="delete" data-kit-id="${escapeHtml(kit.id)}" title="Delete kit">
                         <i class="fa fa-trash"></i>
                         Delete
                     </button>
@@ -331,20 +355,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kit) {
             const kitDetails = `
                 <div class="kit-details-modal">
-                    <h5>${kit.kit_type}</h5>
+                    <h5>${escapeHtml(kit.kit_type)}</h5>
                     <div class="row">
-                        <div class="col-md-6"><strong>Quantity:</strong> ${kit.quantity}</div>
-                        <div class="col-md-6"><strong>Condition:</strong> ${kit.condition}</div>
+                        <div class="col-md-6"><strong>Quantity:</strong> ${escapeHtml(kit.quantity)}</div>
+                        <div class="col-md-6"><strong>Condition:</strong> ${escapeHtml(kit.condition)}</div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><strong>Location:</strong> ${kit.location || 'Not specified'}</div>
+                        <div class="col-md-6"><strong>Location:</strong> ${escapeHtml(kit.location || 'Not specified')}</div>
                         <div class="col-md-6"><strong>Status:</strong> ${kit.is_active ? 'Active' : 'Inactive'}</div>
                     </div>
-                    ${kit.expiration_date ? `<div class="row"><div class="col-12"><strong>Expiration Date:</strong> ${formatDate(kit.expiration_date)}</div></div>` : ''}
-                    ${kit.notes ? `<div class="row"><div class="col-12"><strong>Notes:</strong> ${kit.notes}</div></div>` : ''}
+                    ${kit.expiration_date ? `<div class="row"><div class="col-12"><strong>Expiration Date:</strong> ${escapeHtml(formatDate(kit.expiration_date))}</div></div>` : ''}
+                    ${kit.notes ? `<div class="row"><div class="col-12"><strong>Notes:</strong> ${escapeHtml(kit.notes)}</div></div>` : ''}
                     <div class="row">
-                        <div class="col-md-6"><strong>Created:</strong> ${formatDate(kit.timestamp)}</div>
-                        <div class="col-md-6"><strong>Last Updated:</strong> ${formatDate(kit.last_updated)}</div>
+                        <div class="col-md-6"><strong>Created:</strong> ${escapeHtml(formatDate(kit.timestamp))}</div>
+                        <div class="col-md-6"><strong>Last Updated:</strong> ${escapeHtml(formatDate(kit.last_updated))}</div>
                     </div>
                 </div>
             `;
@@ -371,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-group">
                         <label for="editQuantity">Quantity</label>
-                        <input type="number" class="form-control" id="editQuantity" name="quantity" min="1" value="${kit.quantity}" required>
+                        <input type="number" class="form-control" id="editQuantity" name="quantity" min="1" value="${escapeHtml(kit.quantity)}" required>
                     </div>
                     <div class="form-group">
                         <label for="editCondition">Condition</label>
@@ -385,15 +409,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-group">
                         <label for="editLocation">Location</label>
-                        <input type="text" class="form-control" id="editLocation" name="location" value="${kit.location || ''}">
+                        <input type="text" class="form-control" id="editLocation" name="location" value="${escapeHtml(kit.location || '')}">
                     </div>
                     <div class="form-group">
                         <label for="editExpirationDate">Expiration Date</label>
-                        <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" value="${kit.expiration_date || ''}">
+                        <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" value="${escapeHtml(kit.expiration_date || '')}">
                     </div>
                     <div class="form-group">
                         <label for="editNotes">Notes</label>
-                        <textarea class="form-control" id="editNotes" name="notes" rows="3">${kit.notes || ''}</textarea>
+                        <textarea class="form-control" id="editNotes" name="notes" rows="3">${escapeHtml(kit.notes || '')}</textarea>
                     </div>
                     <div class="form-group">
                         <div class="form-check">
@@ -576,41 +600,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showSuccess(message) {
-        // Create a temporary success message
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="fa fa-check-circle"></i>
-            ${message}
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        `;
-        
-        // Insert at the top of the container
-        const container = document.querySelector('.add-items-container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            alertDiv.classList.remove('show');
-            setTimeout(() => alertDiv.remove(), 150);
-        }, 5000);
+        showAlert(message, 'success', 'check-circle');
     }
 
     function showError(message) {
-        // Create a temporary error message
+        showAlert(message, 'danger', 'exclamation-triangle');
+    }
+
+    function showAlert(message, type, iconName) {
         const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="fa fa-exclamation-triangle"></i>
-            ${message}
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        `;
-        
-        // Insert at the top of the container
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+
+        const icon = document.createElement('i');
+        icon.className = `fa fa-${iconName}`;
+        const messageNode = document.createElement('span');
+        messageNode.textContent = message;
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'close';
+        closeButton.dataset.dismiss = 'alert';
+        closeButton.textContent = '\u00d7';
+        alertDiv.append(icon, messageNode, closeButton);
+
         const container = document.querySelector('.add-items-container');
+        if (!container) {
+            console.error('Unable to display alert: add-items container is missing.');
+            return;
+        }
         container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-hide after 5 seconds
+
         setTimeout(() => {
             alertDiv.classList.remove('show');
             setTimeout(() => alertDiv.remove(), 150);

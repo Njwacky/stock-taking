@@ -6,7 +6,7 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #667eea;
+    background-color: #2E6347;
     color: white;
     border: none;
     font-size: 24px;
@@ -20,7 +20,7 @@
 }
 
 .floating-comment-btn:hover {
-    background-color: #5a67d8;
+    background-color: #382523;
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
@@ -54,7 +54,7 @@
 /* Panel Header */
 .floating-panel-header {
     padding: 16px 20px;
-    background: #667eea;
+    background: #2E6347;
     color: white;
     display: flex;
     justify-content: space-between;
@@ -103,8 +103,8 @@
 }
 
 .floating-tab.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
+    color: #2E6347;
+    border-bottom-color: #2E6347;
 }
 
 /* Tab Content */
@@ -140,7 +140,7 @@
 
 .floating-form-control:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #2E6347;
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 

@@ -17,13 +17,26 @@ class TestNavMarkup:
         content = as_member.get('/').content.decode()
         assert 'navUserBtn' in content
         assert 'navMenu' in content
+        assert '<body class="has-mobile-tabbar">' in content
         assert 'Change Password' in content
         assert 'Logout' in content
 
-    def test_primary_pills_are_five_destinations(self, as_member):
+    def test_primary_navigation_includes_profile(self, as_member):
         content = as_member.get('/').content.decode()
-        for label in ['Dashboard', 'Add Stock', 'Track Usage', 'Distribute', 'Calculator']:
+        for label in [
+            'Dashboard', 'Add Stock', 'Track Usage', 'Distribute', 'Calculator', 'Profile',
+        ]:
             assert label in content
+        assert content.count('<span>Dashboard</span>') == 1
+        assert content.count('<span>Track Usage</span>') == 1
+        assert 'href="/profile/" aria-current="page"' in as_member.get('/profile/').content.decode()
+
+    def test_theme_toggle_is_available_to_all_users(self, client, as_member):
+        for response in (client.get('/'), as_member.get('/')):
+            content = response.content.decode()
+            assert 'data-theme-toggle' in content
+            assert 'Switch to dark mode' in content
+            assert '/static/js/base.js' in content
 
     def test_manager_menu_items_gated(self, as_member, as_manager):
         member_content = as_member.get('/').content.decode()
@@ -35,6 +48,7 @@ class TestNavMarkup:
     def test_anon_nav_has_login_not_account(self, client):
         content = client.get('/').content.decode()
         assert 'navUserBtn' not in content
+        assert 'has-mobile-tabbar' not in content
         assert 'Login' in content
 
     def test_aria_current_marks_dashboard(self, as_member):

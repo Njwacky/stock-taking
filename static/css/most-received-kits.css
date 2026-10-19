@@ -81,7 +81,7 @@
     width: 40px;
     height: 40px;
     margin: 0 auto 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -114,7 +114,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     border: none;
     width: 35px;
@@ -161,7 +161,7 @@
 }
 
 .dot.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     transform: scale(1.2);
 }
 
@@ -170,7 +170,7 @@
 }
 
 .dot.active:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
 }
 
 /* Register CTA Buttons */
@@ -208,7 +208,7 @@
 }
 
 .register-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
 }
@@ -221,12 +221,12 @@
 
 .login-btn {
     background: transparent;
-    color: #667eea;
-    border-color: #667eea;
+    color: #2E6347;
+    border-color: #2E6347;
 }
 
 .login-btn:hover {
-    background: #667eea;
+    background: #2E6347;
     color: white;
     transform: translateY(-2px);
 }
@@ -428,7 +428,7 @@
 }
 
 .stats-header h3 i {
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.3rem;
     animation: iconBounce 2s ease-in-out infinite;
 }

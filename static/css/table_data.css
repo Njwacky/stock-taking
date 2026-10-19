@@ -2,9 +2,9 @@
 
 /* CSS Variables for consistent table theming */
 :root {
-    --table-primary: #667eea;
-    --table-secondary: #764ba2;
-    --table-accent: #ffd700;
+    --table-primary: #2E6347;
+    --table-secondary: #78352E;
+    --table-accent: #18B864;
     --table-header-bg: #007bff;
     --table-header-text: #ffffff;
     --table-row-even: #f8fafd;

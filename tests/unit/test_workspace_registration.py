@@ -62,12 +62,13 @@ def test_workspace_is_seeded_with_kit_types(client):
     assert {'FEET', 'VHB18', 'RIV8'} <= codes
 
 
-def test_first_registrant_on_empty_install_is_superadmin(client):
-    """Fresh install: the very first account also gets app-level admin."""
+def test_first_registrant_on_empty_install_is_ordinary_user(client):
+    """Public registration never grants app-level administrative privileges."""
     _post_register(client)
     user = User.objects.get(username='newbie')
-    assert user.is_superuser is True
-    assert user.role == 'admin'
+    assert user.is_superuser is False
+    assert user.is_staff is False
+    assert user.role == 'user'
 
 
 def test_later_registrants_are_ordinary_users(client):

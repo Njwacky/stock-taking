@@ -352,7 +352,7 @@
 .calc-key.calc-key--util:hover { background: rgba(255, 122, 122, 0.28); }
 
 .calc-key.calc-key--eq {
-    background: linear-gradient(135deg, #667eea, #8b5cf6);
+    background: linear-gradient(135deg, #2E6347, #78352E);
     color: #fff;
     font-size: 1.45rem;
     box-shadow: 0 8px 18px rgba(102, 126, 234, 0.45);

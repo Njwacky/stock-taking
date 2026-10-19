@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class RegisterForm(UserCreationForm):
-    """One-time workspace setup form: the first registrant becomes Superadmin."""
+    """Open registration form for standard user accounts."""
 
     class Meta:
         model = User

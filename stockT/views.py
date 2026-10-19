@@ -252,13 +252,6 @@ def register(request):
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
             user = form.save(commit=False)
-            # Fresh install: the very first account also becomes the app-level
-            # superuser (for Admins / Footer / Analytics). Registration stays
-            # open for everyone else either way.
-            if not User.objects.exists():
-                user.role = User.ROLE_ADMIN
-                user.is_staff = True
-                user.is_superuser = True
             user.save()
             workspace = ensure_user_workspace(user)
         set_current_workspace(request, workspace)

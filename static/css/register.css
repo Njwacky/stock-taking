@@ -7,7 +7,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     padding: 40px 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin-top: -20px;
@@ -68,7 +68,7 @@
 }
 
 .section-header i {
-    color: #667eea;
+    color: #2E6347;
 }
 
 .form-row {
@@ -93,7 +93,7 @@
 }
 
 .input-label i {
-    color: #667eea;
+    color: #2E6347;
 }
 
 .required-badge {
@@ -127,7 +127,7 @@
 .input-wrapper input:focus,
 .input-wrapper select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #2E6347;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     transform: translateY(-1px);
 }
@@ -135,7 +135,7 @@
 .input-icon {
     position: absolute;
     left: 15px;
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.1rem;
 }
 
@@ -182,7 +182,7 @@
 }
 
 .register-submit-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -210,7 +210,7 @@
 }
 
 .why-register-link {
-    color: #ffd700;
+    color: #18B864;
     text-decoration: none;
     font-weight: 600;
     margin-left: 8px;
@@ -244,7 +244,7 @@
 }
 
 .register-benefits h3 i {
-    color: #ffd700;
+    color: #18B864;
 }
 
 .benefits-grid {
@@ -267,7 +267,7 @@
 
 .benefit-card i {
     font-size: 2rem;
-    color: #667eea;
+    color: #2E6347;
     margin-bottom: 15px;
 }
 
@@ -290,7 +290,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -379,7 +379,7 @@
 .register-form input[type="password"]:focus,
 .register-form select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #2E6347;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     transform: translateY(-1px);
 }
@@ -388,7 +388,7 @@
 .register-form input[type="email"]:hover,
 .register-form input[type="password"]:hover,
 .register-form select:hover {
-    border-color: #667eea;
+    border-color: #2E6347;
 }
 
 .register-form .error {
@@ -465,7 +465,7 @@
 .register-button {
     width: 100%;
     padding: 14px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -510,7 +510,7 @@
 }
 
 .register-links a {
-    color: #667eea;
+    color: #2E6347;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s ease;
@@ -518,7 +518,7 @@
 }
 
 .register-links a:hover {
-    color: #764ba2;
+    color: #78352E;
     text-decoration: underline;
 }
 
@@ -607,15 +607,15 @@
 }
 
 .role-option input[type="radio"]:checked + label {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
-    border-color: #667eea;
+    border-color: #2E6347;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .role-option label:hover {
-    border-color: #667eea;
+    border-color: #2E6347;
     transform: translateY(-1px);
 }
 

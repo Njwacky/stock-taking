@@ -2,9 +2,9 @@
 
 /* CSS Variables for consistent theming */
 :root {
-    --navbar-primary: #667eea;
-    --navbar-secondary: #764ba2;
-    --navbar-accent: #ffd700;
+    --navbar-primary: #2E6347;
+    --navbar-secondary: #382523;
+    --navbar-accent: #18B864;
     --navbar-text: #ffffff;
     --navbar-shadow: rgba(0, 0, 0, 0.1);
     --nav-hover-bg: rgba(255, 255, 255, 0.1);

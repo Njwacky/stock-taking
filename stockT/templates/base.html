@@ -6,7 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Stock Management System{% endblock %}</title>
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#2E6347">
+    <script>
+        try {
+            if (localStorage.getItem('stock-theme') === 'dark') {
+                document.documentElement.dataset.theme = 'dark';
+            }
+        } catch (error) {
+            console.warn('Could not restore the saved theme preference:', error);
+        }
+    </script>
     <link rel="icon" type="image/png" href="{% static 'images/light_blue.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
@@ -18,7 +27,7 @@
          same typography, spacing, controls, tables, and responsive patterns. -->
     <link rel="stylesheet" href="{% static 'css/ui.css' %}">
 </head>
-<body>
+<body{% if user.is_authenticated %} class="has-mobile-tabbar"{% endif %}>
     <a href="#main" class="skip-link">Skip to content</a>
     <nav class="navbar" aria-label="Primary">
         <a href="{% url 'dashboard' %}" class="nav-brand">
@@ -26,20 +35,30 @@
             <span>Stock Tracker</span>
         </a>
         {% comment %}
-        Primary navigation is five destinations and nothing else (blaqVibe
-        pattern): Dashboard · Add Stock · Track Usage · Distribute · Calculator.
-        Everything that is a utility — Profile, Notifications, Manage Users,
-        Analytics, Admins — lives in the account menu. On mobile the row
-        becomes a horizontal pill scroller; there is no hamburger drawer.
+        Primary navigation is six destinations: Dashboard · Add Stock · Track
+        Usage · Distribute · Calculator · Profile.
+        Utilities such as Notifications, Manage Users, Analytics, and Admins
+        live in the account menu. On mobile, destinations stay visible in a
+        fixed bottom bar; there is no hamburger drawer.
         {% endcomment %}
         <div id="navLinks" class="nav-links">
-            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</a>
+            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line" aria-hidden="true"></i><span>Dashboard</span></a>
             {% if user.is_authenticated %}
-            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus" aria-hidden="true"></i> Add Stock</a>
-            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list" aria-hidden="true"></i> Track Usage</a>
-            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes" aria-hidden="true"></i> Distribute</a>
-            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator" aria-hidden="true"></i> Calculator</a>
-
+            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus" aria-hidden="true"></i><span>Add Stock</span></a>
+            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list" aria-hidden="true"></i><span>Track Usage</span></a>
+            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes" aria-hidden="true"></i><span>Distribute</span></a>
+            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator" aria-hidden="true"></i><span>Calculator</span></a>
+            <a class="nav-link" href="{% url 'profile' %}"{% if '/profile' in request.path %} aria-current="page"{% endif %}><i class="fas fa-id-badge" aria-hidden="true"></i><span>Profile</span></a>
+            {% else %}
+            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i><span>Login</span></a>
+            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus" aria-hidden="true"></i><span>Register</span></a>
+            {% endif %}
+        </div>
+        <div class="nav-tools">
+            <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
+                <i class="fas fa-moon" aria-hidden="true"></i>
+            </button>
+        {% if user.is_authenticated %}
             <div class="nav-user" id="navUser">
                 <button type="button" id="navUserBtn" class="nav-user-btn" aria-label="Account menu for {{ user.username }}" aria-controls="navMenu" aria-expanded="false">
                     <span class="nav-avatar" aria-hidden="true">{{ user.username|first|upper }}</span>
@@ -72,7 +91,6 @@
                         <a href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}><i class="fas fa-sliders" aria-hidden="true"></i> Workspace settings</a>
                     </div>
                     <div class="nav-menu-sep"></div>
-                    <a href="{% url 'profile' %}"{% if request.path == '/profile/' %} aria-current="page"{% endif %}><i class="fas fa-id-badge" aria-hidden="true"></i> Profile</a>
                     <a href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
                         <i class="fas fa-bell" aria-hidden="true"></i> Notifications
                         {% if pending_reset_requests_count or pending_stock_usage_count %}
@@ -105,10 +123,7 @@
                     <a href="{% url 'logout' %}"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Logout</a>
                 </div>
             </div>
-            {% else %}
-            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Login</a>
-            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</a>
-            {% endif %}
+        {% endif %}
         </div>
     </nav>
 

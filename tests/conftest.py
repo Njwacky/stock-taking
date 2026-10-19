@@ -30,7 +30,7 @@ def make_admin(username='admin_user', **extra):
 
 @pytest.fixture
 def owner(db):
-    """Workspace owner (the first registrant): superuser + admin role."""
+    """Test workspace owner with app-level superuser access."""
     return make_admin('owner')
 
 
@@ -126,7 +126,7 @@ def as_member(member):
 
 @pytest.fixture
 def register_workspace(client):
-    """POST the one-time workspace registration as the first user."""
+    """POST public registration to create a user's personal workspace."""
     def _register(username='founder', clock_number='1001', password='F0under!pass'):
         response = client.post('/register/', {
             'username': username,
