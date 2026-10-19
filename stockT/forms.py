@@ -169,9 +169,21 @@ class StockUsageForm(forms.ModelForm):
         fields = ('kit_type', 'quantity_used', 'purpose', 'feedback')
         widgets = {
             'kit_type': forms.Select(attrs={'class': 'form-control'}),
-            'purpose': forms.TextInput(attrs={'class': 'form-control'}),
-            'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'purpose': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Site maintenance at Store A',
+            }),
+            'feedback': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional notes about this usage…',
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['kit_type'].empty_label = 'Select kit type'
+        self.fields['kit_type'].widget.attrs.setdefault('required', True)
 
 
 class ProfileForm(forms.ModelForm):

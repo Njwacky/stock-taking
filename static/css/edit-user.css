@@ -5,7 +5,7 @@
 }
 
 .edit-user-title {
-    color: #2c3e50;
+    color: var(--text);
     margin-bottom: 20px;
     text-align: center;
     font-size: 1.5rem;
@@ -37,14 +37,14 @@
 
 .form-label {
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text);
     margin-bottom: 5px;
     font-size: 14px;
 }
 
 .form-control {
     padding: 10px;
-    border: 2px solid #ddd;
+    border: 2px solid #e0d4cf;
     border-radius: 4px;
     font-size: 14px;
     transition: border-color 0.3s;
@@ -52,30 +52,30 @@
 
 .form-control:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: #2E6347;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
 }
 
 .error-message {
-    color: #e74c3c;
+    color: #B72818;
     font-size: 12px;
     margin-top: 3px;
 }
 
 .form-help-text {
-    color: #666;
+    color: var(--text-muted);
     font-size: 11px;
     margin-top: 2px;
     font-style: italic;
 }
 
 .security-notice {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
+    background: #f7ded8;
+    border: 1px solid #eeb9b1;
     border-radius: 4px;
     padding: 10px;
     margin: 10px 0;
-    color: #721c24;
+    color: #8c1e12;
     font-size: 13px;
     display: flex;
     align-items: center;
@@ -88,7 +88,7 @@
     gap: 10px;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #e0d4cf;
 }
 
 .button {
@@ -106,21 +106,21 @@
 }
 
 .save-btn {
-    background: #27ae60;
+    background: #2E6347;
     color: white;
 }
 
 .save-btn:hover {
-    background: #219a52;
+    background: #24503a;
 }
 
 .cancel-btn {
-    background: #95a5a6;
+    background: #a99a94;
     color: white;
 }
 
 .cancel-btn:hover {
-    background: #7f8c8d;
+    background: #8d7d76;
 }
 
 .notification-bar {
@@ -138,21 +138,21 @@
 }
 
 .edit-user-notification.success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+    background: #e8f5ed;
+    border: 1px solid #c9e2d3;
+    color: #24503a;
 }
 
 .edit-user-notification.error {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+    background: #f7ded8;
+    border: 1px solid #eeb9b1;
+    color: #8c1e12;
 }
 
 .edit-user-notification.warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
+    background: #f6efec;
+    border: 1px solid #f3e7d3;
+    color: #78352E;
 }
 
 @media (max-width: 768px) {

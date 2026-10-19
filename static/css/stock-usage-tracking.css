@@ -1,17 +1,17 @@
 /* Main color variables */
 :root {
-    --primary-color: #5d7dc7;
-    --primary-dark: #4a67a5;
-    --primary-light: #8fa3d4;
-    --primary-bg: #f0f4ff;
-    --light-gray: #f5f7fa;
-    --medium-gray: #e1e5eb;
-    --border-color: #e2e8f0;
-    --dark-gray: #4a5568;
-    --text-muted: #718096;
-    --success: #38a169;
-    --warning: #d69e2e;
-    --danger: #e53e3e;
+    --primary-color: #2E6347;
+    --primary-dark: #24503a;
+    --primary-light: #5a8f74;
+    --primary-bg: #eaf3ed;
+    --light-gray: #f8f6f4;
+    --medium-gray: #e0d4cf;
+    --border-color: #e8dedb;
+    --dark-gray: #5c4a45;
+    --text-muted: #6c544f;
+    --success: #2E6347;
+    --warning: #8a5a33;
+    --danger: #B72818;
     --white: #ffffff;
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -26,8 +26,8 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 1.5rem;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    color: #2d3748;
+    font-family: var(--font-sans);
+    color: var(--text);
     line-height: 1.5;
 }
 
@@ -201,15 +201,15 @@ textarea.form-control {
 
 .usage-page .btn-secondary,
 .usage-page .btn-secondary:visited {
-    background-color: #edf2f7;
-    color: #2d3748 !important;
-    border-color: #e2e8f0;
+    background-color: var(--tint-hover);
+    color: var(--text) !important;
+    border-color: #e8dedb;
 }
 
 .usage-page .btn-secondary:hover,
 .usage-page .btn-secondary:focus {
-    background-color: #e2e8f0;
-    color: #2d3748 !important;
+    background-color: #e8dedb;
+    color: var(--text) !important;
 }
 
 .usage-page .btn-link,
@@ -322,7 +322,7 @@ textarea.form-control {
 
 .usage-page .activity-title {
     font-weight: 500;
-    color: #2d3748;
+    color: var(--text);
     margin: 0 0 0.25rem 0;
     white-space: nowrap;
     overflow: hidden;
@@ -445,7 +445,7 @@ textarea.form-control {
 .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #2d3748;
+    color: var(--text);
     line-height: 1.2;
 }
 

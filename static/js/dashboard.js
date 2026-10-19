@@ -491,14 +491,19 @@ function initializePieChart() {
         const labels = chartData.map(item => item.kit_type || 'Unknown');
         const data = chartData.map(item => item.total_quantity || 0);
         
-        // Generate colors for the pie chart
+        // Generate colors for the pie chart — brand categorical palette
+        // (forest green, brick, bronze, sage, accent, rose, bark, clay)
         const colors = [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF',
-            '#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56'
+            '#2E6347', '#78352E', '#8a5a33', '#5a8f74',
+            '#18B864', '#B72818', '#4a3330', '#c98578',
+            '#a8c4b5', '#744a22', '#24503a', '#a5645b'
         ];
         
         const backgroundColors = data.map((_, index) => colors[index % colors.length]);
+        
+        // Slice separators follow the card surface in light and dark themes
+        const cardBg = getComputedStyle(document.documentElement)
+            .getPropertyValue('--card-bg').trim() || '#ffffff';
         
         // Create the pie chart
         const ctx = chartCanvas.getContext('2d');
@@ -509,7 +514,7 @@ function initializePieChart() {
                 datasets: [{
                     data: data,
                     backgroundColor: backgroundColors,
-                    borderColor: '#ffffff',
+                    borderColor: cardBg,
                     borderWidth: 2
                 }]
             },

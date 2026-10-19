@@ -85,6 +85,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // -----------------------------------------------------------------
+    // Double-submit guard: absorbs accidental double taps (especially on
+    // mobile) without locking out intentional re-submits on async forms.
+    // -----------------------------------------------------------------
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.busy === '1') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
+        }
+        form.dataset.busy = '1';
+        setTimeout(function() {
+            form.dataset.busy = '';
+        }, 1500);
+    }, true);
+
+    // -----------------------------------------------------------------
     // Flash messages: dismiss button + auto-hide after 6 seconds
     // -----------------------------------------------------------------
     function dismissAlert(alert) {

@@ -1434,7 +1434,7 @@ class CalculatorGuidedTour {
             left: ${rect.left - 5}px;
             width: ${rect.width + 10}px;
             height: ${rect.height + 10}px;
-            border: 3px solid #3498db;
+            border: 3px solid #18B864;
             border-radius: 8px;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
             z-index: 10001;
