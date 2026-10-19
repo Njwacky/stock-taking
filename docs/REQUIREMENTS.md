@@ -10,7 +10,7 @@
 ### Software Requirements
 
 #### Core Dependencies
-- **Python**: 3.9 or higher
+- **Python**: 3.10 or higher (the Docker image uses Python 3.12)
 - **Django**: 5.2.x (Web Framework)
 - **Database**: SQLite (development), PostgreSQL (production recommended)
 
@@ -185,24 +185,18 @@ coverage>=6.0.0
 ## Docker Deployment Requirements
 
 ### Container Specifications
-- **Base Image**: Python 3.9-slim
+- **Base Image**: `mcr.microsoft.com/devcontainers/python:3.12` (Django 5.2 requires Python 3.10 or newer)
 - **Architecture**: Multi-stage build for optimization
 - **Security**: Non-root user execution, proper file permissions
-- **Health Checks**: Integrated health monitoring for all services
+- **Health Checks**: The local web container has a health check; production infrastructure should add checks for external services
 
 ### Docker Services
-- **Web Application**: Django with Gunicorn WSGI server
-- **Database**: PostgreSQL 13 with persistent volumes
-- **Cache**: Redis 6 with persistence
-- **Web Server**: Nginx with SSL termination and security headers
-- **Background Tasks**: Celery worker and beat scheduler (optional)
+The checked-in local Compose configuration defines a single Django `web` service using `runserver`, SQLite, and host port 8001. It does not start a database, cache, Nginx, or background-task services. Production deployments must provide any required PostgreSQL database and HTTPS reverse proxy separately; the Dockerfile's default command uses Gunicorn.
 
 ### Environment Configuration
-- **Settings**: Environment-based configuration via .env files
-- **Security**: Secure secret management, CSRF protection
-- **Database**: PostgreSQL connection with connection pooling
-- **Caching**: Redis integration for session and application caching
-- **File Storage**: Configurable for local or cloud storage (AWS S3)
+- **Settings**: Environment-based configuration via environment variables or `.env`
+- **Security**: Production requires a generated secret, explicit hosts, and HTTPS settings
+- **Database**: `DATABASE_URL` supports SQLite and PostgreSQL
 
 ### Performance Requirements
 - **Build Optimization**: Multi-stage builds, proper .dockerignore
@@ -220,32 +214,23 @@ coverage>=6.0.0
 
 ### Deployment Commands
 ```bash
-# Development
-docker-compose up
+# Local development only (SQLite, host port 8001)
+docker compose up --build
 
-# Production
-docker-compose --profile production up -d
-
-# Build images
-docker-compose build
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+# Production: build the Gunicorn image and deploy it with an external
+# PostgreSQL database and HTTPS reverse proxy. This repository has no
+# production Compose profile.
+docker build -t stock-management:latest .
 ```
 
 ### Environment Variables
-Required environment variables for Docker deployment:
-- `DEBUG`: Debug mode setting
-- `SECRET_KEY`: Django secret key
-- `DATABASE_URL`: PostgreSQL connection string
-- `REDIS_URL`: Redis connection string
-- `ALLOWED_HOSTS`: Allowed hostnames
-- `CSRF_TRUSTED_ORIGINS`: Trusted CSRF origins
-- `EMAIL_*`: Email configuration settings
-- `AWS_*`: AWS S3 configuration (if using cloud storage)
+For Docker deployment, configure:
+- `DEBUG`: `True` for local development; `False` in production
+- `SECRET_KEY`: Use a generated, strong key in production
+- `DATABASE_URL`: SQLite or PostgreSQL connection URL
+- `ALLOWED_HOSTS`: Explicit hostnames in production; no wildcard
+- `CSRF_TRUSTED_ORIGINS`: Matching origins, including `https://` in production
+- `SECURE_SSL_REDIRECT`, secure-cookie settings, and `SECURE_HSTS_SECONDS`: production HTTPS settings
 
 ## Compliance Requirements
 

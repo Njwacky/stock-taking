@@ -1,21 +1,28 @@
 """Template context processors for the stockT application."""
 from .models import ContactInfo, PasswordResetRequest, StockUsage
-from .workspace import current_workspace, registration_open, user_workspaces
+from .workspace import (
+    current_workspace,
+    is_workspace_manager,
+    registration_open,
+    user_workspaces,
+)
 
 
 def workspace_context(request):
-    """Expose workspace state to every template: registration flag, the
-    active workspace and the user's workspace list (for the switcher)."""
+    """Expose workspace state and active-workspace permissions to templates."""
     user = getattr(request, 'user', None)
     active = None
     workspaces = []
+    can_manage_workspace = False
     if user is not None and user.is_authenticated:
         active = current_workspace(request)
         workspaces = list(user_workspaces(user))
+        can_manage_workspace = is_workspace_manager(user, active)
     return {
         'registration_open': registration_open(),
         'current_workspace': active,
         'user_workspaces': workspaces,
+        'can_manage_workspace': can_manage_workspace,
     }
 
 
@@ -34,9 +41,14 @@ def footer_contacts(request):
 
 
 def pending_stock_usage_count(request):
-    """Expose the number of pending stock usage requests to staff."""
+    """Expose pending usage requests in the active workspace to its managers."""
     user = getattr(request, 'user', None)
     count = 0
-    if user is not None and user.is_authenticated and user.is_manager:
-        count = StockUsage.objects.filter(status=StockUsage.STATUS_PENDING).count()
+    if user is not None and user.is_authenticated:
+        workspace = current_workspace(request)
+        if workspace is not None and is_workspace_manager(user, workspace):
+            count = StockUsage.objects.filter(
+                workspace=workspace,
+                status=StockUsage.STATUS_PENDING,
+            ).count()
     return {'pending_stock_usage_count': count}

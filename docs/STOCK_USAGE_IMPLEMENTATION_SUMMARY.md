@@ -55,7 +55,7 @@ Created comprehensive documentation:
   - Admin workflow guide
   - Common questions and troubleshooting
 
-- ✅ **`test_stock_usage_system.py`** - Automated test script
+- ✅ **`tests/manual/test_stock_usage_system.py`** - Automated test script
   - Tests complete workflow
   - Verifies signal functionality
   - Tests both partial and complete deletion
@@ -149,7 +149,7 @@ All Django checks passed successfully!
 3. **Test Signal Functionality:**
    ```bash
    # Run automated test script
-   python manage.py shell < test_stock_usage_system.py
+   python manage.py shell < tests/manual/test_stock_usage_system.py
    
    # Check logs
    cat logs/django.log | grep "STOCK"
@@ -159,7 +159,7 @@ All Django checks passed successfully!
 
 Run the test script:
 ```bash
-python test_stock_usage_system.py
+python -m tests.manual.test_stock_usage_system
 ```
 
 This will:
@@ -183,7 +183,7 @@ This will:
 ### Created Files
 1. `STOCK_USAGE_TRACKING_GUIDE.md` - Technical documentation
 2. `STOCK_USAGE_QUICK_GUIDE.md` - User guide
-3. `test_stock_usage_system.py` - Test script
+3. `tests/manual/test_stock_usage_system.py` - Test script
 4. `STOCK_USAGE_IMPLEMENTATION_SUMMARY.md` - This file
 
 ---
@@ -256,7 +256,7 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
 ### For Developers
 - Read `STOCK_USAGE_TRACKING_GUIDE.md`
 - Check `logs/django.log` for debugging
-- Run `test_stock_usage_system.py` for verification
+- Run `tests/manual/test_stock_usage_system.py` for verification
 
 ### For Admins
 - Monitor `logs/django.log` for system activity

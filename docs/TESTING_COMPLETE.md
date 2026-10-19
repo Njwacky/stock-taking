@@ -286,13 +286,13 @@ All automated tests passed successfully. The comment system is:
 ### Regular Checks:
 ```bash
 # Check for orphaned comments
-python quick_check.py
+python -m tests.manual.quick_check
 
 # Verify URLs still work
-python check_urls.py
+python -m tests.manual.check_urls
 
 # Run full test suite
-python run_full_test.py
+python -m tests.manual.run_full_test
 ```
 
 ### Database Backup:
@@ -320,7 +320,7 @@ python manage.py loaddata comments_backup.json
 
 3. **Check database**
    ```bash
-   python quick_check.py
+   python -m tests.manual.quick_check
    ```
 
 4. **Restart server**

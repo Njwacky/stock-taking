@@ -11,7 +11,7 @@
 <div class="calc-page">
 
     <header class="calc-page-header">
-        <h1><i class="fas fa-calculator"></i> Advanced Calculator</h1>
+        <h1><i class="fas fa-calculator" aria-hidden="true"></i> Advanced Calculator</h1>
         <p>Standard &amp; scientific maths, live preview, unit conversion and stock tools — all in one friendly workspace.</p>
     </header>
 
@@ -19,19 +19,19 @@
     <div class="calc-modes" role="tablist" aria-label="Calculator modes">
         <button type="button" class="calc-mode-btn is-active" role="tab" aria-selected="true"
                 data-mode="standard" id="tab-standard">
-            <i class="fas fa-table-cells-large"></i> Standard
+            <i class="fas fa-table-cells-large" aria-hidden="true"></i> Standard
         </button>
         <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
                 data-mode="scientific" id="tab-scientific">
-            <i class="fas fa-square-root-variable"></i> Scientific
+            <i class="fas fa-square-root-variable" aria-hidden="true"></i> Scientific
         </button>
         <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
                 data-mode="converter" id="tab-converter">
-            <i class="fas fa-right-left"></i> Converter
+            <i class="fas fa-right-left" aria-hidden="true"></i> Converter
         </button>
         <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
                 data-mode="inventory" id="tab-inventory">
-            <i class="fas fa-boxes-stacked"></i> Stock Tools
+            <i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock Tools
         </button>
     </div>
 
@@ -49,7 +49,7 @@
                                     aria-label="Angle mode: DEG (click to switch)">DEG</button>
                             <button type="button" class="calc-chip-btn" id="calc-copy-result"
                                     aria-label="Copy current result">
-                                <i class="fas fa-copy"></i> Copy
+                                <i class="fas fa-copy" aria-hidden="true"></i> Copy
                             </button>
                         </div>
                     </div>
@@ -104,7 +104,7 @@
                 {# Main keypad #}
                 <div class="calc-keypad" id="calc-keypad" aria-label="Calculator keypad">
                     <button type="button" class="calc-key calc-key--util" data-action="clear" aria-label="Clear all">AC</button>
-                    <button type="button" class="calc-key calc-key--util" data-action="back" aria-label="Backspace"><i class="fas fa-delete-left"></i></button>
+                    <button type="button" class="calc-key calc-key--util" data-action="back" aria-label="Backspace"><i class="fas fa-delete-left" aria-hidden="true"></i></button>
                     <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="%" data-key="%">%</button>
                     <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="÷" data-key="÷">÷</button>
 
@@ -139,13 +139,13 @@
         {# History sidebar #}
         <aside class="calc-history" aria-label="Calculation history">
             <div class="calc-history-head">
-                <h2><i class="fas fa-clock-rotate-left"></i> History</h2>
+                <h2><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> History</h2>
                 <button type="button" class="calc-link-btn" id="calc-history-clear" disabled>
-                    <i class="fas fa-trash-can"></i> Clear
+                    <i class="fas fa-trash-can" aria-hidden="true"></i> Clear
                 </button>
             </div>
             <div class="calc-history-empty" id="calc-history-empty">
-                <i class="fas fa-inbox"></i>
+                <i class="fas fa-inbox" aria-hidden="true"></i>
                 No calculations yet — your results will appear here.<br>
                 Click any result to reuse it.
             </div>
@@ -156,7 +156,7 @@
     {# ---------- Converter ---------- #}
     <div class="calc-view" data-view="converter" role="tabpanel" aria-labelledby="tab-converter" hidden>
         <section class="calc-tool-panel">
-            <h2><i class="fas fa-right-left"></i> Unit Converter</h2>
+            <h2><i class="fas fa-right-left" aria-hidden="true"></i> Unit Converter</h2>
             <p class="calc-tool-sub">Instant, two-way conversions for the units you use in stock — length, mass, volume and area.</p>
 
             <div class="calc-chip-row" id="conv-categories" role="group" aria-label="Conversion category">
@@ -173,7 +173,7 @@
                     <select id="conv-from-unit" aria-label="From unit"></select>
                 </div>
                 <button type="button" class="calc-conv-swap" id="conv-swap" aria-label="Swap units">
-                    <i class="fas fa-arrows-rotate"></i>
+                    <i class="fas fa-arrows-rotate" aria-hidden="true"></i>
                 </button>
                 <div class="calc-field">
                     <label for="conv-to-value">To</label>
@@ -183,7 +183,7 @@
             </div>
 
             <div class="calc-conv-note">
-                <i class="fas fa-lightbulb"></i>
+                <i class="fas fa-lightbulb" aria-hidden="true"></i>
                 <span>Tip: edit either side — the other updates instantly. Use the swap button to flip the conversion.</span>
             </div>
         </section>
@@ -192,13 +192,13 @@
     {# ---------- Stock tools ---------- #}
     <div class="calc-view" data-view="inventory" role="tabpanel" aria-labelledby="tab-inventory" hidden>
         <section class="calc-tool-panel">
-            <h2><i class="fas fa-boxes-stacked"></i> Stock Tools</h2>
+            <h2><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock Tools</h2>
             <p class="calc-tool-sub">Quick, purpose-built calculators for everyday stock work. Results update as you type.</p>
 
             <div class="calc-tool-grid">
 
                 <div class="calc-tool-card">
-                    <h3><i class="fas fa-tape"></i> Tape &amp; VHB Rolls</h3>
+                    <h3><i class="fas fa-tape" aria-hidden="true"></i> Tape &amp; VHB Rolls</h3>
                     <p>How much tape do you have? Each standard roll is 33&nbsp;m long.</p>
                     <div class="calc-field">
                         <label for="tape-rolls">Number of rolls</label>
@@ -221,7 +221,7 @@
                 </div>
 
                 <div class="calc-tool-card">
-                    <h3><i class="fas fa-scissors"></i> Pieces From a Roll</h3>
+                    <h3><i class="fas fa-scissors" aria-hidden="true"></i> Pieces From a Roll</h3>
                     <p>How many pieces can you cut from the tape you have?</p>
                     <div class="calc-field">
                         <label for="piece-length">Piece length (mm)</label>
@@ -240,7 +240,7 @@
                 </div>
 
                 <div class="calc-tool-card">
-                    <h3><i class="fas fa-box-open"></i> Kit Builder</h3>
+                    <h3><i class="fas fa-box-open" aria-hidden="true"></i> Kit Builder</h3>
                     <p>Total items needed across kits, with an optional spare percentage.</p>
                     <div class="calc-field">
                         <label for="kit-items">Items per kit</label>

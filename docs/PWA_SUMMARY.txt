@@ -48,7 +48,7 @@
 
 📚 DOCUMENTATION:
    ├─ PWA_GUIDE.md ..................... Complete PWA guide
-   ├─ test_pwa.py ...................... PWA verification script
+   ├─ tests/manual/test_pwa.py ...................... PWA verification script
    └─ PWA_SUMMARY.txt .................. This file
 
 
@@ -260,7 +260,7 @@ FOR PRODUCTION:
 └──────────────────────────────────────────────────────────────────────┘
 
 # Test PWA setup
-python test_pwa.py
+python -m tests.manual.test_pwa
 
 # Generate icons
 python generate_pwa_icons.py
@@ -337,7 +337,7 @@ YOUR PWA IS WORKING IF:
 
 📚 DOCUMENTATION:
    → PWA_GUIDE.md .................. Complete implementation guide
-   → test_pwa.py ................... Verification script
+   → tests/manual/test_pwa.py ................... Verification script
    → generate_pwa_icons.py ......... Icon generator
 
 🔗 EXTERNAL RESOURCES:

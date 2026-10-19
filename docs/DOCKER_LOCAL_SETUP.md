@@ -16,16 +16,20 @@ This Django Stock Management application is configured for **LOCAL USE ONLY** wi
 ### 1. Build and Run with Docker Compose
 
 ```bash
-# Build and start the application
-docker-compose up --build
+# Prepare writable bind-mount directories
+mkdir -p data media logs staticfiles
 
-# Or run in detached mode
-docker-compose up -d --build
+# On Linux/macOS, run the container as your host user so those mounts stay writable
+export LOCAL_UID="$(id -u)"
+export LOCAL_GID="$(id -g)"
+
+# Build and start the application (or add -d to run in the background)
+docker compose up --build
 ```
 
 The application will be available at:
-- **http://localhost:8000** (from the host machine)
-- **http://<your-local-ip>:8000** (from other devices on your local network)
+- **http://localhost:8001** (from the host machine)
+- **http://<your-local-ip>:8001** (from other devices on your local network)
 
 ### 2. Access from Local Network
 
@@ -35,12 +39,13 @@ To allow other devices on your local network to access the app:
    - Windows: `ipconfig` (look for IPv4 Address)
    - Linux/Mac: `ifconfig` or `ip addr`
 
-2. Update `docker-compose.yml` if needed:
-   ```yaml
-   - CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,http://YOUR_LOCAL_IP:8000
+2. Copy `.env.example` to `.env`, then add your local IP to both `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`:
+   ```dotenv
+   ALLOWED_HOSTS=localhost,127.0.0.1,YOUR_LOCAL_IP
+   CSRF_TRUSTED_ORIGINS=http://localhost:8001,http://127.0.0.1:8001,http://YOUR_LOCAL_IP:8001
    ```
 
-3. Users can then access the app at `http://YOUR_LOCAL_IP:8000`
+3. Users can then access the app at `http://YOUR_LOCAL_IP:8001`
 
 ## PWA Installation
 
@@ -74,7 +79,7 @@ To allow other devices on your local network to access the app:
 
 ### Ports
 
-- **8000:8000**: Main application port
+- **8001:8000**: Host port 8001 maps to the app's container port 8000
 
 ### Volumes
 
@@ -85,15 +90,13 @@ To allow other devices on your local network to access the app:
 
 ## Environment Variables
 
-You can customize the setup using environment variables:
+The Compose setup uses SQLite at `./data/db.sqlite3` by default and runs in local development mode. Customize it with a `.env` file:
 
 ```bash
-# Create a .env file (optional)
-DEBUG=True
-SECRET_KEY=your-secret-key-here
-ALLOWED_HOSTS=*
-CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+cp .env.example .env
 ```
+
+For another device on your LAN, set `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` to include the host's IP address. For PostgreSQL, set `DATABASE_URL` to a reachable PostgreSQL URL; this Compose file does not start a PostgreSQL service.
 
 ## PWA Files
 
@@ -110,25 +113,25 @@ The following PWA files are automatically collected and served:
 1. Check browser console for errors
 2. Verify `/static/sw.js` is accessible
 3. Clear browser cache and reload
-4. Check that static files were collected: `docker-compose exec web python manage.py collectstatic`
+4. Check that static files were collected: `docker compose exec web python manage.py collectstatic`
 
 ### Cannot Access from Other Devices
 
 1. Check firewall settings on host machine
 2. Verify local IP address is correct
-3. Ensure `ALLOWED_HOSTS=*` in docker-compose.yml
-4. Add your local IP to `CSRF_TRUSTED_ORIGINS`
+3. Add your local IP to `ALLOWED_HOSTS` in `.env`
+4. Add the matching `http://YOUR_LOCAL_IP:8001` origin to `CSRF_TRUSTED_ORIGINS`
 
 ### Static Files Not Loading
 
-1. Run collectstatic: `docker-compose exec web python manage.py collectstatic --noinput`
+1. Run collectstatic: `docker compose exec web python manage.py collectstatic --noinput`
 2. Check volume mounts in docker-compose.yml
 3. Verify static files directory permissions
 
 ### Database Issues
 
 1. Check `./data` directory exists and has proper permissions
-2. Run migrations: `docker-compose exec web python manage.py migrate`
+2. Run migrations: `docker compose exec web python manage.py migrate`
 
 ## Development Mode
 
@@ -145,19 +148,19 @@ volumes:
 
 ⚠️ **This setup is for LOCAL USE ONLY**
 
-For production deployment:
-1. Remove source code volume mount
-2. Set `DEBUG=False`
-3. Use a proper secret key
-4. Configure HTTPS (required for PWA in production)
-5. Set up proper database (PostgreSQL recommended)
-6. Configure nginx for static file serving
-7. Set up proper backup strategy
+For production deployment, do not use this local-development Compose configuration unchanged:
+1. Use the Dockerfile's Gunicorn command (without the source-code mount or `runserver` override).
+2. Set `DEBUG=False`, generate a strong `SECRET_KEY`, and set explicit `ALLOWED_HOSTS`.
+3. Configure `DATABASE_URL` for a reachable PostgreSQL database and test migrations before rollout.
+4. Terminate HTTPS at a trusted proxy such as the included Nginx config; set the secure-cookie and HSTS environment values.
+5. Keep the application port private behind the proxy, serve collected static files, and configure backups.
+
+When `DEBUG=False`, settings reject a missing/weak secret key, a wildcard/empty host list, and default to HTTPS redirects, secure cookies, and HSTS.
 
 ## Support
 
 For issues or questions:
-1. Check application logs: `docker-compose logs web`
+1. Check application logs: `docker compose logs web`
 2. Check Django logs: `./logs/django.log`
-3. Verify Docker containers: `docker-compose ps`
+3. Verify Docker containers: `docker compose ps`
 

@@ -8,63 +8,80 @@
 {% endblock %}
 
 {% block content %}
-<div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-boxes-stacked"></i> Kit Types</h1>
-    </div>
+<div class="manage-users-container kit-types-page">
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Kit Types</h1>
+            <p class="dashboard-subtitle">Manage the stock types available to this workspace.</p>
+        </div>
+    </header>
 
-    <p class="text-muted">
-        These are the stock types available on <strong>Add Stock</strong>,
-        <strong>Track Usage</strong> and <strong>Distribute</strong>. Deactivating hides a
-        type from new entries without removing its history.
+    <p class="text-muted kit-types-intro">
+        Kit types are used when adding, tracking and distributing stock. Deactivating a type hides it from new entries without removing its history.
     </p>
 
-    <form method="post" class="dashboard-controls">
+    <form method="post" class="kit-type-create-form" aria-label="Add a kit type">
         {% csrf_token %}
         <input type="hidden" name="action" value="add">
-        <input type="text" name="name" class="form-control" placeholder="Name (e.g. VHB Boss Tape 18mm)" required>
-        <input type="text" name="code" class="form-control" placeholder="Code (e.g. VHB18)" required>
-        <input type="text" name="unit_of_measure" class="form-control" placeholder="Unit (default: pieces)">
-        <input type="text" name="description" class="form-control" placeholder="Description (optional)">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Kit Type</button>
+        <div class="kit-type-create-grid">
+            <div class="form-group">
+                <label for="new-kit-name">Name</label>
+                <input id="new-kit-name" type="text" name="name" class="form-control" placeholder="e.g. VHB Boss Tape 18mm" required>
+            </div>
+            <div class="form-group">
+                <label for="new-kit-code">Code</label>
+                <input id="new-kit-code" type="text" name="code" class="form-control" placeholder="e.g. VHB18" required>
+            </div>
+            <div class="form-group">
+                <label for="new-kit-unit">Unit of measure</label>
+                <input id="new-kit-unit" type="text" name="unit_of_measure" class="form-control" placeholder="Pieces">
+            </div>
+            <div class="form-group">
+                <label for="new-kit-description">Description <span class="text-muted">(optional)</span></label>
+                <input id="new-kit-description" type="text" name="description" class="form-control">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add kit type</button>
     </form>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Unit</th>
-                <th>Description</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in kit_types %}
-            <tr>
-                <td>{{ t.name }}</td>
-                <td><code>{{ t.code }}</code></td>
-                <td>{{ t.unit_of_measure }}</td>
-                <td>{{ t.description|default:"-" }}</td>
-                <td>{% if t.is_active %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
-                <td>
-                    <form method="post" class="inline-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="toggle">
-                        <input type="hidden" name="kit_type_id" value="{{ t.id }}">
-                        {% if t.is_active %}
-                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-ban"></i> Deactivate</button>
-                        {% else %}
-                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Activate</button>
-                        {% endif %}
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="empty-state">No kit types yet — add the first one above.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Kit types in this workspace">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Unit</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in kit_types %}
+                <tr>
+                    <td>{{ t.name }}</td>
+                    <td><code>{{ t.code }}</code></td>
+                    <td>{{ t.unit_of_measure }}</td>
+                    <td>{{ t.description|default:"—" }}</td>
+                    <td>{% if t.is_active %}<span class="status-badge status-approved">Active</span>{% else %}<span class="status-badge status-dismissed">Inactive</span>{% endif %}</td>
+                    <td>
+                        <form method="post" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle">
+                            <input type="hidden" name="kit_type_id" value="{{ t.id }}">
+                            {% if t.is_active %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Deactivate</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-state">No kit types yet. Add one using the form above.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

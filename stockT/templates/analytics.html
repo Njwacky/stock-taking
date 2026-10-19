@@ -10,10 +10,13 @@
 
 {% block content %}
 <div class="dashboard-header">
-    <h1><i class="fas fa-chart-pie"></i> Analytics</h1>
-    <div>
-        <a href="{% url 'analytics_devices' %}" class="btn btn-secondary"><i class="fas fa-mobile-screen"></i> Devices</a>
-        <a href="{% url 'analytics_notifications' %}" class="btn btn-secondary"><i class="fas fa-trophy"></i> Milestones</a>
+    <div class="dashboard-heading">
+        <h1><i class="fas fa-chart-pie" aria-hidden="true"></i> Analytics</h1>
+        <p class="dashboard-subtitle">A summary of recent usage and device activity.</p>
+    </div>
+    <div class="dashboard-header-actions">
+        <a href="{% url 'analytics_devices' %}" class="btn btn-secondary"><i class="fas fa-mobile-screen" aria-hidden="true"></i> Devices</a>
+        <a href="{% url 'analytics_notifications' %}" class="btn btn-secondary"><i class="fas fa-trophy" aria-hidden="true"></i> Milestones</a>
     </div>
 </div>
 
@@ -26,21 +29,27 @@
     <div class="stat-card"><h3>Total Page Views</h3><p class="stat-value">{{ stats.total_page_views }}</p></div>
 </div>
 
-<div class="dashboard-stats">
-    <h2>Last 14 Days</h2>
-    <canvas id="analyticsChart" width="800" height="300"></canvas>
-</div>
+<section class="dashboard-stats" aria-labelledby="analytics-chart-title">
+    <div class="dashboard-section-heading">
+        <div>
+            <h2 id="analytics-chart-title">Activity over the last 14 days</h2>
+            <p>Sessions, page views and devices by day.</p>
+        </div>
+    </div>
+    <canvas id="analyticsChart" width="800" height="300" role="img" aria-label="Line chart comparing sessions, page views and devices over the last 14 days"></canvas>
+</section>
 
-<h2>Daily Breakdown</h2>
+<h2 class="page-section-title">Daily breakdown</h2>
+<div class="table-scroll-region" role="region" tabindex="0" aria-label="Daily analytics breakdown">
 <table class="data-table">
     <thead>
         <tr>
-            <th>Date</th>
-            <th>Devices</th>
-            <th>Sessions</th>
-            <th>Page Views</th>
-            <th>Active Users</th>
-            <th>Top Page</th>
+            <th scope="col">Date</th>
+            <th scope="col">Devices</th>
+            <th scope="col">Sessions</th>
+            <th scope="col">Page Views</th>
+            <th scope="col">Active Users</th>
+            <th scope="col">Top Page</th>
         </tr>
     </thead>
     <tbody>
@@ -58,6 +67,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}
 
 {% block extra_js %}

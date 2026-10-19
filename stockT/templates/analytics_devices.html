@@ -10,19 +10,20 @@
 {% block content %}
 <div class="comments-container">
     <div class="dashboard-header">
-        <h1><i class="fas fa-mobile-screen"></i> Tracked Devices</h1>
-        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie"></i> Back to Analytics</a>
+        <h1><i class="fas fa-mobile-screen" aria-hidden="true"></i> Tracked Devices</h1>
+        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie" aria-hidden="true"></i> Back to Analytics</a>
     </div>
 
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Tracked devices">
     <table class="data-table">
         <thead>
             <tr>
-                <th>Device</th>
-                <th>Browser</th>
-                <th>OS</th>
-                <th>User</th>
-                <th>Sessions</th>
-                <th>Last Seen</th>
+                <th scope="col">Device</th>
+                <th scope="col">Browser</th>
+                <th scope="col">OS</th>
+                <th scope="col">User</th>
+                <th scope="col">Sessions</th>
+                <th scope="col">Last Seen</th>
             </tr>
         </thead>
         <tbody>
@@ -40,5 +41,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

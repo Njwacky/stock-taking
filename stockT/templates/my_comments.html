@@ -10,18 +10,19 @@
 {% block content %}
 <div class="comments-container">
     <div class="dashboard-header">
-        <h1><i class="fas fa-comments"></i> My Feedback</h1>
-        <a href="{% url 'submit_comment' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Feedback</a>
+        <h1><i class="fas fa-comments" aria-hidden="true"></i> My Feedback</h1>
+        <a href="{% url 'submit_comment' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> New Feedback</a>
     </div>
 
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Your feedback submissions">
     <table class="data-table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Admin Response</th>
+                <th scope="col">Date</th>
+                <th scope="col">Category</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Status</th>
+                <th scope="col">Admin Response</th>
             </tr>
         </thead>
         <tbody>
@@ -38,5 +39,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

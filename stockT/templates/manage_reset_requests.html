@@ -8,59 +8,72 @@
 {% endblock %}
 
 {% block content %}
-<div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-key"></i> Password Reset Requests</h1>
-        <a href="{% url 'notifications' %}" class="btn btn-secondary"><i class="fas fa-bell"></i> Notifications</a>
-    </div>
+<div class="manage-users-container reset-requests-page">
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-key" aria-hidden="true"></i> Password Reset Requests</h1>
+            <p class="dashboard-subtitle">Review account recovery requests and set temporary passwords when approving them.</p>
+        </div>
+        <a href="{% url 'notifications' %}" class="btn btn-secondary"><i class="fas fa-bell" aria-hidden="true"></i> Notifications</a>
+    </header>
 
-    <p class="text-muted">
-        When someone forgets their password they submit a request with their username and
-        clock number. Approve it with a new temporary password and share it with them
-        securely — they can then change it under <strong>Change Password</strong>.
+    <p class="text-muted reset-requests-help">
+        Verify the username and clock number before approving. Share a temporary password securely; the user can change it after signing in.
     </p>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Clock #</th>
-                <th>Requested</th>
-                <th>Status</th>
-                <th>Processed</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in requests %}
-            <tr>
-                <td><a href="{% url 'user_profile' r.user.id %}">{{ r.username }}</a></td>
-                <td>{{ r.clock_number }}</td>
-                <td>{{ r.requested_at|date:"Y-m-d H:i" }}</td>
-                <td><span class="status-badge status-{% if r.status == 'approved' %}approved{% elif r.status == 'rejected' %}rejected{% else %}pending{% endif %}">{{ r.get_status_display }}</span></td>
-                <td>
-                    {% if r.processed_at %}
-                    {{ r.processed_at|date:"Y-m-d H:i" }}<br><small class="text-muted">by {{ r.processed_by.username|default:"-" }}</small>
-                    {% else %}-{% endif %}
-                </td>
-                <td>
-                    {% if r.status == 'pending' %}
-                    <form method="post" action="{% url 'process_reset_request' r.id %}" class="inline-form">
-                        {% csrf_token %}
-                        <input type="password" name="new_password" class="form-control" placeholder="New password" required style="width:150px;display:inline-block">
-                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm" required style="width:130px;display:inline-block">
-                        <button type="submit" name="action" value="approve" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
-                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Reject</button>
-                    </form>
-                    {% else %}
-                    <span class="text-muted">—</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="empty-state">No password reset requests.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Password reset requests">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Clock number</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Processed</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td><a href="{% url 'user_profile' r.user.id %}">{{ r.username }}</a></td>
+                    <td>{{ r.clock_number }}</td>
+                    <td>{{ r.requested_at|date:"M j, Y H:i" }}</td>
+                    <td><span class="status-badge status-{% if r.status == 'approved' %}approved{% elif r.status == 'rejected' %}rejected{% else %}pending{% endif %}">{{ r.get_status_display }}</span></td>
+                    <td>
+                        {% if r.processed_at %}
+                        {{ r.processed_at|date:"M j, Y H:i" }}<br><small class="text-muted">by {{ r.processed_by.username|default:"—" }}</small>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="reset-actions-cell">
+                        {% if r.status == 'pending' %}
+                        <form method="post" action="{% url 'process_reset_request' r.id %}" class="reset-action-form">
+                            {% csrf_token %}
+                            <div class="reset-password-fields">
+                                <div class="form-group">
+                                    <label class="visually-hidden" for="reset-password-{{ r.id }}">Temporary password for {{ r.username }}</label>
+                                    <input id="reset-password-{{ r.id }}" type="password" name="new_password" class="form-control" placeholder="Temporary password" autocomplete="new-password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="visually-hidden" for="reset-confirm-{{ r.id }}">Confirm temporary password for {{ r.username }}</label>
+                                    <input id="reset-confirm-{{ r.id }}" type="password" name="confirm_password" class="form-control" placeholder="Confirm password" autocomplete="new-password" required>
+                                </div>
+                            </div>
+                            <div class="reset-action-buttons">
+                                <button type="submit" name="action" value="approve" class="btn btn-success btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Approve</button>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm" formnovalidate><i class="fas fa-times" aria-hidden="true"></i> Reject</button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-state">No password reset requests.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

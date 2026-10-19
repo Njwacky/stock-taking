@@ -16,6 +16,14 @@ const totalCards = 6; // Total number of register cards
 
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Keep filter controls and pagination in sync with a bookmarked/shared URL.
+    const initialParams = new URLSearchParams(window.location.search);
+    currentParams.user = initialParams.get('user') || '';
+    currentParams.search = initialParams.get('search') || '';
+    currentParams.sort = initialParams.get('sort') || 'timestamp';
+    currentParams.order = initialParams.get('order') || 'desc';
+    currentParams.page = initialParams.get('page') || '1';
+
     // Initialize selection display
     updateSelection();
     
@@ -36,6 +44,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterForm) {
         filterForm.addEventListener('submit', loadDashboardData);
     }
+
+    // Confirm bulk deletion and prevent an empty submission.
+    const bulkDeleteForm = document.getElementById('bulk-delete-form');
+    if (bulkDeleteForm) {
+        bulkDeleteForm.addEventListener('submit', function(event) {
+            const count = document.querySelectorAll('.kit-checkbox:checked').length;
+            if (count === 0) {
+                event.preventDefault();
+                window.alert('Select at least one stock item first.');
+                return;
+            }
+            if (!window.confirm(`Delete ${count} selected stock item(s)? This cannot be undone.`)) {
+                event.preventDefault();
+            }
+        });
+    }
     
     // Initialize pie chart if user is authenticated and data exists
     initializePieChart();
@@ -43,18 +67,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize carousel if it exists on the page
     initializeCarousel();
     
-    // Add browser history support
+    // Keep pagination working after AJAX replaces its links.
+    const paginationContainer = document.getElementById('pagination-container');
+    if (paginationContainer) {
+        paginationContainer.addEventListener('click', function(event) {
+            const link = event.target.closest('.page-link');
+            if (!link) {
+                return;
+            }
+            event.preventDefault();
+            loadPage(link.dataset.page);
+        });
+    }
+
+    // Restore the visible controls and table when navigating browser history.
     window.addEventListener('popstate', function(event) {
-        if (event.state && event.state.path) {
-            const url = new URL(event.state.path, window.location.origin);
-            const params = new URLSearchParams(url.search);
-            currentParams.user = params.get('user') || '';
-            currentParams.search = params.get('search') || '';
-            currentParams.sort = params.get('sort') || 'timestamp';
-            currentParams.order = params.get('order') || 'desc';
-            currentParams.page = params.get('page') || '1';
-            fetchDashboardData();
-        }
+        const url = event.state && event.state.path
+            ? new URL(event.state.path, window.location.origin)
+            : new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        currentParams.user = params.get('user') || '';
+        currentParams.search = params.get('search') || '';
+        currentParams.sort = params.get('sort') || 'timestamp';
+        currentParams.order = params.get('order') || 'desc';
+        currentParams.page = params.get('page') || '1';
+        syncFilterControlsFromParams();
+        fetchDashboardData(false);
     });
 });
 
@@ -253,9 +291,12 @@ function loadDashboardData(event) {
     const form = document.getElementById('filter-form');
     const formData = new FormData(form);
     
-    // Update current parameters
+    // Update every control before fetching so search, sort, order and user
+    // filters work together and remain reflected in the URL.
     currentParams.user = formData.get('user') || '';
     currentParams.search = formData.get('search') || '';
+    currentParams.sort = formData.get('sort') || 'timestamp';
+    currentParams.order = formData.get('order') || 'desc';
     currentParams.page = '1';
     
     fetchDashboardData();
@@ -276,16 +317,32 @@ function loadPage(pageNumber) {
     fetchDashboardData();
 }
 
-// Fetch dashboard data via AJAX
-function fetchDashboardData() {
+function syncFilterControlsFromParams() {
+    const form = document.getElementById('filter-form');
+    if (!form) {
+        return;
+    }
+    ['user', 'search', 'sort', 'order'].forEach(name => {
+        const control = form.elements.namedItem(name);
+        if (control) {
+            control.value = currentParams[name] || (name === 'sort' ? 'timestamp' : name === 'order' ? 'desc' : '');
+        }
+    });
+}
+
+// Fetch dashboard data via AJAX. History restoration fetches without adding a
+// second history entry so the browser's Back and Forward buttons keep working.
+function fetchDashboardData(pushHistory = true) {
     const queryString = new URLSearchParams(currentParams).toString();
     const url = `${window.location.pathname}?${queryString}`;
     
     // Show loading indicator
     showLoading();
     
-    // Update browser history
-    history.pushState({ path: url }, '', url);
+    // Update browser history for a new user action only.
+    if (pushHistory) {
+        history.pushState({ path: url }, '', url);
+    }
     
     // Make AJAX request to fetch new data
     fetch(url, {
@@ -336,10 +393,12 @@ function showLoading() {
     if (!document.getElementById('loading-overlay')) {
         const loadingOverlay = document.createElement('div');
         loadingOverlay.id = 'loading-overlay';
+        loadingOverlay.setAttribute('role', 'status');
+        loadingOverlay.setAttribute('aria-live', 'polite');
         loadingOverlay.innerHTML = `
             <div class="loading-spinner">
-                <i class="fa fa-spinner fa-spin"></i>
-                <span>Loading...</span>
+                <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+                <span>Loading stock items…</span>
             </div>
         `;
         document.body.appendChild(loadingOverlay);
@@ -375,11 +434,12 @@ function updateTableContent(tableHTML) {
     }
 }
 
-// Update pagination with new HTML
+// Update pagination with new HTML. The container uses delegated click handling,
+// so links continue to work even after their markup is replaced.
 function updatePagination(paginationHTML) {
     const paginationContainer = document.getElementById('pagination-container');
-    if (paginationContainer && paginationHTML) {
-        paginationContainer.innerHTML = paginationHTML;
+    if (paginationContainer) {
+        paginationContainer.innerHTML = paginationHTML || '';
     }
 }
 
@@ -488,37 +548,50 @@ function initializePieChart() {
     }
 }
 
-// Generate custom legend for the pie chart
+// Generate an accessible legend without inserting kit type names as HTML.
 function generateChartLegend(chartData, colors) {
     const legendContainer = document.getElementById('chartLegend');
     if (!legendContainer || !chartData || chartData.length === 0) {
         return;
     }
-    
-    // Calculate total for percentages
-    const total = chartData.reduce((sum, item) => sum + (item.total_quantity || 0), 0);
-    
-    // Generate legend HTML
-    let legendHTML = '<div class="chart-legend-container">';
-    
+
+    const total = chartData.reduce((sum, item) => sum + (Number(item.total_quantity) || 0), 0);
+    const list = document.createElement('div');
+    list.className = 'chart-legend-container';
+    list.setAttribute('role', 'list');
+
     chartData.forEach((item, index) => {
-        const quantity = item.total_quantity || 0;
-        const percentage = total > 0 ? ((quantity / total) * 100).toFixed(1) : 0;
+        const quantity = Number(item.total_quantity) || 0;
+        const userCount = Number(item.user_count) || 0;
+        const percentage = total > 0 ? ((quantity / total) * 100).toFixed(1) : '0.0';
         const color = colors[index % colors.length];
-        const kitType = item.kit_type || 'Unknown';
-        const userCount = item.user_count || 0;
-        
-        legendHTML += `
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: ${color}"></div>
-                <div class="legend-info">
-                    <div class="legend-label">${kitType}</div>
-                    <div class="legend-stats">${quantity} units (${percentage}%) - ${userCount} users</div>
-                </div>
-            </div>
-        `;
+
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        legendItem.setAttribute('role', 'listitem');
+
+        const swatch = document.createElement('div');
+        swatch.className = 'legend-color';
+        swatch.style.backgroundColor = color;
+        swatch.setAttribute('aria-hidden', 'true');
+
+        const info = document.createElement('div');
+        info.className = 'legend-info';
+
+        const label = document.createElement('div');
+        label.className = 'legend-label';
+        label.textContent = item.kit_type || 'Unknown';
+
+        const stats = document.createElement('div');
+        stats.className = 'legend-stats';
+        const unitLabel = quantity === 1 ? 'unit' : 'units';
+        const userLabel = userCount === 1 ? 'user' : 'users';
+        stats.textContent = `${quantity.toLocaleString()} ${unitLabel} (${percentage}%) · ${userCount.toLocaleString()} ${userLabel}`;
+
+        info.append(label, stats);
+        legendItem.append(swatch, info);
+        list.appendChild(legendItem);
     });
-    
-    legendHTML += '</div>';
-    legendContainer.innerHTML = legendHTML;
+
+    legendContainer.replaceChildren(list);
 }
