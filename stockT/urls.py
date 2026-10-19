@@ -9,6 +9,11 @@ urlpatterns = [
 
     # Auth
     path('register/', views.register, name='register'),
+    path('workspace/create/', views.workspace_create, name='workspace_create'),
+    path('workspace/switch/', views.workspace_switch, name='workspace_switch'),
+    path('workspace/settings/', views.workspace_settings, name='workspace_settings'),
+    path('workspace/members/add/', views.workspace_member_add, name='workspace_member_add'),
+    path('workspace/members/remove/', views.workspace_member_remove, name='workspace_member_remove'),
     path('password-reset/request/', views.password_reset_request, name='password_reset_request'),
     path('password-reset/manage/', views.manage_reset_requests, name='manage_reset_requests'),
     path('password-reset/process/<int:reset_id>/', views.process_reset_request, name='process_reset_request'),
