@@ -238,12 +238,12 @@ python manage.py createsuperuser
 
 **Check database:**
 ```bash
-python quick_check.py
+python -m tests.manual.quick_check
 ```
 
 **Run tests:**
 ```bash
-python run_full_test.py
+python -m tests.manual.run_full_test
 ```
 
 **Collect static files:**
@@ -296,11 +296,11 @@ Potential features to add:
 
 ### Test Scripts
 
-1. **test_comment_system.py** - Interactive test menu
-2. **quick_check.py** - Database checker
-3. **check_urls.py** - URL verification
-4. **run_full_test.py** - Full test suite
-5. **setup_test_data.py** - Create test data
+1. **tests/manual/test_comment_system.py** - Interactive test menu
+2. **tests/manual/quick_check.py** - Database checker
+3. **tests/manual/check_urls.py** - URL verification
+4. **tests/manual/run_full_test.py** - Full test suite
+5. **tests/manual/setup_test_data.py** - Create test data
 
 ---
 
@@ -378,8 +378,8 @@ Before deploying to production:
 
 1. **Check browser console** (F12)
 2. **Check server logs** (terminal)
-3. **Run diagnostics**: `python quick_check.py`
-4. **Verify files**: `python check_urls.py`
+3. **Run diagnostics**: `python -m tests.manual.quick_check`
+4. **Verify files**: `python -m tests.manual.check_urls`
 5. **Restart server**: Ctrl+C, then `python manage.py runserver`
 
 ### Common Solutions

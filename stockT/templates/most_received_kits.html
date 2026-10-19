@@ -10,14 +10,20 @@
 
 {% block content %}
 <div class="comments-container">
-    <h1><i class="fas fa-ranking-star"></i> Most Received Kits</h1>
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-ranking-star" aria-hidden="true"></i> Most Received Kits</h1>
+            <p class="dashboard-subtitle">See which stock types are held across the most users.</p>
+        </div>
+    </header>
 
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Most received kit types">
     <table class="data-table">
         <thead>
             <tr>
-                <th>Kit Type</th>
-                <th>Total Quantity</th>
-                <th>Users Holding</th>
+                <th scope="col">Kit Type</th>
+                <th scope="col">Total Quantity</th>
+                <th scope="col">Users Holding</th>
             </tr>
         </thead>
         <tbody>
@@ -32,5 +38,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

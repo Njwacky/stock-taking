@@ -10,10 +10,10 @@
 {% block content %}
 <div class="comments-container">
     <div class="dashboard-header">
-        <h1><i class="fas fa-bell"></i> Notifications</h1>
+        <h1><i class="fas fa-bell" aria-hidden="true"></i> Notifications</h1>
         {% if user.is_manager %}
         <a href="{% url 'manage_reset_requests' %}" class="btn btn-primary">
-            <i class="fas fa-key"></i> Password Resets
+            <i class="fas fa-key" aria-hidden="true"></i> Password Resets
             {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
         </a>
         {% endif %}
@@ -21,7 +21,7 @@
 
     {% if user.is_manager and pending_reset_requests_count %}
     <div class="alert alert-warning" style="margin-bottom:18px">
-        <i class="alert-icon fas fa-triangle-exclamation"></i>
+        <i class="alert-icon fas fa-triangle-exclamation" aria-hidden="true"></i>
         <span class="alert-text">
             <strong>{{ pending_reset_requests_count }} password reset request{{ pending_reset_requests_count|pluralize }}</strong>
             waiting for a decision.
@@ -40,7 +40,7 @@
         {% if user not in notification.read_by.all %}
         <form method="post" action="{% url 'mark_notification_read' notification.id %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Mark as read</button>
+            <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Mark as read</button>
         </form>
         {% endif %}
     </div>

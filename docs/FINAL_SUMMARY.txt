@@ -134,11 +134,11 @@
 
 🔧 TEST SCRIPTS:
 
-   🧪 test_comment_system.py ........... Interactive test menu
-   🧪 quick_check.py ................... Database checker
-   🧪 check_urls.py .................... URL verification
-   🧪 run_full_test.py ................. Full test suite
-   🧪 setup_test_data.py ............... Create test data
+   🧪 tests/manual/test_comment_system.py ........... Interactive test menu
+   🧪 tests/manual/quick_check.py ................... Database checker
+   🧪 tests/manual/check_urls.py .................... URL verification
+   🧪 tests/manual/run_full_test.py ................. Full test suite
+   🧪 tests/manual/setup_test_data.py ............... Create test data
 
 
 ┌──────────────────────────────────────────────────────────────────────┐

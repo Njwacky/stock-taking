@@ -203,3 +203,54 @@ class TestWorkspaceSettings:
         content = as_owner.get('/workspace/settings/').content.decode()
         assert 'listed' in content
         assert 'Owner' in content
+
+
+class TestWorkspaceOwnerControls:
+    def test_workspace_owner_sees_controls_for_the_active_workspace(
+        self, as_member, member, other_member,
+    ):
+        from stockT.models import Kit, StockUsage
+
+        as_member.post('/workspace/create/', {'name': 'Owned Store'})
+        workspace = member.workspace_memberships.get(
+            workspace__name='Owned Store',
+        ).workspace
+        assert not member.is_manager  # owner only in this workspace
+
+        as_member.post('/workspace/members/add/', {
+            'username': other_member.username,
+            'role': 'member',
+        })
+        kit_type = workspace.kit_types.filter(is_active=True).first()
+        Kit.objects.create(
+            user=other_member,
+            kit_type_fk=kit_type,
+            kit_type_string=kit_type.name[:20],
+            quantity=8,
+            workspace=workspace,
+        )
+        StockUsage.objects.create(
+            user=other_member,
+            clock_number=other_member.clock_number,
+            kit_type=kit_type,
+            kit_type_name=kit_type.name,
+            quantity_used=1,
+            workspace=workspace,
+        )
+
+        dashboard = as_member.get('/').content.decode()
+        assert 'Kit Types' in dashboard
+        assert 'Manage Users' not in dashboard
+        assert 'name="user"' in dashboard
+        assert 'Delete Selected' in dashboard
+        assert other_member.username in dashboard
+
+        history = as_member.get('/tracking/history/').content.decode()
+        assert 'Approve' in history
+        assert 'Reject' in history
+
+        tracking = as_member.get('/tracking/').content.decode()
+        assert '1 pending' in tracking
+
+        kit_types_page = as_member.get('/kit-types/')
+        assert kit_types_page.status_code == 200

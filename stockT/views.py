@@ -809,10 +809,21 @@ def add_user(request):
         return redirect('manage_users')
     form = AddUserForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
+        workspace = _ws(request)
+        with transaction.atomic():
+            user = form.save(commit=False)
+            user.save()
+            # Account roles are system-wide; membership role is scoped to this
+            # workspace. A newly added person starts as a workspace member.
+            WorkspaceMember.objects.create(
+                workspace=workspace,
+                user=user,
+                role=WorkspaceMember.ROLE_MEMBER,
+            )
         messages.success(
             request,
-            f'{user.username} has been added to the workspace as {user.get_role_display()}.',
+            f'{user.username} has been added to “{workspace.name}” as a '
+            f'workspace member (account role: {user.get_role_display()}).',
         )
         return redirect('manage_users')
     return render(request, 'add_user.html', {'form': form})
@@ -961,21 +972,45 @@ def review_stock_usage(request, usage_id):
     if not is_workspace_manager(request.user, workspace):
         messages.error(request, 'You do not have permission to review usage requests.')
         return redirect('stock_usage_history')
-    usage = get_object_or_404(_ws_rows(StockUsage.objects.all(), workspace), id=usage_id)
+
     action = request.POST.get('action')
-    usage.admin_notes = request.POST.get('admin_notes', '') or None
-    usage.reviewed_by = request.user
-    usage.reviewed_at = timezone.now()
-    if action == 'approve':
-        usage.status = StockUsage.STATUS_APPROVED
-        usage.save()
-        messages.success(request, 'Usage approved and stock updated.')
-    elif action == 'reject':
-        usage.status = StockUsage.STATUS_REJECTED
-        usage.save()
-        messages.success(request, 'Usage request rejected.')
-    else:
+    if action not in ('approve', 'reject'):
         messages.error(request, 'Unknown action.')
+        return redirect(request.POST.get('next') or 'stock_usage_history')
+
+    already_processed = False
+    try:
+        # Lock the request so two managers cannot approve the same request at
+        # once. The signal's stock deduction runs inside this transaction too.
+        with transaction.atomic():
+            usage = get_object_or_404(
+                _ws_rows(StockUsage.objects.select_for_update(), workspace),
+                id=usage_id,
+            )
+            if usage.status != StockUsage.STATUS_PENDING:
+                already_processed = True
+            else:
+                usage.admin_notes = request.POST.get('admin_notes', '') or None
+                usage.reviewed_by = request.user
+                usage.reviewed_at = timezone.now()
+                if action == 'approve':
+                    usage.status = StockUsage.STATUS_APPROVED
+                else:
+                    usage.status = StockUsage.STATUS_REJECTED
+                usage.save()
+    except ValidationError as exc:
+        messages.error(
+            request,
+            'Usage was not approved: ' + ' '.join(exc.messages),
+        )
+        return redirect(request.POST.get('next') or 'stock_usage_history')
+
+    if already_processed:
+        messages.info(request, 'This usage request has already been reviewed or is no longer pending.')
+    elif action == 'approve':
+        messages.success(request, 'Usage approved and stock updated.')
+    else:
+        messages.success(request, 'Usage request rejected.')
     return redirect(request.POST.get('next') or 'stock_usage_history')
 
 
@@ -1238,9 +1273,13 @@ def demote_admin(request, user_id):
     if target.id == request.user.id:
         messages.error(request, 'You cannot demote yourself.')
         return redirect('manage_admins')
+    if not (target.is_superuser or target.role == User.ROLE_ADMIN):
+        messages.error(request, f'{target.username} is not an administrator.')
+        return redirect('manage_admins')
     target.role = User.ROLE_USER
     target.is_staff = False
-    target.save(update_fields=['role', 'is_staff'])
+    target.is_superuser = False
+    target.save(update_fields=['role', 'is_staff', 'is_superuser'])
     messages.success(request, f'{target.username} demoted to regular user.')
     return redirect('manage_admins')
 

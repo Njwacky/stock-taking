@@ -79,7 +79,9 @@ build/
 dist/
 out/
 
-# Test files
+# Test files (keep them out of production images)
+tests/
+test_*.py
 htmlcov/
 .tox/
 .coverage

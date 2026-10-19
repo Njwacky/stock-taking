@@ -99,7 +99,7 @@ NEW FILES:
   📄 COMMENT_SYSTEM.md (documentation)
   📄 COMMENT_SYSTEM_TESTING.md (test guide)
   📄 QUICK_TEST_GUIDE.md (quick start)
-  📄 test_comment_system.py (test script)
+  📄 tests/manual/test_comment_system.py (test script)
   📄 TESTING_COMPLETE.md (results)
 
 MODIFIED FILES:
@@ -170,17 +170,17 @@ PRIORITY 3 (Nice to Have):
 📄 QUICK_TEST_GUIDE.md
    → 5-minute quick start guide
 
-📄 test_comment_system.py
-   → Automated test script (run with: python test_comment_system.py)
+📄 tests/manual/test_comment_system.py
+   → Automated test script (run with: python -m tests.manual.test_comment_system)
 
-📄 quick_check.py
-   → Quick database check (run with: python quick_check.py)
+📄 tests/manual/quick_check.py
+   → Quick database check (run with: python -m tests.manual.quick_check)
 
-📄 check_urls.py
-   → URL verification (run with: python check_urls.py)
+📄 tests/manual/check_urls.py
+   → URL verification (run with: python -m tests.manual.check_urls)
 
-📄 run_full_test.py
-   → Full test suite (run with: python run_full_test.py)
+📄 tests/manual/run_full_test.py
+   → Full test suite (run with: python -m tests.manual.run_full_test)
 
 📄 visual_test.html
    → Visual test page (open in browser)

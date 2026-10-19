@@ -235,7 +235,7 @@ for u in User.objects.all():
 
 ```bash
 # Run the test script
-python test_comment_system.py
+python -m tests.manual.test_comment_system
 
 # Choose option 1 to run all tests
 # Choose option 2 to create test data

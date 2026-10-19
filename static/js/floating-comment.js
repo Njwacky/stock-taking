@@ -6,63 +6,83 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.floating-tab');
     const tabContents = document.querySelectorAll('.floating-tab-content');
 
-    // Toggle panel visibility
+    function setPanelOpen(open, restoreFocus = false) {
+        if (!floatingPanel || !floatingBtn) return;
+        floatingPanel.classList.toggle('active', open);
+        floatingPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+        floatingBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            const activeContent = floatingPanel.querySelector('.floating-tab-content.active');
+            const activeTab = floatingPanel.querySelector('.floating-tab[aria-selected="true"]');
+            const firstInput = activeContent && activeContent.querySelector('input, textarea, select');
+            const focusTarget = firstInput || activeTab;
+            if (focusTarget) setTimeout(() => focusTarget.focus(), 50);
+        } else if (restoreFocus) {
+            floatingBtn.focus();
+        }
+    }
+
+    // Toggle the feedback panel and announce its expanded state.
     if (floatingBtn && floatingPanel) {
         floatingBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            floatingPanel.classList.toggle('active');
-            
-            // Add a small delay to allow the panel to be fully displayed before focusing
-            if (floatingPanel.classList.contains('active')) {
-                setTimeout(() => {
-                    const activeTab = document.querySelector('.floating-tab.active');
-                    if (activeTab) {
-                        const tabId = activeTab.getAttribute('data-tab') + 'Tab';
-                        const activeContent = document.getElementById(tabId);
-                        if (activeContent) {
-                            const firstInput = activeContent.querySelector('input, textarea, select');
-                            if (firstInput) firstInput.focus();
-                        }
-                    }
-                }, 50);
-            }
+            setPanelOpen(!floatingPanel.classList.contains('active'));
         });
     }
 
-    // Close panel
     if (closeBtn && floatingPanel) {
         closeBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            floatingPanel.classList.remove('active');
+            setPanelOpen(false, true);
         });
     }
 
-    // Close panel when clicking outside
+    // Dismiss the panel with Escape or a click outside it.
     document.addEventListener('click', function(e) {
-        if (floatingPanel && !floatingPanel.contains(e.target) && e.target !== floatingBtn) {
-            floatingPanel.classList.remove('active');
+        if (floatingPanel && floatingPanel.classList.contains('active') &&
+            !floatingPanel.contains(e.target) && e.target !== floatingBtn) {
+            setPanelOpen(false);
+        }
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && floatingPanel && floatingPanel.classList.contains('active')) {
+            setPanelOpen(false, true);
         }
     });
 
-    // Tab switching
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
+    function activateTab(tab) {
+        tabs.forEach(item => {
+            const selected = item === tab;
+            item.classList.toggle('active', selected);
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.tabIndex = selected ? 0 : -1;
+        });
+        tabContents.forEach(content => {
+            const selected = content.id === tab.getAttribute('aria-controls');
+            content.classList.toggle('active', selected);
+            content.hidden = !selected;
+        });
+
+        const content = document.getElementById(tab.getAttribute('aria-controls'));
+        const firstInput = content && content.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }
+
+    // Keep the tab controls keyboard-operable with the standard arrow keys.
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', function() {
+            activateTab(this);
+        });
+        tab.addEventListener('keydown', function(e) {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
             e.preventDefault();
-            
-            // Remove active class from all tabs and contents
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            
-            // Add active class to clicked tab and corresponding content
-            this.classList.add('active');
-            const tabId = this.getAttribute('data-tab') + 'Tab';
-            const content = document.getElementById(tabId);
-            if (content) {
-                content.classList.add('active');
-                // Focus first input in the active tab
-                const firstInput = content.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }
+            let nextIndex = index;
+            if (e.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+            if (e.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (e.key === 'Home') nextIndex = 0;
+            if (e.key === 'End') nextIndex = tabs.length - 1;
+            tabs[nextIndex].focus();
+            activateTab(tabs[nextIndex]);
         });
     });
 
@@ -146,32 +166,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 const container = myCommentsTab.querySelector('#userCommentsList');
                 if (!container) return;
                 
-                if (comments.length === 0) {
-                    container.innerHTML = '<p class="text-muted">You have not submitted any feedback yet.</p>';
+                container.replaceChildren();
+                if (!Array.isArray(comments) || comments.length === 0) {
+                    const emptyMessage = document.createElement('p');
+                    emptyMessage.className = 'text-muted';
+                    emptyMessage.textContent = 'You have not submitted any feedback yet.';
+                    container.appendChild(emptyMessage);
                     return;
                 }
-                
-                container.innerHTML = comments.map(comment => `
-                    <div class="comment-item">
-                        <div class="comment-header">
-                            <strong>${comment.category_display || 'General'}</strong>
-                            <span class="text-muted">${new Date(comment.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="comment-content">${comment.content}</div>
-                        ${comment.admin_response ? `
-                            <div class="admin-response">
-                                <strong>Admin Response:</strong>
-                                <p>${comment.admin_response}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('');
+
+                comments.forEach(comment => {
+                    const item = document.createElement('article');
+                    item.className = 'comment-item';
+
+                    const header = document.createElement('div');
+                    header.className = 'comment-header';
+                    const subject = document.createElement('strong');
+                    subject.textContent = comment.subject || comment.category_display || 'Feedback';
+                    const date = document.createElement('span');
+                    date.className = 'text-muted';
+                    const timestamp = new Date(comment.created_at);
+                    date.textContent = Number.isNaN(timestamp.getTime()) ? '' : timestamp.toLocaleDateString();
+                    header.append(subject, date);
+
+                    const category = document.createElement('p');
+                    category.className = 'text-muted';
+                    category.textContent = comment.category_display || 'General';
+                    const content = document.createElement('p');
+                    content.className = 'comment-content';
+                    content.textContent = comment.content || '';
+                    item.append(header, category, content);
+
+                    if (comment.admin_response) {
+                        const response = document.createElement('div');
+                        response.className = 'admin-response';
+                        const responseTitle = document.createElement('strong');
+                        responseTitle.textContent = 'Admin response';
+                        const responseText = document.createElement('p');
+                        responseText.textContent = comment.admin_response;
+                        response.append(responseTitle, responseText);
+                        item.appendChild(response);
+                    }
+                    container.appendChild(item);
+                });
             })
             .catch(error => {
                 console.error('Error loading comments:', error);
                 const container = myCommentsTab.querySelector('#userCommentsList');
                 if (container) {
-                    container.innerHTML = '<p class="text-danger">Error loading your feedback. Please try again later.</p>';
+                    const errorMessage = document.createElement('p');
+                    errorMessage.className = 'text-danger';
+                    errorMessage.textContent = 'Error loading your feedback. Please try again later.';
+                    container.replaceChildren(errorMessage);
                 }
             });
     }

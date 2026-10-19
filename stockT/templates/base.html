@@ -6,24 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Stock Management System{% endblock %}</title>
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#3498db">
+    <meta name="theme-color" content="#667eea">
     <link rel="icon" type="image/png" href="{% static 'images/light_blue.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
-    <!-- Shared UI layer (buttons, tables, alerts, badges, footer…) — must load
-         after the legacy sheets above so consistent styles win -->
-    <link rel="stylesheet" href="{% static 'css/ui.css' %}">
     {% block extra_css %}{% endblock %}
+    <!-- Shared UI layer loads last so legacy and page-specific styles use the
+         same typography, spacing, controls, tables, and responsive patterns. -->
+    <link rel="stylesheet" href="{% static 'css/ui.css' %}">
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to content</a>
-    <nav class="navbar" role="navigation" aria-label="Primary">
+    <nav class="navbar" aria-label="Primary">
         <a href="{% url 'dashboard' %}" class="nav-brand">
-            <i class="fas fa-boxes-stacked"></i>
+            <i class="fas fa-boxes-stacked" aria-hidden="true"></i>
             <span>Stock Tracker</span>
         </a>
         {% comment %}
@@ -34,15 +33,15 @@
         becomes a horizontal pill scroller; there is no hamburger drawer.
         {% endcomment %}
         <div id="navLinks" class="nav-links">
-            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</a>
             {% if user.is_authenticated %}
-            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus"></i> Add Stock</a>
-            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list"></i> Track Usage</a>
-            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes"></i> Distribute</a>
-            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator"></i> Calculator</a>
+            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus" aria-hidden="true"></i> Add Stock</a>
+            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list" aria-hidden="true"></i> Track Usage</a>
+            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes" aria-hidden="true"></i> Distribute</a>
+            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator" aria-hidden="true"></i> Calculator</a>
 
             <div class="nav-user" id="navUser">
-                <button type="button" id="navUserBtn" class="nav-user-btn" aria-haspopup="true" aria-expanded="false">
+                <button type="button" id="navUserBtn" class="nav-user-btn" aria-label="Account menu for {{ user.username }}" aria-controls="navMenu" aria-expanded="false">
                     <span class="nav-avatar" aria-hidden="true">{{ user.username|first|upper }}</span>
                     <span class="nav-user-name">{{ user.username }}</span>
                     {% if pending_reset_requests_count or pending_stock_usage_count %}
@@ -50,11 +49,11 @@
                     {% endif %}
                     <span class="nav-caret" aria-hidden="true">&#9662;</span>
                 </button>
-                <div class="nav-menu" id="navMenu" role="menu">
+                <div class="nav-menu" id="navMenu">
                     <div class="nav-ws-block">
                         <div class="nav-ws-label">Workspace</div>
                         <div class="nav-ws-current" title="Active workspace">
-                            <i class="fas fa-layer-group"></i>
+                            <i class="fas fa-layer-group" aria-hidden="true"></i>
                             <span>{{ current_workspace.name|default:"My Workspace" }}</span>
                         </div>
                         {% if user_workspaces|length > 1 %}
@@ -69,52 +68,56 @@
                             </select>
                         </form>
                         {% endif %}
-                        <a role="menuitem" href="{% url 'workspace_create' %}"><i class="fas fa-plus"></i> New workspace</a>
-                        <a role="menuitem" href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}><i class="fas fa-sliders"></i> Workspace settings</a>
+                        <a href="{% url 'workspace_create' %}"><i class="fas fa-plus" aria-hidden="true"></i> New workspace</a>
+                        <a href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}><i class="fas fa-sliders" aria-hidden="true"></i> Workspace settings</a>
                     </div>
                     <div class="nav-menu-sep"></div>
-                    <a role="menuitem" href="{% url 'profile' %}"{% if request.path == '/profile/' %} aria-current="page"{% endif %}><i class="fas fa-id-badge"></i> Profile</a>
-                    <a role="menuitem" href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
-                        <i class="fas fa-bell"></i> Notifications
+                    <a href="{% url 'profile' %}"{% if request.path == '/profile/' %} aria-current="page"{% endif %}><i class="fas fa-id-badge" aria-hidden="true"></i> Profile</a>
+                    <a href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
+                        <i class="fas fa-bell" aria-hidden="true"></i> Notifications
                         {% if pending_reset_requests_count or pending_stock_usage_count %}
                         <span class="nav-badge">{{ pending_reset_requests_count|add:pending_stock_usage_count }}</span>
                         {% endif %}
                     </a>
-                    <a role="menuitem" href="{% url 'my_comments' %}"{% if '/comments/my' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comment-dots"></i> My Feedback</a>
-                    <a role="menuitem" href="{% url 'change_password' %}"{% if '/change-password' in request.path %} aria-current="page"{% endif %}><i class="fas fa-lock"></i> Change Password</a>
-                    {% if user.is_manager %}
+                    <a href="{% url 'my_comments' %}"{% if '/comments/my' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comment-dots" aria-hidden="true"></i> My Feedback</a>
+                    <a href="{% url 'change_password' %}"{% if '/change-password' in request.path %} aria-current="page"{% endif %}><i class="fas fa-lock" aria-hidden="true"></i> Change Password</a>
+                    {% if can_manage_workspace or user.is_manager %}
                     <div class="nav-menu-sep"></div>
-                    <a role="menuitem" href="{% url 'manage_reset_requests' %}"{% if '/password-reset/manage' in request.path or '/password-reset/process' in request.path %} aria-current="page"{% endif %}>
-                        <i class="fas fa-key"></i> Password Resets
+                    {% endif %}
+                    {% if can_manage_workspace %}
+                    <a href="{% url 'manage_kit_types' %}"{% if '/kit-types' in request.path %} aria-current="page"{% endif %}><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Kit Types</a>
+                    {% endif %}
+                    {% if user.is_manager %}
+                    <a href="{% url 'manage_reset_requests' %}"{% if '/password-reset/manage' in request.path or '/password-reset/process' in request.path %} aria-current="page"{% endif %}>
+                        <i class="fas fa-key" aria-hidden="true"></i> Password Resets
                         {% if pending_reset_requests_count %}<span class="nav-badge">{{ pending_reset_requests_count }}</span>{% endif %}
                     </a>
-                    <a role="menuitem" href="{% url 'manage_kit_types' %}"{% if '/kit-types' in request.path %} aria-current="page"{% endif %}><i class="fas fa-boxes-stacked"></i> Kit Types</a>
-                    <a role="menuitem" href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}><i class="fas fa-users-gear"></i> Manage Users</a>
-                    <a role="menuitem" href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path or '/comments/update' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comments"></i> Review Feedback</a>
-                    <a role="menuitem" href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path %} aria-current="page"{% endif %}><i class="fas fa-chart-pie"></i> Analytics</a>
+                    <a href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}><i class="fas fa-users-gear" aria-hidden="true"></i> Manage Users</a>
+                    <a href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path or '/comments/update' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comments" aria-hidden="true"></i> Review Feedback</a>
+                    <a href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path %} aria-current="page"{% endif %}><i class="fas fa-chart-pie" aria-hidden="true"></i> Analytics</a>
                     {% endif %}
                     {% if user.is_superuser %}
                     <div class="nav-menu-sep"></div>
-                    <a role="menuitem" href="{% url 'manage_admins' %}"{% if '/admin/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-user-shield"></i> Admins</a>
-                    <a role="menuitem" href="{% url 'manage_footer_contacts' %}"{% if '/footer/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-address-book"></i> Manage Footer</a>
+                    <a href="{% url 'manage_admins' %}"{% if '/admin/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-user-shield" aria-hidden="true"></i> Admins</a>
+                    <a href="{% url 'manage_footer_contacts' %}"{% if '/footer/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-address-book" aria-hidden="true"></i> Manage Footer</a>
                     {% endif %}
                     <div class="nav-menu-sep"></div>
-                    <a role="menuitem" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+                    <a href="{% url 'logout' %}"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Logout</a>
                 </div>
             </div>
             {% else %}
-            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
-            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus"></i> Register</a>
+            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Login</a>
+            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</a>
             {% endif %}
         </div>
     </nav>
 
-    <main class="main-content" id="main">
+    <main class="main-content" id="main" tabindex="-1">
         {% if messages %}
         <div class="messages-container" role="status" aria-live="polite">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags|default:'info' }}" data-auto-dismiss>
-                <i class="alert-icon fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                <i class="alert-icon fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>
                 <span class="alert-text">{{ message }}</span>
                 <button type="button" class="alert-close" aria-label="Dismiss message">&times;</button>
             </div>
@@ -127,7 +130,7 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
-                <h3><i class="fas fa-boxes-stacked"></i> Stock Tracker</h3>
+                <h3><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock Tracker</h3>
                 <p>Efficient stock and inventory management.</p>
             </div>
             {% if footer_contacts %}
@@ -160,23 +163,24 @@
 
     {% if user.is_authenticated %}
     <!-- Floating feedback widget -->
-    <button id="floatingCommentBtn" class="floating-comment-btn" title="Send feedback">
-        <i class="fas fa-comment-dots"></i>
+    <button type="button" id="floatingCommentBtn" class="floating-comment-btn" aria-label="Send feedback" aria-controls="floatingCommentPanel" aria-expanded="false">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
     </button>
-    <div id="floatingCommentPanel" class="floating-comment-panel">
+    <div id="floatingCommentPanel" class="floating-comment-panel" role="region" aria-label="Feedback panel" aria-hidden="true">
         <div class="floating-panel-header">
-            <h4><i class="fas fa-comment-dots"></i> Feedback</h4>
-            <button id="floatingPanelClose" class="floating-panel-close">&times;</button>
+            <h4><i class="fas fa-comment-dots" aria-hidden="true"></i> Feedback</h4>
+            <button type="button" id="floatingPanelClose" class="floating-panel-close" aria-label="Close feedback panel">&times;</button>
         </div>
-        <div class="floating-tabs">
-            <button class="floating-tab active" data-tab="submit" type="button">Submit</button>
-            <button class="floating-tab" data-tab="myComments" type="button">My Feedback</button>
+        <div class="floating-tabs" role="tablist" aria-label="Feedback options">
+            <button id="feedback-tab-submit" class="floating-tab active" data-tab="submit" type="button" role="tab" aria-selected="true" aria-controls="submitTab" tabindex="0">Submit</button>
+            <button id="feedback-tab-comments" class="floating-tab" data-tab="myComments" type="button" role="tab" aria-selected="false" aria-controls="myCommentsTab" tabindex="-1">My Feedback</button>
         </div>
-        <div id="submitTab" class="floating-tab-content active">
+        <div id="submitTab" class="floating-tab-content active" role="tabpanel" aria-labelledby="feedback-tab-submit" tabindex="0">
             <form id="floatingCommentForm" method="post" action="{% url 'submit_comment' %}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <select name="category" class="form-control" required>
+                    <label class="visually-hidden" for="floatingCommentCategory">Category</label>
+                    <select id="floatingCommentCategory" name="category" class="form-control" required>
                         <option value="">Category...</option>
                         <option value="bug">Bug Report</option>
                         <option value="feature">Feature Request</option>
@@ -186,16 +190,18 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <input type="text" name="subject" class="form-control" placeholder="Subject" maxlength="200" required>
+                    <label class="visually-hidden" for="floatingCommentSubject">Subject</label>
+                    <input type="text" id="floatingCommentSubject" name="subject" class="form-control" placeholder="Subject" maxlength="200" required>
                 </div>
                 <div class="form-group">
-                    <textarea name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
+                    <label class="visually-hidden" for="floatingCommentMessage">Your message</label>
+                    <textarea id="floatingCommentMessage" name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane"></i> Send</button>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send</button>
             </form>
         </div>
-        <div id="myCommentsTab" class="floating-tab-content">
-            <div id="userCommentsList"></div>
+        <div id="myCommentsTab" class="floating-tab-content" role="tabpanel" aria-labelledby="feedback-tab-comments" tabindex="0" hidden>
+            <div id="userCommentsList" aria-live="polite"></div>
             <a href="{% url 'my_comments' %}" class="btn btn-link btn-sm">View all feedback &rarr;</a>
         </div>
     </div>

@@ -89,10 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = !(userSelected && itemsSelected && quantitiesValid);
 
         if (submitBtn.disabled) {
-            submitBtn.innerHTML = '<i class="fa fa-plus"></i><span>Select User & Items</span>';
+            const prompt = userSelected ? 'Select at least one item' : 'Select a user and at least one item';
+            submitBtn.innerHTML = `<i class="fa fa-plus" aria-hidden="true"></i><span>${prompt}</span>`;
         } else {
             const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            submitBtn.innerHTML = `<i class="fa fa-plus"></i><span>Add ${selectedCount} Kit${selectedCount > 1 ? 's' : ''}</span>`;
+            submitBtn.innerHTML = `<i class="fa fa-plus" aria-hidden="true"></i><span>Add ${selectedCount} kit${selectedCount === 1 ? '' : 's'}</span>`;
         }
     }
 
@@ -123,11 +124,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 quantityInput.disabled = true;
                 quantityInput.style.display = 'none'; // Hide quantity input when not selected
                 kitDetails.classList.remove('show'); // Use smooth transition
+                // Keep any values if the checkbox is toggled off and back on;
+                // disabled fields are not submitted until the item is selected again.
                 detailFields.forEach(field => {
                     field.disabled = true;
-                    field.value = '';
                 });
-                quantityInput.value = '';
                 itemUnit.style.display = 'none'; // Hide unit when item is not selected
                 
                 // Hide tape calculation
@@ -191,31 +192,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== CRUD FUNCTIONALITY FOR EXISTING KITS ==========
 
-    // Load user's existing kits when user is selected
-    userSelect.addEventListener('change', function() {
-        const userId = this.value;
-        if (userId) {
-            loadUserKits(userId);
-            const selectedOption = this.options[this.selectedIndex];
-            const userName = selectedOption.text.split(' (')[0]; // Extract username without clock number
-            selectedUserName.textContent = userName;
-            existingKitsSection.style.display = 'block';
-        } else {
-            existingKitsSection.style.display = 'none';
-        }
-    });
+    // Existing-stock tools are only rendered for users who can select a
+    // recipient. Guard these optional controls for regular members.
+    if (existingKitsSection && selectedUserName && refreshKitsBtn &&
+        kitsListContainer && kitsEmptyState && kitSearchInput && kitFilterSelect) {
+        userSelect.addEventListener('change', function() {
+            const userId = this.value;
+            if (userId) {
+                loadUserKits(userId);
+                const selectedOption = this.options[this.selectedIndex];
+                selectedUserName.textContent = selectedOption.text.split(' (')[0];
+                existingKitsSection.hidden = false;
+            } else {
+                existingKitsSection.hidden = true;
+            }
+        });
 
-    // Refresh kits button
-    refreshKitsBtn.addEventListener('click', function() {
-        const userId = userSelect.value;
-        if (userId) {
-            loadUserKits(userId);
-        }
-    });
+        refreshKitsBtn.addEventListener('click', function() {
+            const userId = userSelect.value;
+            if (userId) loadUserKits(userId);
+        });
+        kitSearchInput.addEventListener('input', filterKits);
+        kitFilterSelect.addEventListener('change', filterKits);
 
-    // Search and filter functionality
-    kitSearchInput.addEventListener('input', filterKits);
-    kitFilterSelect.addEventListener('change', filterKits);
+        if (userSelect.value) {
+            const selectedOption = userSelect.options[userSelect.selectedIndex];
+            selectedUserName.textContent = selectedOption.text.split(' (')[0];
+            loadUserKits(userSelect.value);
+        }
+    }
 
     // Load user's kits from API
     async function loadUserKits(userId) {
@@ -245,13 +250,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render kits list
     function renderKitsList(kits) {
         if (kits.length === 0) {
-            kitsListContainer.style.display = 'none';
-            kitsEmptyState.style.display = 'block';
+            kitsListContainer.hidden = true;
+            kitsEmptyState.hidden = false;
             return;
         }
 
-        kitsListContainer.style.display = 'block';
-        kitsEmptyState.style.display = 'none';
+        kitsListContainer.hidden = false;
+        kitsEmptyState.hidden = true;
 
         const kitsHTML = kits.map(kit => `
             <div class="kit-item ${!kit.is_active ? 'inactive' : ''}" data-kit-id="${kit.id}" data-kit-type="${kit.kit_type_code}">
