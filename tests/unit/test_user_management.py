@@ -27,13 +27,29 @@ def add_user_payload(**overrides):
 
 
 class TestAddUser:
-    def test_owner_adds_member(self, as_owner):
+    def test_owner_adds_member_to_current_workspace(self, as_owner, workspace):
         response = as_owner.post('/manage-users/add/', add_user_payload())
         assert response.status_code == 302
         user = User.objects.get(username='newbie')
         assert user.role == 'user'
         assert user.is_superuser is False
         assert user.check_password('N3wbie!pass')
+        membership = user.workspace_memberships.get(workspace=workspace)
+        assert membership.role == 'member'
+        assert user.workspace_memberships.count() == 1
+
+    def test_member_is_added_to_the_selected_workspace(self, as_owner, owner, workspace):
+        as_owner.post('/workspace/create/', {'name': 'Second Store'})
+        selected = owner.workspace_memberships.get(
+            workspace__name='Second Store',
+        ).workspace
+
+        response = as_owner.post('/manage-users/add/', add_user_payload())
+
+        user = User.objects.get(username='newbie')
+        assert response.status_code == 302
+        assert user.workspace_memberships.filter(workspace=selected).exists()
+        assert not user.workspace_memberships.filter(workspace=workspace).exists()
 
     def test_manager_cannot_add(self, as_manager):
         response = as_manager.post('/manage-users/add/', add_user_payload())

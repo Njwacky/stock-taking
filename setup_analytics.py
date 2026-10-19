@@ -81,7 +81,7 @@ def setup_analytics():
     print("   http://localhost:8000/analytics/")
     print()
     print("📚 Read the full guide:")
-    print("   ANALYTICS_SETUP_GUIDE.md")
+    print("   docs/ANALYTICS_SETUP_GUIDE.md")
     print()
     print("🚀 Next steps:")
     print("   1. Make sure middleware is added to settings.py")

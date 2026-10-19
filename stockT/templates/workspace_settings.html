@@ -4,119 +4,109 @@
 {% block title %}Workspace Settings - Stock Management System{% endblock %}
 
 {% block content %}
-<div class="calc-page-header" style="text-align:center; margin:8px 0 22px;">
-    <h1 style="margin:0 0 6px; font-size:1.7rem; font-weight:800;">
-        <i class="fas fa-sliders" style="background:var(--gradient); color:#fff; padding:12px; border-radius:16px;"></i>
-        Workspace Settings
-    </h1>
-    <p style="margin:0; color:var(--text-muted);">
-        Managing <strong>{{ workspace.name }}</strong>
-        — you are <strong>{{ membership.get_role_display|default:"a member" }}</strong> here.
-    </p>
-</div>
-
-<div class="ws-settings-grid">
-
-    <section class="calc-tool-panel">
-        <h2><i class="fas fa-pen"></i> General</h2>
-        <p class="calc-tool-sub">Rename this workspace. Only owners and admins can change it.</p>
-
-        {% if can_manage %}
-        <form method="post" action="{% url 'workspace_settings' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="rename">
-            <div class="calc-field">
-                <label for="{{ form.name.id_for_label }}">Workspace name</label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                <div class="field-errors">{{ form.name.errors }}</div>
-                {% endif %}
-            </div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Save</button>
-        </form>
-        {% else %}
-        <div class="calc-conv-note">
-            <i class="fas fa-circle-info"></i>
-            <span>Only workspace owners and admins can rename this workspace.</span>
+<div class="workspace-settings-page">
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-sliders" aria-hidden="true"></i> Workspace Settings</h1>
+            <p class="dashboard-subtitle">Managing <strong>{{ workspace.name }}</strong> · Your role: {{ membership.get_role_display|default:"Member" }}.</p>
         </div>
-        {% endif %}
+    </header>
 
-        <div class="calc-conv-note" style="margin-top:16px;">
-            <i class="fas fa-lightbulb"></i>
-            <span>
-                Workspaces are fully separate: stock, kit types and usage logged here
-                are never visible in your other workspaces.
-                <a href="{% url 'workspace_create' %}">Create another workspace</a> any time.
-            </span>
-        </div>
-    </section>
-
-    <section class="calc-tool-panel">
-        <h2><i class="fas fa-users"></i> Members</h2>
-        <p class="calc-tool-sub">{{ members|length }} member{{ members|length|pluralize }} in this workspace.</p>
-
-        {% if can_manage %}
-        <form method="post" action="{% url 'workspace_member_add' %}" style="margin-bottom:18px;">
-            {% csrf_token %}
-            <div class="calc-field">
-                <label for="{{ add_member_form.username.id_for_label }}">Add a registered user</label>
-                {{ add_member_form.username }}
-                {% if add_member_form.username.errors %}
-                <div class="field-errors">{{ add_member_form.username.errors }}</div>
-                {% endif %}
+    <div class="ws-settings-grid">
+        <section class="ws-settings-panel" aria-labelledby="workspace-general-title">
+            <div class="dashboard-section-heading">
+                <div>
+                    <h2 id="workspace-general-title"><i class="fas fa-pen" aria-hidden="true"></i> General</h2>
+                    <p>Update the name shown to workspace members.</p>
+                </div>
             </div>
-            <div class="calc-field">
-                <label for="{{ add_member_form.role.id_for_label }}">Role</label>
-                {{ add_member_form.role }}
+
+            {% if can_manage %}
+            <form method="post" action="{% url 'workspace_settings' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="rename">
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Workspace name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="field-errors">{{ form.name.errors }}</div>{% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save name</button>
+            </form>
+            {% else %}
+            <p class="ws-settings-note"><i class="fas fa-circle-info" aria-hidden="true"></i> Only workspace owners and admins can rename this workspace.</p>
+            {% endif %}
+
+            <p class="ws-settings-note"><i class="fas fa-lightbulb" aria-hidden="true"></i> Workspaces keep stock, kit types and usage separate. <a href="{% url 'workspace_create' %}">Create another workspace</a> whenever you need one.</p>
+        </section>
+
+        <section class="ws-settings-panel" aria-labelledby="workspace-members-title">
+            <div class="dashboard-section-heading">
+                <div>
+                    <h2 id="workspace-members-title"><i class="fas fa-users" aria-hidden="true"></i> Members</h2>
+                    <p>{{ members|length }} member{{ members|length|pluralize }} in this workspace.</p>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Add Member
-            </button>
-        </form>
-        {% endif %}
 
-        <table class="ws-members-table">
-            <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Joined</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in members %}
-                <tr>
-                    <td>
-                        <strong>{{ m.user.username }}</strong>
-                        {% if m.user.id == user.id %} <span class="ws-role-chip">You</span>{% endif %}
-                        <br><small style="color:var(--text-muted);">{{ m.user.get_full_name|default:m.user.email }}</small>
-                    </td>
-                    <td>
-                        <span class="ws-role-chip {% if m.role == 'owner' %}is-owner{% elif m.role == 'admin' %}is-admin{% endif %}">
-                            {{ m.get_role_display }}
-                        </span>
-                    </td>
-                    <td><small style="color:var(--text-muted);">{{ m.joined_at|date:"Y-m-d" }}</small></td>
-                    <td>
-                        {% if m.role == 'owner' %}
-                        <small style="color:var(--text-muted);">—</small>
-                        {% elif can_manage or m.user.id == user.id %}
-                        <form method="post" action="{% url 'workspace_member_remove' %}"
-                              onsubmit="return confirm('Remove {{ m.user.username }} from this workspace?');">
-                            {% csrf_token %}
-                            <input type="hidden" name="user_id" value="{{ m.user.id }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                {% if m.user.id == user.id %}Leave{% else %}Remove{% endif %}
-                            </button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
+            {% if can_manage %}
+            <form method="post" action="{% url 'workspace_member_add' %}" class="ws-add-member-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ add_member_form.username.id_for_label }}">Add a registered user</label>
+                    {{ add_member_form.username }}
+                    {% if add_member_form.username.errors %}<div class="field-errors">{{ add_member_form.username.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ add_member_form.role.id_for_label }}">Role</label>
+                    {{ add_member_form.role }}
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> Add member</button>
+            </form>
+            {% endif %}
 
+            <div class="table-scroll-region" role="region" tabindex="0" aria-label="Workspace members">
+                <table class="ws-members-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">User</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Joined</th>
+                            <th scope="col" aria-label="Actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in members %}
+                        <tr>
+                            <td>
+                                <strong>{{ m.user.username }}</strong>
+                                {% if m.user.id == user.id %} <span class="ws-role-chip">You</span>{% endif %}
+                                <br><small class="ws-member-subtitle">{{ m.user.get_full_name|default:m.user.email }}</small>
+                            </td>
+                            <td>
+                                <span class="ws-role-chip {% if m.role == 'owner' %}is-owner{% elif m.role == 'admin' %}is-admin{% endif %}">
+                                    {{ m.get_role_display }}
+                                </span>
+                            </td>
+                            <td><small class="ws-member-subtitle">{{ m.joined_at|date:"M j, Y" }}</small></td>
+                            <td>
+                                {% if m.role == 'owner' %}
+                                <small class="ws-member-subtitle">—</small>
+                                {% elif can_manage or m.user.id == user.id %}
+                                <form method="post" action="{% url 'workspace_member_remove' %}"
+                                      onsubmit="return confirm('Remove {{ m.user.username }} from this workspace?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ m.user.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        {% if m.user.id == user.id %}Leave{% else %}Remove{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

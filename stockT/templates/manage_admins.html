@@ -10,18 +10,19 @@
 {% block content %}
 <div class="manage-users-container">
     <div class="dashboard-header">
-        <h1><i class="fas fa-user-shield"></i> Manage Administrators</h1>
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Admin</a>
+        <h1><i class="fas fa-user-shield" aria-hidden="true"></i> Manage Administrators</h1>
+        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Create Admin</a>
     </div>
 
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Administrators">
     <table class="data-table">
         <thead>
             <tr>
-                <th>Username</th>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Superadmin</th>
-                <th>Actions</th>
+                <th scope="col">Username</th>
+                <th scope="col">Name</th>
+                <th scope="col">Role</th>
+                <th scope="col">Superadmin</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -30,13 +31,13 @@
                 <td>{{ admin_user.username }}</td>
                 <td>{{ admin_user.first_name }} {{ admin_user.last_name }}</td>
                 <td>{{ admin_user.role_display }}</td>
-                <td>{% if admin_user.is_superuser %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}</td>
+                <td>{% if admin_user.is_superuser %}<span class="visually-hidden">Yes</span><i class="fas fa-check text-success" aria-hidden="true"></i>{% else %}<span class="visually-hidden">No</span><i class="fas fa-minus" aria-hidden="true"></i>{% endif %}</td>
                 <td>
                     {% if admin_user.id != user.id %}
                     <form method="post" action="{% url 'demote_admin' admin_user.id %}" class="inline-form"
                           onsubmit="return confirm('Demote {{ admin_user.username }}?');">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-arrow-down"></i> Demote</button>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-arrow-down" aria-hidden="true"></i> Demote</button>
                     </form>
                     {% else %}
                     <span class="text-muted">(you)</span>
@@ -48,5 +49,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

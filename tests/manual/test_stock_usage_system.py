@@ -5,8 +5,8 @@ Test script for Stock Usage Tracking System
 This script tests the complete workflow of the stock usage tracking system
 including signal receivers and automatic stock deletion.
 
-Run with: python manage.py shell < test_stock_usage_system.py
-Or: python test_stock_usage_system.py (if Django is configured)
+Run with: python manage.py shell < tests/manual/test_stock_usage_system.py
+Or: python -m tests.manual.test_stock_usage_system (if Django is configured)
 """
 
 import os

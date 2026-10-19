@@ -2,7 +2,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from tests.conftest import make_user
+from tests.conftest import make_admin, make_user
 
 User = get_user_model()
 
@@ -49,6 +49,19 @@ class TestPromoteDemote:
         target.refresh_from_db()
         assert target.role == 'user'
         assert target.is_staff is False
+        assert target.is_superuser is False
+
+    def test_demoting_another_superuser_removes_superuser_access(self, as_owner):
+        target = make_admin('second_superuser')
+
+        response = as_owner.post(f'/admin/demote/{target.id}/')
+
+        assert response.status_code == 302
+        target.refresh_from_db()
+        assert target.role == 'user'
+        assert target.is_staff is False
+        assert target.is_superuser is False
+        assert target.is_manager is False
 
     def test_cannot_demote_self(self, as_owner, owner):
         as_owner.post(f'/admin/demote/{owner.id}/')

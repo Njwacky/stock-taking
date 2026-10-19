@@ -8,85 +8,111 @@
 {% endblock %}
 
 {% block content %}
-<div class="distribution-container">
-    <h1><i class="fas fa-share-nodes"></i> Stock Distribution</h1>
-    <p class="text-muted">Manager & Supervisor Stock Assignment Portal &mdash; distribute stock kits to users. Your password is required to confirm each distribution.</p>
-
-    <form method="post" class="distribution-form">
-        {% csrf_token %}
-
-        <div class="form-group">
-            <label for="recipient_user">Recipient</label>
-            <select name="recipient_user" id="recipient_user" class="form-control" required>
-                <option value="">Select a user...</option>
-                {% for u in recipients %}
-                <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
-                {% endfor %}
-            </select>
+<div class="distribution-page">
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-share-nodes" aria-hidden="true"></i> Stock Distribution</h1>
+            <p class="dashboard-subtitle">Assign stock to a workspace member. Confirm each distribution with your password.</p>
         </div>
+    </header>
 
-        <div class="form-group">
-            <label for="confirm_password">Confirm your password</label>
-            <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
-        </div>
+    <div class="distribution-layout">
+        <form method="post" class="distribution-form">
+            {% csrf_token %}
 
-        <h2>Kits to distribute</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Kit Type</th>
-                    <th>Quantity</th>
-                    <th>Condition</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for kit_type in kit_types %}
-                <tr>
-                    <td>{{ kit_type.name }} <small>({{ kit_type.code }})</small></td>
-                    <td><input type="number" name="kit_type_{{ kit_type.id }}_qty" class="form-control" min="0" value="0"></td>
-                    <td>
-                        <select name="kit_type_{{ kit_type.id }}_condition" class="form-control">
-                            <option value="new">New</option>
-                            <option value="good">Good</option>
-                            <option value="fair">Fair</option>
-                            <option value="poor">Poor</option>
-                            <option value="damaged">Damaged</option>
-                        </select>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <div class="form-group">
+                <label for="recipient_user">Recipient</label>
+                <select name="recipient_user" id="recipient_user" class="form-control" required>
+                    <option value="">Select a user</option>
+                    {% for u in recipients %}
+                    <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <button type="submit" class="btn btn-primary"><i class="fas fa-share"></i> Distribute Stock</button>
-    </form>
+            <div class="form-group">
+                <label for="confirm_password">Confirm your password</label>
+                <input type="password" name="confirm_password" id="confirm_password" class="form-control" autocomplete="current-password" required>
+            </div>
 
-    <section class="recent-distributions">
-        <h2>Recent Distribution Activity</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Kit</th>
-                    <th>Qty</th>
-                    <th>Recipient</th>
-                    <th>Distributed By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for kit in recent_distributions %}
-                <tr>
-                    <td>{{ kit.timestamp|date:"Y-m-d H:i" }}</td>
-                    <td>{{ kit.kit_type_name }}</td>
-                    <td>{{ kit.quantity }}</td>
-                    <td>{{ kit.user.username }}</td>
-                    <td>{{ kit.created_by.username }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" class="empty-state">No distributions recorded yet.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
+            <div class="distribution-table-heading">
+                <h2>Kits to distribute</h2>
+                <p class="text-muted">Enter a quantity for each kit type you want to assign.</p>
+            </div>
+            <div class="table-scroll-region" role="region" tabindex="0" aria-label="Kit types and quantities">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Kit type</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kit_type in kit_types %}
+                        <tr>
+                            <td>{{ kit_type.name }} <small>({{ kit_type.code }})</small></td>
+                            <td>
+                                <label class="visually-hidden" for="distribution-quantity-{{ kit_type.id }}">Quantity of {{ kit_type.name }}</label>
+                                <input id="distribution-quantity-{{ kit_type.id }}" type="number" name="kit_type_{{ kit_type.id }}_qty" class="form-control" min="0" value="0" inputmode="numeric">
+                            </td>
+                            <td>
+                                <label class="visually-hidden" for="distribution-condition-{{ kit_type.id }}">Condition of {{ kit_type.name }}</label>
+                                <select id="distribution-condition-{{ kit_type.id }}" name="kit_type_{{ kit_type.id }}_condition" class="form-control">
+                                    <option value="new">New</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="damaged">Damaged</option>
+                                </select>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="empty-state">No active kit types are available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-share" aria-hidden="true"></i> Distribute Stock</button>
+            </div>
+        </form>
+
+        <section class="recent-distributions" aria-labelledby="recent-distributions-title">
+            <div class="dashboard-section-heading">
+                <div>
+                    <h2 id="recent-distributions-title">Recent distribution activity</h2>
+                    <p>Latest stock assignments in this workspace.</p>
+                </div>
+            </div>
+            <div class="table-scroll-region" role="region" tabindex="0" aria-label="Recent distribution activity">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Kit</th>
+                            <th scope="col">Qty</th>
+                            <th scope="col">Recipient</th>
+                            <th scope="col">Distributed by</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kit in recent_distributions %}
+                        <tr>
+                            <td>{{ kit.timestamp|date:"M j, Y H:i" }}</td>
+                            <td>{{ kit.kit_type_name }}</td>
+                            <td>{{ kit.quantity }}</td>
+                            <td>{{ kit.user.username }}</td>
+                            <td>{{ kit.created_by.username }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="empty-state">No distributions recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

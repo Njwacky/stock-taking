@@ -159,12 +159,16 @@ class WorkspaceMemberAddForm(forms.Form):
 class StockUsageForm(forms.ModelForm):
     """Form for logging stock usage."""
 
+    quantity_used = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+    )
+
     class Meta:
         model = StockUsage
         fields = ('kit_type', 'quantity_used', 'purpose', 'feedback')
         widgets = {
             'kit_type': forms.Select(attrs={'class': 'form-control'}),
-            'quantity_used': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'purpose': forms.TextInput(attrs={'class': 'form-control'}),
             'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

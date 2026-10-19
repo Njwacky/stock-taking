@@ -9,24 +9,29 @@
 
 {% block content %}
 <div class="comments-container">
-    <h1><i class="fas fa-comments"></i> Manage Feedback</h1>
+    <header class="dashboard-header">
+        <div class="dashboard-heading">
+            <h1><i class="fas fa-comments" aria-hidden="true"></i> Manage Feedback</h1>
+            <p class="dashboard-subtitle">Review, respond to and resolve submitted feedback.</p>
+        </div>
+    </header>
 
-    <div class="dashboard-controls">
-        <a href="{% url 'manage_comments' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
-        <a href="{% url 'manage_comments' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
-        <a href="{% url 'manage_comments' %}?status=reviewed" class="btn btn-sm {% if status_filter == 'reviewed' %}btn-primary{% else %}btn-secondary{% endif %}">Reviewed</a>
-        <a href="{% url 'manage_comments' %}?status=resolved" class="btn btn-sm {% if status_filter == 'resolved' %}btn-primary{% else %}btn-secondary{% endif %}">Resolved</a>
-        <a href="{% url 'manage_comments' %}?status=dismissed" class="btn btn-sm {% if status_filter == 'dismissed' %}btn-primary{% else %}btn-secondary{% endif %}">Dismissed</a>
-    </div>
+    <nav class="dashboard-controls status-filters" aria-label="Filter feedback by status">
+        <a href="{% url 'manage_comments' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}"{% if not status_filter %} aria-current="page"{% endif %}>All</a>
+        <a href="{% url 'manage_comments' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'pending' %} aria-current="page"{% endif %}>Pending</a>
+        <a href="{% url 'manage_comments' %}?status=reviewed" class="btn btn-sm {% if status_filter == 'reviewed' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'reviewed' %} aria-current="page"{% endif %}>Reviewed</a>
+        <a href="{% url 'manage_comments' %}?status=resolved" class="btn btn-sm {% if status_filter == 'resolved' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'resolved' %} aria-current="page"{% endif %}>Resolved</a>
+        <a href="{% url 'manage_comments' %}?status=dismissed" class="btn btn-sm {% if status_filter == 'dismissed' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'dismissed' %} aria-current="page"{% endif %}>Dismissed</a>
+    </nav>
 
     {% for comment in comments %}
-    <div class="comment-admin-item">
+    <article class="comment-admin-item" aria-labelledby="feedback-title-{{ comment.id }}">
         <div class="comment-admin-header">
-            <strong>{{ comment.subject }}</strong>
+            <h2 id="feedback-title-{{ comment.id }}">{{ comment.subject }}</h2>
             <span class="status-badge status-{{ comment.status }}">{{ comment.get_status_display }}</span>
         </div>
         <p class="text-muted">
-            {{ comment.get_category_display }} &middot; {{ comment.user.username }} &middot; {{ comment.created_at|date:"Y-m-d H:i" }}
+            {{ comment.get_category_display }} · {{ comment.user.username }} · {{ comment.created_at|date:"M j, Y H:i" }}
         </p>
         <p>{{ comment.message }}</p>
         {% if comment.admin_response %}
@@ -36,18 +41,19 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
             <div class="form-group">
-                <input type="text" name="admin_response" class="form-control" placeholder="Admin response..."
+                <label class="visually-hidden" for="admin-response-{{ comment.id }}">Response to {{ comment.subject }}</label>
+                <input id="admin-response-{{ comment.id }}" type="text" name="admin_response" class="form-control" placeholder="Write a response (optional)"
                        value="{{ comment.admin_response|default:'' }}">
             </div>
             <div class="form-actions">
-                <button type="submit" name="status" value="reviewed" class="btn btn-secondary btn-sm">Mark Reviewed</button>
+                <button type="submit" name="status" value="reviewed" class="btn btn-secondary btn-sm">Mark reviewed</button>
                 <button type="submit" name="status" value="resolved" class="btn btn-success btn-sm">Resolve</button>
                 <button type="submit" name="status" value="dismissed" class="btn btn-danger btn-sm">Dismiss</button>
             </div>
         </form>
-    </div>
+    </article>
     {% empty %}
-    <p class="empty-state">No feedback found.</p>
+    <p class="empty-state">No feedback found for this status.</p>
     {% endfor %}
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-"""Seed the standard kit types (REQUIREMENTS.md) so a fresh install can add
+"""Seed the standard kit types (docs/REQUIREMENTS.md) so a fresh install can add
 stock immediately — previously KitType rows could only be created through the
 Django admin, leaving every stock dropdown empty.
 

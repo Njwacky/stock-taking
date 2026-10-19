@@ -89,6 +89,19 @@ class TestDashboard:
         content = response.content.decode()
         assert 'member' in content and 'other_member' in content
 
+    def test_member_does_not_see_bulk_selection_controls(self, as_member, kit):
+        content = as_member.get('/').content.decode()
+        assert 'bulk-delete-form' not in content
+        assert 'select-all' not in content
+        assert 'kit-checkbox' not in content
+
+    def test_dashboard_filters_have_visible_labels(self, as_member):
+        content = as_member.get('/').content.decode()
+        assert 'for="filter-search"' in content
+        assert 'for="filter-sort"' in content
+        assert 'for="filter-order"' in content
+        assert 'Search inventory' in content
+
     def test_bulk_delete_manager_only(self, as_member, kit):
         as_member.post('/', {'action': 'bulk_delete', 'kit_ids': [kit.id]})
         assert Kit.objects.filter(id=kit.id, is_active=True).exists()

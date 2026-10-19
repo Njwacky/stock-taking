@@ -47,6 +47,19 @@ class TestNavMarkup:
     def test_ui_css_loaded(self, client):
         assert 'ui.css' in client.get('/').content.decode()
 
+    def test_shared_styles_load_in_cascade_order(self, client):
+        content = client.get('/').content.decode()
+        styles = ['base.css', 'navbar.css', 'footer.css', 'ui.css']
+        positions = [content.index(name) for name in styles]
+        assert positions == sorted(positions)
+        assert 'style.css' not in content
+
+    def test_quoted_service_worker_url_tag_renders(self, client):
+        from django.urls import reverse
+
+        content = client.get('/').content.decode()
+        assert f"navigator.serviceWorker.register('{reverse('service_worker')}')" in content
+
 
 class TestFlashMessages:
     def test_alert_renders_with_close_button(self, as_member):

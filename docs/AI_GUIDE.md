@@ -28,7 +28,7 @@ This is a Django-based Stock Management System designed to track and manage vari
 - **Responsive UI**: Mobile-friendly interface with modern design
 
 ### Technology Stack
-- **Backend**: Django 5.2, Python 3.9+
+- **Backend**: Django 5.2, Python 3.10+
 - **Frontend**: HTML5, CSS3, JavaScript (vanilla)
 - **Database**: SQLite (dev), PostgreSQL (prod)
 - **Authentication**: Django's built-in auth system
@@ -53,33 +53,27 @@ This is a Django-based Stock Management System designed to track and manage vari
 ```
 stock_management_system/
 ├── app_conf/                 # Django project configuration
-│   ├── __init__.py
 │   ├── settings.py          # Main settings file
-│   ├── urls.py             # Root URL configuration
-│   ├── wsgi.py             # WSGI configuration
-│   └── asgi.py             # ASGI configuration
-├── stockT/                 # Main Django app
-│   ├── __init__.py
-│   ├── admin.py            # Django admin configuration
-│   ├── apps.py             # App configuration
-│   ├── models.py           # Data models
-│   ├── views.py            # View functions
-│   ├── urls.py             # App URL configuration
-│   ├── forms.py            # Form classes
-│   ├── tests.py            # Test cases
-│   ├── managers.py         # Custom model managers
-│   └── signals.py          # Django signals
-├── static/                 # Static files (CSS, JS, images)
-│   ├── css/
-│   ├── js/
-│   └── images/
-├── templates/              # HTML templates
-│   └── stockT/
-├── media/                  # User-uploaded files
-├── logs/                   # Application logs
-├── requirements.txt        # Python dependencies
-├── manage.py              # Django management script
-└── README.md              # Project documentation
+│   ├── urls.py              # Root URL configuration
+│   ├── wsgi.py              # WSGI configuration
+│   └── asgi.py              # ASGI configuration
+├── stockT/                  # Main Django app
+│   ├── admin.py             # Django admin configuration
+│   ├── apps.py              # App configuration
+│   ├── models.py            # Data models
+│   ├── views.py             # View functions
+│   ├── urls.py              # App URL configuration
+│   ├── forms.py             # Form classes
+│   └── signals.py            # Django signals
+├── static/                  # Static files (CSS, JS, images)
+├── tests/                   # Automated and manual tests
+│   ├── unit/                # Default pytest suite
+│   └── manual/              # Interactive and diagnostic checks
+├── docs/                    # Guides, setup notes, reports, implementation docs
+├── media/                   # User-uploaded files
+├── logs/                    # Application logs
+├── requirements.txt         # Python dependencies
+└── manage.py                # Django management script
 ```
 
 ### Data Models Overview
@@ -191,8 +185,8 @@ class Kit(models.Model):
 
 #### Prerequisites
 ```bash
-# Install Python 3.9+
-python --version  # Should be 3.9+
+# Install Python 3.10+
+python --version  # Should be 3.10+
 
 # Install virtual environment
 pip install virtualenv
@@ -230,102 +224,63 @@ python manage.py runserver
 
 #### Prerequisites
 ```bash
-# Install Docker and Docker Compose
-docker --version  # Should be 20.10+
-docker-compose --version  # Should be 1.29+
+# Install Docker Engine and the Docker Compose plugin
+docker --version
+docker compose version
 
-# Create environment file
+# Create the local-development environment file
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env if you need LAN access or an external PostgreSQL URL
+mkdir -p data media logs staticfiles
+# On Linux/macOS, make bind-mounted files writable by your local user
+export LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)"
 ```
 
 #### Docker Development Commands
 ```bash
-# Build and start all services
-docker-compose up
+# Build and start the local development app (host port 8001)
+docker compose up --build
 
-# Build images only
-docker-compose build
+# Start in the background
+docker compose up -d
 
-# Start services in background
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Stop services and remove volumes
-docker-compose down -v
+# View logs / stop the app
+docker compose logs -f web
+docker compose down
 
 # Access Django shell
-docker-compose exec web python manage.py shell
+docker compose exec web python manage.py shell
 
-# Run migrations
-docker-compose exec web python manage.py migrate
-
-# Create superuser
-docker-compose exec web python manage.py createsuperuser
-
-# View database
-docker-compose exec db psql -U postgres -d stock_management
+# Run migrations (normally applied by the entrypoint)
+docker compose exec web python manage.py migrate
 ```
 
 #### Service Overview
-- **web**: Django application with Gunicorn
-- **db**: PostgreSQL database
-- **redis**: Redis cache server
-- **nginx**: Nginx web server (production profile)
-- **celery**: Background task worker (production profile)
-- **celery-beat**: Scheduled task scheduler (production profile)
+The checked-in Compose file defines only a **web** service. It runs Django's development server, exposes host port 8001, and persists SQLite under `./data`. It does not define PostgreSQL, Redis, Nginx, Celery, or a production profile.
 
 ### Docker Production Deployment
 
-#### Production Setup
+The local Compose file is not a production stack. Build the Dockerfile's Gunicorn image and deploy it with a separately managed PostgreSQL database and HTTPS reverse proxy. For example:
+
 ```bash
-# Create production environment file
-cp .env.example .env.production
-# Edit .env.production with production settings
-
-# Start production services
-docker-compose --profile production up -d
-
-# View production logs
-docker-compose --profile production logs -f
-
-# Backup database
-docker-compose exec db pg_dump -U postgres stock_management > backup.sql
-
-# Restore database
-docker-compose exec -T db psql -U postgres stock_management < backup.sql
+# Prepare .env.production with DEBUG=False, a generated SECRET_KEY,
+# explicit ALLOWED_HOSTS, a reachable DATABASE_URL, and HTTPS settings.
+docker build -t stock-management:latest .
+docker run -d --restart unless-stopped --name stock-management \
+  --env-file .env.production -p 127.0.0.1:8000:8000 stock-management:latest
 ```
 
-#### Production Configuration
-- **Environment**: Set `DEBUG=False` and configure proper `SECRET_KEY`
-- **Database**: Use PostgreSQL with persistent volumes
-- **Static Files**: Served by Nginx with caching
-- **Media Files**: Stored in persistent volumes or cloud storage
-- **SSL**: Configure SSL certificates in Nginx
-- **Security**: Enable all security headers and rate limiting
-- **Monitoring**: Health checks and logging enabled
-
-#### Production Services
-- **Web Application**: 3 Gunicorn workers, optimized for production
-- **Database**: PostgreSQL with connection pooling
-- **Cache**: Redis for session and application caching
-- **Web Server**: Nginx with SSL termination and compression
-- **Background Tasks**: Celery for email sending and periodic tasks
-- **Monitoring**: Health checks and comprehensive logging
+Use your platform's persistent storage, secret manager, database backups, and proxy/network configuration for production; do not publish the application port publicly when a reverse proxy should receive traffic.
 
 #### Environment Variables for Production
 ```bash
 # Required
 DEBUG=False
-SECRET_KEY=your-production-secret-key
+# Generate with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+SECRET_KEY=<generated-random-key>
 ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-DATABASE_URL=postgresql://user:pass@db:5432/stock_management
-REDIS_URL=redis://redis:6379/0
+CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+DATABASE_URL=postgresql://user:password@your-db-host:5432/stock_management?sslmode=require
 
 # Email Configuration
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
@@ -335,15 +290,14 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your-email@domain.com
 EMAIL_HOST_PASSWORD=your-email-password
 
-# Security Settings
+# Security Settings (HTTPS must terminate at a trusted reverse proxy)
 SECURE_SSL_REDIRECT=True
 SECURE_HSTS_SECONDS=31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS=True
-SECURE_HSTS_PRELOAD=True
-SECURE_CONTENT_TYPE_NOSNIFF=True
-SECURE_BROWSER_XSS_FILTER=True
+SECURE_HSTS_INCLUDE_SUBDOMAINS=False
+SECURE_HSTS_PRELOAD=False
 SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True
+USE_X_FORWARDED_PROTO=True
 ```
 
 #### Docker File Structure
@@ -374,29 +328,20 @@ project-root/
 
 #### Troubleshooting Docker Issues
 ```bash
-# Check container status
-docker-compose ps
+# Check the local Compose app
+docker compose ps
 
-# View specific service logs
-docker-compose logs web
-docker-compose logs db
-docker-compose logs redis
+# View logs and open a shell in the web container
+docker compose logs web
+docker compose exec web sh
 
-# Access container shell
-docker-compose exec web bash
-docker-compose exec db bash
-
-# Check disk usage
+# Check disk usage and clean unused resources
 docker system df
-
-# Clean up unused resources
 docker system prune -a
 
-# Rebuild specific service
-docker-compose build --no-cache web
-
-# Force recreate containers
-docker-compose up -d --force-recreate
+# Rebuild and recreate the web service
+docker compose build --no-cache web
+docker compose up -d --force-recreate web
 ```
 
 ## Recent Bug Fixes & Updates

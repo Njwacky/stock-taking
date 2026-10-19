@@ -127,13 +127,13 @@ All automated checks passed. System is ready for manual testing and user accepta
 
 ```bash
 # Check database
-python quick_check.py
+python -m tests.manual.quick_check
 
 # Check URLs
-python check_urls.py
+python -m tests.manual.check_urls
 
 # Run full test suite
-python run_full_test.py
+python -m tests.manual.run_full_test
 
 # Start server
 python manage.py runserver

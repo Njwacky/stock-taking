@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Quick test script for Comment System
-Run with: python test_comment_system.py
+Run with: python -m tests.manual.test_comment_system
 """
 
 import os
