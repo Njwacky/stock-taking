@@ -7,7 +7,7 @@
     justify-content: center;
     background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     padding: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-sans);
 }
 
 .login-card {
@@ -39,7 +39,7 @@
 }
 
 .login-header h1 {
-    color: #2c3e50;
+    color: var(--text);
     font-size: 2rem;
     font-weight: 700;
     margin: 0 0 10px 0;
@@ -47,7 +47,7 @@
 }
 
 .login-header p {
-    color: #6c757d;
+    color: var(--text-muted);
     font-size: 0.95rem;
     margin: 0;
 }
@@ -59,7 +59,7 @@
 .login-form label {
     display: block;
     margin-bottom: 8px;
-    color: #2c3e50;
+    color: var(--text);
     font-weight: 600;
     font-size: 0.9rem;
 }
@@ -68,11 +68,11 @@
 .login-form input[type="password"] {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e9ecef;
+    border: 2px solid #e8dedb;
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.3s ease;
-    background: #ffffff;
+    background: var(--card-bg);
     box-sizing: border-box;
 }
 
@@ -80,7 +80,7 @@
 .login-form input[type="password"]:focus {
     outline: none;
     border-color: #2E6347;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(46, 99, 71, 0.1);
     transform: translateY(-1px);
 }
 
@@ -90,7 +90,7 @@
 }
 
 .login-form .error {
-    color: #dc3545;
+    color: #B72818;
     font-size: 0.85rem;
     margin-top: 5px;
     display: block;
@@ -98,7 +98,7 @@
 
 .login-form .help-text {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: var(--text-muted);
     margin-top: 5px;
 }
 
@@ -120,7 +120,7 @@
 
 .login-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 6px 20px rgba(46, 99, 71, 0.3);
 }
 
 .login-button:active {
@@ -146,7 +146,7 @@
     text-align: center;
     margin-top: 25px;
     padding-top: 20px;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid #e8dedb;
 }
 
 .login-links a {
@@ -163,7 +163,7 @@
 }
 
 .login-links .divider {
-    color: #6c757d;
+    color: var(--text-muted);
     margin: 0 10px;
 }
 
@@ -176,27 +176,27 @@
 }
 
 .alert-success {
-    background-color: #d4edda;
-    border-color: #28a745;
-    color: #155724;
+    background-color: #e8f5ed;
+    border-color: #2E6347;
+    color: #24503a;
 }
 
 .alert-error {
-    background-color: #f8d7da;
-    border-color: #dc3545;
-    color: #721c24;
+    background-color: #f7ded8;
+    border-color: #B72818;
+    color: #8c1e12;
 }
 
 .alert-info {
-    background-color: #d1ecf1;
-    border-color: #17a2b8;
-    color: #0c5460;
+    background-color: #eaf3ed;
+    border-color: #2E6347;
+    color: #24503a;
 }
 
 .alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffc107;
-    color: #856404;
+    background-color: #f6efec;
+    border-color: #8a5a33;
+    color: #78352E;
 }
 
 /* Responsive design */
@@ -236,27 +236,27 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     .login-card {
-        border: 2px solid #333;
-        background: #ffffff;
+        border: 2px solid #382523;
+        background: var(--card-bg);
     }
     
     .login-form input[type="text"],
     .login-form input[type="password"] {
-        border: 2px solid #333;
+        border: 2px solid #382523;
     }
     
     .login-form input[type="text"]:focus,
     .login-form input[type="password"]:focus {
-        border-color: #0066cc;
+        border-color: #2E6347;
     }
     
     .login-button {
-        background: #0066cc;
-        border: 2px solid #333;
+        background: #2E6347;
+        border: 2px solid #382523;
     }
     
     .login-links a {
-        color: #0066cc;
+        color: #2E6347;
         font-weight: 700;
     }
 }
@@ -323,13 +323,13 @@
     left: 0;
     right: 0;
     height: 1px;
-    background-color: #e9ecef;
+    background-color: #e8dedb;
 }
 
 .social-login-divider span {
     background-color: rgba(255, 255, 255, 0.95);
     padding: 0 15px;
-    color: #6c757d;
+    color: var(--text-muted);
     font-size: 0.85rem;
     font-weight: 500;
     position: relative;
@@ -371,14 +371,14 @@
 
 /* Google */
 .google-btn {
-    background-color: #ffffff;
-    color: #757575;
-    border-color: #dadce0;
+    background-color: var(--card-bg);
+    color: var(--text-muted);
+    border-color: #d9cdc8;
 }
 
 .google-btn:hover {
-    background-color: #f8f9fa;
-    border-color: #dadce0;
+    background-color: var(--page-bg);
+    border-color: #d9cdc8;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 

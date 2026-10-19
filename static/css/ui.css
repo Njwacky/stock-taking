@@ -34,6 +34,33 @@
     --radius: 10px;
     --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08);
     --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.1);
+
+    /* Typography — one stack everywhere, tabular figures in data views */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+
+    /* Inputs & focus */
+    --input-bg: #ffffff;
+    --input-border: #d9cdc8;
+    --input-hover: #b3a29b;
+    --input-disabled-bg: #f1ece9;
+    --input-disabled-text: #8a7770;
+    --focus-color: #2E6347;
+    --focus-ring: rgba(46, 99, 71, 0.28);
+    --focus-ring-strong: rgba(46, 99, 71, 0.55);
+
+    /* Surfaces & motion */
+    --tint-hover: #f4efec;
+    --tint-active: #ebe3df;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow-xs: 0 1px 2px rgba(56, 37, 35, 0.06);
+    --shadow-lg: 0 16px 48px rgba(56, 37, 35, 0.18);
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --speed: 0.18s;
 }
 
 /* --------------------------------------------------------------------------
@@ -73,7 +100,7 @@ body {
     top: 0;
     z-index: 12000;
     padding: 10px 14px;
-    background: #fff;
+    background: var(--card-bg);
     color: var(--secondary);
     font-size: 13px;
     font-weight: 700;
@@ -144,7 +171,7 @@ body {
 
 /* Active pill inverts (blaqVibe): solid white on the gradient */
 .nav-link[aria-current="page"] {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--secondary);
     border-color: #fff;
     font-weight: 700;
@@ -161,7 +188,7 @@ body {
 }
 
 .nav-pill-accent {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--secondary);
     border-color: #fff;
     font-weight: 700;
@@ -298,7 +325,7 @@ body {
 }
 
 .nav-menu a:hover {
-    background: #f1f5f9;
+    background: var(--tint-hover);
     color: var(--text);
 }
 
@@ -353,6 +380,18 @@ body {
     --page-bg: #1d1918;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.3);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+    --input-bg: #342a28;
+    --input-border: #564340;
+    --input-hover: #6d5651;
+    --input-disabled-bg: #2a2220;
+    --input-disabled-text: #9b8983;
+    --focus-color: #18B864;
+    --focus-ring: rgba(24, 184, 100, 0.35);
+    --focus-ring-strong: rgba(24, 184, 100, 0.6);
+    --tint-hover: #382c2a;
+    --tint-active: #433431;
 }
 
 :root[data-theme="dark"] body {
@@ -371,7 +410,7 @@ body {
 :root[data-theme="dark"] .btn-secondary,
 :root[data-theme="dark"] .btn-outline-danger {
     color: var(--text);
-    background: #382f2c;
+    background: #382523;
     border-color: var(--border);
 }
 
@@ -413,7 +452,7 @@ body {
 
 :root[data-theme="dark"] .nav-menu a:hover,
 :root[data-theme="dark"] .data-table tbody tr:hover {
-    background: #382f2c;
+    background: #382523;
 }
 
 :root[data-theme="dark"] .nav-menu a[aria-current="page"] {
@@ -435,7 +474,7 @@ body {
 
 :root[data-theme="dark"] .data-table thead th {
     color: #e4d9d4;
-    background: #382f2c;
+    background: #382523;
 }
 
 :root[data-theme="dark"] .form-control,
@@ -595,7 +634,7 @@ body {
     font-weight: 600;
     line-height: 1.25;
     color: var(--text);
-    background: #edf2f7;
+    background: var(--tint-hover);
     border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
@@ -617,7 +656,7 @@ body {
 }
 
 .btn:focus-visible {
-    outline: 3px solid rgba(46, 99, 71, 0.45);
+    outline: 3px solid var(--focus-ring-strong);
     outline-offset: 2px;
 }
 
@@ -638,14 +677,14 @@ body {
 }
 
 .btn-secondary {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--text);
     border-color: var(--border);
 }
 
 .btn-secondary:hover {
-    background: #f7fafc;
-    border-color: #cbd5e0;
+    background: var(--page-bg);
+    border-color: #d9cdc8;
     color: var(--text);
 }
 
@@ -655,7 +694,7 @@ body {
 }
 
 .btn-success:hover {
-    background: #276749;
+    background: #24503a;
     color: #fff;
 }
 
@@ -680,7 +719,7 @@ body {
 }
 
 .btn-outline-danger {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--danger);
     border-color: var(--danger);
 }
@@ -795,20 +834,20 @@ body {
 .alert-error,
 .alert-danger {
     background: var(--danger-bg);
-    border-color: #f5c2c2;
+    border-color: #eeb9b1;
     color: var(--danger);
 }
 
 .alert-warning {
     background: var(--warning-bg);
-    border-color: #f3d9a4;
+    border-color: #f3e7d3;
     color: var(--warning);
 }
 
 .alert-info,
 .alert-debug {
     background: var(--info-bg);
-    border-color: #bfd7f2;
+    border-color: #cfe0d6;
     color: var(--info);
 }
 
@@ -883,7 +922,7 @@ body {
 }
 
 .role-badge.role-user {
-    background: #edf2f7;
+    background: var(--tint-hover);
     color: var(--text-muted);
 }
 
@@ -962,8 +1001,8 @@ body {
 }
 
 .data-table thead th {
-    background: #f1f5f9;
-    color: #4a5568;
+    background: var(--tint-hover);
+    color: var(--text-muted);
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
@@ -976,7 +1015,7 @@ body {
 }
 
 .data-table tbody tr:hover {
-    background: #f7fafc;
+    background: var(--page-bg);
 }
 
 .data-table a {
@@ -1078,7 +1117,7 @@ body {
 
 .errorlist.nonfield {
     background: var(--danger-bg);
-    border: 1px solid #f5c2c2;
+    border: 1px solid #eeb9b1;
     border-radius: 8px;
     padding: 10px 14px;
     margin-bottom: 14px;
@@ -1145,19 +1184,24 @@ body {
 }
 
 /* Immersive auth pages (login / register / password reset)  */
+/* Immersive auth pages (login / register / password reset / workspace create):
+   one focused task per page on the brand panel, card floating on top. */
 .auth-container {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: calc(100vh - 260px);
-    padding: 20px;
+    padding: 28px 20px;
+    background: var(--gradient);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-lg);
 }
 
 /* login.css gives .login-container a 100vh purple backdrop which pushes the
    footer off-screen inside the app chrome — keep the look, fit the page. */
 .login-container {
     min-height: calc(100vh - 260px);
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
 }
 
 .auth-card {
@@ -1201,7 +1245,8 @@ body {
    Empty states
    -------------------------------------------------------------------------- */
 
-.empty-state {
+td.empty-state,
+.data-table .empty-state {
     display: table-cell;
     padding: 36px 16px !important;
     text-align: center;
@@ -1213,10 +1258,16 @@ body {
 p.empty-state,
 div.empty-state {
     display: block;
-    padding: 28px 16px !important;
-    background: var(--card-bg);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
+    margin: 0;
+    padding: 22px 16px !important;
+    text-align: center;
+    background: var(--tint-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-style: normal;
+    line-height: 1.55;
 }
 
 /* --------------------------------------------------------------------------
@@ -1249,7 +1300,7 @@ div.empty-state {
 
 .comment-admin-item.unread {
     border-left: 4px solid var(--primary);
-    background: #f8faff;
+    background: var(--tint-hover);
 }
 
 .comment-admin-header {
@@ -1339,7 +1390,7 @@ div.empty-state {
 }
 
 .hero-actions .btn-primary {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--secondary);
 }
 
@@ -1454,8 +1505,8 @@ div.empty-state {
    -------------------------------------------------------------------------- */
 
 .footer {
-    background: #2c3e50;
-    color: #ecf0f1;
+    background: #382523;
+    color: #efe7e2;
     padding: 36px 20px 0;
     margin-top: auto;
     font-size: 0.92rem;
@@ -1484,7 +1535,7 @@ div.empty-state {
 
 .footer-section p {
     margin: 0;
-    color: #bdc3c7;
+    color: #c9bbb4;
     line-height: 1.6;
 }
 
@@ -1496,17 +1547,17 @@ div.empty-state {
 
 .footer-section li {
     margin: 7px 0;
-    color: #bdc3c7;
+    color: #c9bbb4;
 }
 
 .footer-section a {
-    color: #bdc3c7;
+    color: #c9bbb4;
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .footer-section a:hover {
-    color: #fff;
+    color: #18B864;
     text-decoration: underline;
 }
 
@@ -1520,7 +1571,7 @@ div.empty-state {
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     text-align: center;
     padding: 14px 10px;
-    color: #95a5a6;
+    color: #a99a94;
     font-size: 0.85rem;
 }
 
@@ -1529,7 +1580,7 @@ div.empty-state {
 }
 
 .footer-bottom p:last-child {
-    color: #bdc3c7;
+    color: #c9bbb4;
     font-style: normal;
 }
 
@@ -1672,7 +1723,7 @@ div.empty-state {
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
-    background: #fff;
+    background: var(--card-bg);
     min-height: 38px;
     cursor: pointer;
 }
@@ -1745,8 +1796,7 @@ div.empty-state {
    -------------------------------------------------------------------------- */
 
 body {
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
+    font-family: var(--font-sans);
     font-size: 16px;
     line-height: 1.5;
 }
@@ -1832,15 +1882,15 @@ body {
 .legend-item {
     min-width: 0;
     padding: 10px 12px;
-    background: #f8fafc;
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 9px;
     transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .legend-item:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: var(--tint-hover);
+    border-color: #d9cdc8;
     transform: none;
     box-shadow: none;
 }
@@ -1889,7 +1939,7 @@ body {
 }
 
 .filter-field label {
-    color: #475569;
+    color: var(--text-muted);
     font-size: 12.5px;
     font-weight: 700;
 }
@@ -1901,16 +1951,16 @@ body {
     height: 42px;
     margin: 0;
     padding: 8px 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid #d9cdc8;
     border-radius: 8px;
     color: var(--text);
-    background-color: #fff;
+    background-color: var(--card-bg);
     font-size: 14px;
 }
 
 .dashboard-controls .form-control:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.16);
+    box-shadow: 0 0 0 3px rgba(46, 99, 71, 0.16);
 }
 
 .dashboard-controls input[type="search"] {
@@ -1940,7 +1990,7 @@ body {
 }
 
 .table-scroll-region:focus-visible {
-    outline: 3px solid rgba(102, 126, 234, 0.4);
+    outline: 3px solid rgba(46, 99, 71, 0.4);
     outline-offset: 3px;
 }
 
@@ -1956,8 +2006,8 @@ body {
 
 .data-table thead th {
     padding: 13px 15px;
-    background: #f8fafc;
-    color: #475569;
+    background: var(--page-bg);
+    color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     font-size: 12px;
 }
@@ -1968,7 +2018,7 @@ body {
 }
 
 .data-table tbody tr:hover {
-    background: #f8fafc;
+    background: var(--page-bg);
 }
 
 .data-table .select-column {
@@ -1992,12 +2042,6 @@ body {
     accent-color: var(--primary);
 }
 
-.empty-state {
-    color: var(--text-muted);
-    font-style: normal;
-    line-height: 1.55;
-}
-
 .bulk-actions-bar,
 .sticky-bulk-actions-bar {
     display: none;
@@ -2007,7 +2051,7 @@ body {
     padding: 12px 16px;
     color: var(--text);
     background: #eaf3ed;
-    border: 1px solid #c7d2fe;
+    border: 1px solid #cfe0d6;
     border-radius: 10px;
     box-shadow: var(--shadow-sm);
     animation: none;
@@ -2170,9 +2214,10 @@ body {
 .login-form label {
     display: block;
     margin: 0 0 6px;
-    color: #475569;
-    font-size: 13.5px;
+    color: var(--text-muted);
+    font-size: 13px;
     font-weight: 650;
+    letter-spacing: 0.01em;
 }
 
 .form-control {
@@ -2182,36 +2227,52 @@ body {
     min-height: 44px;
     margin: 0;
     padding: 10px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
     color: var(--text);
-    background: #fff;
-    box-shadow: none;
+    background: var(--input-bg);
+    box-shadow: var(--shadow-xs);
     font: inherit;
     font-size: 15px;
     line-height: 1.4;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: border-color var(--speed) var(--ease), box-shadow var(--speed) var(--ease),
+        background-color var(--speed) var(--ease);
 }
 
 .form-control:hover:not(:disabled) {
-    border-color: #94a3b8;
+    border-color: var(--input-hover);
 }
 
 .form-control:focus,
 .form-control:focus-visible {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.16);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-control:disabled {
-    color: #64748b;
-    background: #f1f5f9;
+    color: var(--input-disabled-text);
+    background: var(--input-disabled-bg);
     cursor: not-allowed;
+}
+
+.form-control::placeholder {
+    color: var(--input-disabled-text);
+    opacity: 1;
 }
 
 select.form-control {
     padding-right: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236c544f' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+}
+
+:root[data-theme="dark"] select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23c0b1ac' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
 }
 
 textarea.form-control {
@@ -2331,7 +2392,7 @@ textarea.form-control {
 }
 
 .status-filters .btn[aria-current="page"] {
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.22);
+    box-shadow: 0 2px 8px rgba(46, 99, 71, 0.22);
 }
 
 /* Stock usage: the template uses its own compact class names, so style those
@@ -2395,7 +2456,7 @@ textarea.form-control {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 12px;
     padding: 13px 14px;
-    background: #f8fafc;
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
@@ -2495,7 +2556,7 @@ textarea.form-control {
     min-width: 0;
     min-height: 0;
     padding: 16px;
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: none;
@@ -2503,7 +2564,7 @@ textarea.form-control {
 
 .kit-type-card.item-card:hover {
     transform: translateY(-1px);
-    border-color: #c7d2fe;
+    border-color: #cfe0d6;
     box-shadow: var(--shadow-sm);
 }
 
@@ -2517,7 +2578,7 @@ textarea.form-control {
 }
 
 .kit-type-label:focus-within {
-    outline: 3px solid rgba(102, 126, 234, 0.28);
+    outline: 3px solid rgba(46, 99, 71, 0.28);
     outline-offset: 5px;
     border-radius: 6px;
 }
@@ -2543,8 +2604,8 @@ textarea.form-control {
 
 .kit-type-code {
     padding: 3px 8px;
-    color: #475569;
-    background: #f1f5f9;
+    color: var(--text-muted);
+    background: var(--tint-hover);
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
@@ -2553,7 +2614,7 @@ textarea.form-control {
 .kit-type-fields {
     margin-top: 14px;
     padding: 14px;
-    background: #f8fafc;
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
@@ -2620,7 +2681,7 @@ textarea.form-control {
     gap: 18px;
     margin: 10px 0;
     padding: 16px;
-    background: #f8fafc;
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
@@ -2646,7 +2707,7 @@ textarea.form-control {
     min-height: 36px;
     padding: 7px 10px;
     color: var(--text);
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 7px;
     cursor: pointer;
@@ -2655,7 +2716,7 @@ textarea.form-control {
 .kit-action-btn:hover,
 .kit-action-btn:focus-visible {
     border-color: var(--primary);
-    background: #f8faff;
+    background: var(--tint-hover);
 }
 
 /* Workspace settings use the same panel and form rhythm as other pages. */
@@ -2690,8 +2751,8 @@ textarea.form-control {
     gap: 9px;
     margin: 16px 0 0;
     padding: 12px 14px;
-    color: #475569;
-    background: #f8fafc;
+    color: var(--text-muted);
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 9px;
     font-size: 13.5px;
@@ -2786,7 +2847,7 @@ textarea.form-control {
     grid-template-columns: minmax(130px, 0.7fr) minmax(0, 1fr);
     gap: 12px;
     padding: 11px 0;
-    border-bottom: 1px solid #edf0f4;
+    border-bottom: 1px solid #f4efec;
 }
 
 .profile-details > div:last-child {
@@ -2794,7 +2855,7 @@ textarea.form-control {
 }
 
 .profile-details dt {
-    color: #475569;
+    color: var(--text-muted);
     font-size: 13px;
     font-weight: 700;
 }
@@ -2826,7 +2887,7 @@ textarea.form-control {
     height: auto;
     margin: 0 auto 12px;
     padding: 10px;
-    background: #fff;
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
@@ -2839,7 +2900,7 @@ textarea.form-control {
 .floating-comment-btn:focus-visible,
 .floating-panel-close:focus-visible,
 .floating-tab:focus-visible {
-    outline: 3px solid rgba(102, 126, 234, 0.55);
+    outline: 3px solid rgba(46, 99, 71, 0.55);
     outline-offset: 2px;
 }
 
@@ -2861,7 +2922,7 @@ textarea.form-control {
     display: flex;
     flex: 0 0 auto;
     padding: 0 14px;
-    background: #fff;
+    background: var(--card-bg);
     border-bottom: 1px solid var(--border);
 }
 
@@ -3150,7 +3211,7 @@ textarea.form-control {
     flex: 0 0 auto;
     gap: 4px;
     padding: 0 14px;
-    background: #fff;
+    background: var(--card-bg);
     border-bottom: 1px solid var(--border);
 }
 
@@ -3170,7 +3231,7 @@ textarea.form-control {
 
 .floating-tabs .floating-tab:hover {
     color: var(--primary-dark);
-    background: #f8faff;
+    background: var(--tint-hover);
 }
 
 .floating-tabs .floating-tab.active,
@@ -3580,10 +3641,410 @@ textarea.form-control {
 }
 
 :root[data-theme="dark"] .login-container,
-:root[data-theme="dark"] .register-container {
+:root[data-theme="dark"] .register-container,
+:root[data-theme="dark"] .auth-container {
     background: var(--page-bg);
+    border-color: var(--border);
 }
 
 :root[data-theme="dark"] .profile-details dt {
     color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Refinement layer — typography metrics, focus system, motion, data density
+   ========================================================================== */
+
+::selection {
+    background: var(--focus-ring);
+    color: var(--text);
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 92px; /* sticky navbar + anchor breathing room */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* One consistent focus story for every interactive surface. */
+:where(a, button, summary, [role="tab"], [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+:where(a, button, summary, [role="tab"], [role="button"], [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Data density: figures line up in columns, tables scan faster */
+.stat-value,
+.data-table .cell-quantity,
+.data-table td[data-numeric],
+.data-table .numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+.stat-value {
+    letter-spacing: -0.015em;
+}
+
+/* Display headings share one voice */
+.dashboard-heading h1,
+.dashboard-header h1,
+.tracking-header h1,
+.form-card h1,
+.auth-card h1,
+.error-page h1 {
+    letter-spacing: -0.012em;
+    font-weight: 750;
+}
+
+/* Buttons: crisp press, no accidental text selection */
+.btn,
+.button,
+.theme-toggle,
+.nav-link,
+.nav-user-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn-sm {
+    font-size: 13px;
+}
+
+/* Content links inside prose */
+.main-content > p a,
+.prose a,
+.form-help a {
+    color: var(--primary-dark);
+    font-weight: 600;
+    text-decoration-color: var(--focus-ring-strong);
+    text-underline-offset: 2px;
+}
+
+.main-content > p a:hover,
+.prose a:hover {
+    text-decoration-color: currentColor;
+}
+
+/* Flash messages enter gently */
+.messages-container .alert {
+    animation: alert-in 0.28s var(--ease) both;
+}
+
+@keyframes alert-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .messages-container .alert {
+        animation: none;
+    }
+}
+
+/* Account menu opens with a small fade/slide */
+.nav-menu.open {
+    animation: menu-in 0.16s var(--ease) both;
+}
+
+@keyframes menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-menu.open {
+        animation: none;
+    }
+}
+
+/* Empty states: one calm visual language */
+.empty-state i,
+.empty-state .empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 10px;
+    font-size: 21px;
+    color: var(--primary);
+    background: var(--info-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    max-width: 46ch;
+    margin-inline: auto;
+}
+
+/* Code and keycaps use the mono voice */
+code, kbd, pre, samp {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+}
+
+kbd {
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--tint-hover);
+    color: var(--text);
+    font-size: 0.85em;
+}
+
+/* Themed scrollbars — subtle, brand-warm */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input-hover) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--input-border);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--input-hover);
+    background-clip: padding-box;
+}
+
+/* Images inside cards never overflow */
+.card img,
+.form-card img,
+.profile-card img {
+    border-radius: var(--radius-sm);
+}
+
+/* Destructive dialogs: strong first action, calm secondary */
+.modal-actions .btn-danger,
+.reset-action-buttons .btn-danger {
+    box-shadow: var(--shadow-xs);
+}
+
+/* Table headers already carry the micro-caps voice; keep form labels readable
+   and give filter labels the same muted emphasis. */
+.filter-field label {
+    color: var(--text-muted);
+}
+
+/* Panels: consistent inner rhythm */
+.form-card > :first-child,
+.tracking-form-card > :first-child,
+.ws-settings-panel > :first-child {
+    margin-top: 0;
+}
+
+.form-card > :last-child,
+.tracking-form-card > :last-child {
+    margin-bottom: 0;
+}
+
+/* Auth footer links — shared by login, register, reset and workspace pages
+   (login.css styled these locally, leaving the other auth pages bare). */
+.login-links {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.login-links a {
+    color: var(--primary-dark);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--speed) var(--ease);
+}
+
+.login-links a:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.login-links .divider {
+    color: var(--text-muted);
+    margin: 0 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Class-name alignment: templates use these names while the page CSS targeted
+   older variants, leaving whole sections unstyled.
+   -------------------------------------------------------------------------- */
+
+/* Anonymous dashboard benefit cards (Why Register carousel) — keep the fixed
+   200px card width and nowrap track that dashboard.js pager math expects
+   (220px = card 200px + gap 20px). */
+.why-register {
+    margin: 8px 0 26px;
+}
+
+.why-register > h2 {
+    margin: 0 0 16px;
+    font-size: 1.35rem;
+    letter-spacing: -0.01em;
+    text-align: center;
+}
+
+.register-card-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 200px;
+    max-width: 200px;
+    flex-shrink: 0;
+    padding: 18px 14px;
+    text-align: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease),
+        border-color var(--speed) var(--ease);
+}
+
+.register-card-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.register-card-item i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--gradient);
+    color: #fff;
+    font-size: 1.05rem;
+    box-shadow: var(--shadow-xs);
+}
+
+.register-card-item h3 {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text);
+}
+
+.register-card-item p {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.why-register-cards {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 20px;
+    width: 100%;
+}
+
+/* Track above, dots below — the page CSS expected a different DOM order. */
+.why-register .carousel-container {
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.carousel-dots .dot {
+    cursor: pointer;
+}
+
+/* Dashboard table rhythm */
+.dashboard-table-area {
+    margin-top: 18px;
+    min-width: 0;
+}
+
+/* Focused-task logout card (matches the auth family) */
+.logout-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 320px);
+    padding: 28px 20px;
+}
+
+.logout-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 36px;
+    text-align: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.logout-card h1 {
+    margin: 0 0 6px;
+    font-size: 1.45rem;
+    letter-spacing: -0.01em;
+}
+
+.logout-card p {
+    margin: 10px 0 24px;
+    color: var(--text-muted);
+}
+
+.logout-card form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.logout-card form .btn {
+    flex: 1 1 160px;
+}
+
+/* Slim page wrappers used by kit-types / reset-requests screens */
+.kit-types-page,
+.reset-requests-page {
+    min-width: 0;
 }

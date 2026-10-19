@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mainTitle) {
         const originalText = mainTitle.textContent;
         mainTitle.textContent = '';
-        mainTitle.style.borderRight = '3px solid #667eea';
+        mainTitle.style.borderRight = '3px solid #18B864';
         mainTitle.style.animation = 'blink 1s infinite';
         
         let charIndex = 0;
@@ -145,7 +145,7 @@ style.textContent = `
     }
     
     @keyframes blink {
-        0%, 50% { border-color: #667eea; }
+        0%, 50% { border-color: #18B864; }
         51%, 100% { border-color: transparent; }
     }
     

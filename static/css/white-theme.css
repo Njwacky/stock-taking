@@ -1,7 +1,7 @@
 /* White theme overrides */
 body {
     background-color: #ffffff !important;
-    color: #333333 !important;
+    color: #382523 !important;
 }
 
 /* Ensure content areas have white background */
@@ -20,16 +20,16 @@ body,
 .card,
 .panel,
 .modal-content {
-    color: #333333 !important;
+    color: #382523 !important;
 }
 
 /* Update links for better visibility */
 a {
-    color: #0066cc !important;
+    color: #2E6347 !important;
 }
 
 a:hover {
-    color: #004d99 !important;
+    color: #24503a !important;
     text-decoration: underline !important;
 }
 
@@ -39,18 +39,18 @@ select,
 textarea,
 .form-control {
     background-color: #ffffff !important;
-    color: #333333 !important;
-    border: 1px solid #cccccc !important;
+    color: #382523 !important;
+    border: 1px solid #d9cdc8 !important;
 }
 
 /* Tables */
 table {
     background-color: #ffffff !important;
-    color: #333333 !important;
+    color: #382523 !important;
 }
 
 th, td {
-    border-color: #dddddd !important;
+    border-color: #e0d4cf !important;
 }
 
 /* Cards and panels */
@@ -58,22 +58,22 @@ th, td {
 .panel,
 .modal-content {
     background-color: #ffffff !important;
-    border: 1px solid #e0e0e0 !important;
+    border: 1px solid #e0d4cf !important;
 }
 
 /* Navigation */
 .navbar {
-    background-color: #f8f9fa !important;
-    border-bottom: 1px solid #e0e0e0 !important;
+    background-color: #f8f6f4 !important;
+    border-bottom: 1px solid #e0d4cf !important;
 }
 
 /* Buttons */
 .btn-primary {
-    background-color: #0066cc !important;
-    border-color: #0052a3 !important;
+    background-color: #2E6347 !important;
+    border-color: #24503a !important;
 }
 
 .btn-primary:hover {
-    background-color: #004d99 !important;
-    border-color: #003d7a !important;
+    background-color: #24503a !important;
+    border-color: #1c3d2c !important;
 }

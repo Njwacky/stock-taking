@@ -20,7 +20,7 @@
 }
 
 .floating-comment-btn:hover {
-    background-color: #382523;
+    background-color: var(--text);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
@@ -87,7 +87,7 @@
 /* Tabs */
 .floating-panel-tabs {
     display: flex;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e8dedb;
     margin-bottom: 16px;
 }
 
@@ -98,7 +98,7 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     font-weight: 500;
-    color: #64748b;
+    color: var(--text-muted);
     transition: all 0.2s;
 }
 
@@ -126,13 +126,13 @@
     display: block;
     margin-bottom: 6px;
     font-weight: 500;
-    color: #334155;
+    color: var(--text);
 }
 
 .floating-form-control {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e8dedb;
     border-radius: 6px;
     font-size: 14px;
     transition: border-color 0.2s;
@@ -141,7 +141,7 @@
 .floating-form-control:focus {
     outline: none;
     border-color: #2E6347;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 0 0 2px rgba(46, 99, 71, 0.2);
 }
 
 textarea.floating-form-control {
@@ -152,11 +152,11 @@ textarea.floating-form-control {
 /* Footer */
 .floating-panel-footer {
     padding: 12px 16px;
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
+    background: var(--page-bg);
+    border-top: 1px solid #e8dedb;
     text-align: center;
     font-size: 13px;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 /* Responsive Adjustments */
