@@ -1,12 +1,37 @@
 """Auth flows: logout (was broken), change own password, admin set password."""
+import re
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import Client
 
 from tests.conftest import make_admin, make_user
 
 User = get_user_model()
 
 pytestmark = pytest.mark.django_db
+
+
+class TestLoginCSRF:
+    def test_login_form_token_is_accepted(self):
+        client = Client(enforce_csrf_checks=True)
+        response = client.get('/login/')
+        match = re.search(
+            rb'name="csrfmiddlewaretoken" value="([^"]+)"',
+            response.content,
+        )
+
+        assert response.status_code == 200
+        assert match is not None
+
+        response = client.post('/login/', {
+            'username': 'unknown-user',
+            'password': 'invalid',
+            'csrfmiddlewaretoken': match.group(1).decode(),
+        })
+
+        assert response.status_code == 200
+        assert b'Invalid username or password.' in response.content
 
 
 class TestLogout:

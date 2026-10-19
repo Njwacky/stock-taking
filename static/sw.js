@@ -1,8 +1,7 @@
 // Service Worker for Stock Tracker PWA
-const CACHE_NAME = 'stock-tracker-v1.2';
+const CACHE_NAME = 'stock-tracker-v1.3';
 const OFFLINE_URL = '/offline/';
 const urlsToCache = [
-  '/',
   '/offline/',
   '/static/css/style.css',
   '/static/css/navbar.css',
@@ -60,6 +59,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+
+  // Dynamic pages contain user-specific data and CSRF tokens; never serve them
+  // from or write them to the offline cache.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(OFFLINE_URL))
+    );
+    return;
+  }
   
   // Handle API requests differently
   if (event.request.url.includes('/api/')) {
@@ -98,13 +107,7 @@ self.addEventListener('fetch', event => {
           
         return response;
       })
-      .catch(() => {
-        // If both network and cache fail, show offline page
-        if (event.request.mode === 'navigate') {
-          return caches.match(OFFLINE_URL);
-        }
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });
 
