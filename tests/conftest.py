@@ -35,39 +35,68 @@ def owner(db):
 
 
 @pytest.fixture
-def manager(db):
-    return make_user('manager', role='manager')
+def workspace(owner):
+    """Shared test workspace owned by the `owner` fixture user.
+
+    The other fixture users join it so cross-user behaviour (manager acts on
+    member data, distributions to recipients, …) keeps working the way the
+    suite expects, inside ONE workspace.
+    """
+    from stockT.workspace import create_workspace
+    return create_workspace('Test Workspace', owner)
+
+
+def join_workspace(workspace, user, role='member'):
+    from stockT.models import WorkspaceMember
+    WorkspaceMember.objects.get_or_create(
+        workspace=workspace, user=user, defaults={'role': role},
+    )
 
 
 @pytest.fixture
-def supervisor(db):
-    return make_user('supervisor', role='supervisor')
+def manager(db, workspace):
+    u = make_user('manager', role='manager')
+    join_workspace(workspace, u, 'admin')
+    return u
 
 
 @pytest.fixture
-def member(db):
-    return make_user('member')
+def supervisor(db, workspace):
+    u = make_user('supervisor', role='supervisor')
+    join_workspace(workspace, u, 'member')
+    return u
 
 
 @pytest.fixture
-def other_member(db):
-    return make_user('other_member')
+def member(db, workspace):
+    u = make_user('member')
+    join_workspace(workspace, u, 'member')
+    return u
 
 
 @pytest.fixture
-def kit_type(db):
+def other_member(db, workspace):
+    u = make_user('other_member')
+    join_workspace(workspace, u, 'member')
+    return u
+
+
+@pytest.fixture
+def kit_type(db, workspace):
     from stockT.models import KitType
     kt, _ = KitType.objects.get_or_create(
-        code='TESTKIT', defaults={'name': 'Test Kit', 'unit_of_measure': 'pieces'}
+        workspace=workspace, code='TESTKIT',
+        defaults={'name': 'Test Kit', 'unit_of_measure': 'pieces'},
     )
     return kt
 
 
 @pytest.fixture
-def kit(member, kit_type):
+def kit(member, kit_type, workspace):
     from stockT.models import Kit
     return Kit.objects.create(
         user=member, kit_type_fk=kit_type, kit_type_string=kit_type.name[:20], quantity=100,
+        workspace=workspace,
     )
 
 

@@ -51,6 +51,28 @@
                     <span class="nav-caret" aria-hidden="true">&#9662;</span>
                 </button>
                 <div class="nav-menu" id="navMenu" role="menu">
+                    <div class="nav-ws-block">
+                        <div class="nav-ws-label">Workspace</div>
+                        <div class="nav-ws-current" title="Active workspace">
+                            <i class="fas fa-layer-group"></i>
+                            <span>{{ current_workspace.name|default:"My Workspace" }}</span>
+                        </div>
+                        {% if user_workspaces|length > 1 %}
+                        <form class="nav-ws-switch" method="post" action="{% url 'workspace_switch' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <select name="workspace_id" aria-label="Switch workspace"
+                                    onchange="this.form.submit()">
+                                {% for ws in user_workspaces %}
+                                <option value="{{ ws.id }}" {% if ws.id == current_workspace.id %}selected{% endif %}>{{ ws.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        {% endif %}
+                        <a role="menuitem" href="{% url 'workspace_create' %}"><i class="fas fa-plus"></i> New workspace</a>
+                        <a role="menuitem" href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}><i class="fas fa-sliders"></i> Workspace settings</a>
+                    </div>
+                    <div class="nav-menu-sep"></div>
                     <a role="menuitem" href="{% url 'profile' %}"{% if request.path == '/profile/' %} aria-current="page"{% endif %}><i class="fas fa-id-badge"></i> Profile</a>
                     <a role="menuitem" href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
                         <i class="fas fa-bell"></i> Notifications
@@ -82,9 +104,7 @@
             </div>
             {% else %}
             <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
-            {% if registration_open %}
-            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-shield"></i> Set Up Workspace</a>
-            {% endif %}
+            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus"></i> Register</a>
             {% endif %}
         </div>
     </nav>

@@ -80,19 +80,110 @@ class User(AbstractUser):
         return self.get_role_display()
 
 
+class Workspace(models.Model):
+    """A workspace is a tenant: each registered user owns one (their "apps"),
+    can create more, and can invite other users as members. All stock data
+    (kit types, kits, usage) is scoped to a workspace."""
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=120, unique=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='created_workspaces',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.name)[:100] or 'workspace'
+            slug = base
+            n = 2
+            while Workspace.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f'{base}-{n}'
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def owner(self):
+        """The user who owns this workspace (first owner membership)."""
+        membership = self.memberships.filter(role=WorkspaceMember.ROLE_OWNER).first()
+        return membership.user if membership else self.created_by
+
+
+class WorkspaceMember(models.Model):
+    """Membership of a user in a workspace, with a per-workspace role."""
+
+    ROLE_OWNER = 'owner'
+    ROLE_ADMIN = 'admin'
+    ROLE_MEMBER = 'member'
+    ROLE_CHOICES = [
+        (ROLE_OWNER, 'Owner'),
+        (ROLE_ADMIN, 'Admin'),
+        (ROLE_MEMBER, 'Member'),
+    ]
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspace_memberships')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['joined_at']
+        constraints = [
+            models.UniqueConstraint(fields=['workspace', 'user'], name='unique_workspace_user'),
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} @ {self.workspace.name} ({self.role})'
+
+    @property
+    def is_manager(self):
+        return self.role in (self.ROLE_OWNER, self.ROLE_ADMIN)
+
+
 class KitType(models.Model):
     """Type/category of stock kits (e.g. VHB tape, rivnuts, feets)."""
 
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     unit_of_measure = models.CharField(max_length=50, default='pieces')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='kit_types',
+    )
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='created_kit_types',
     )
+
+    class Meta:
+        constraints = [
+            # Names/codes are unique per workspace (null workspace = legacy
+            # rows, which are exempt so old fixtures keep working).
+            models.UniqueConstraint(
+                fields=['workspace', 'name'],
+                condition=models.Q(workspace__isnull=False),
+                name='unique_kit_type_name_per_workspace',
+            ),
+            models.UniqueConstraint(
+                fields=['workspace', 'code'],
+                condition=models.Q(workspace__isnull=False),
+                name='unique_kit_type_code_per_workspace',
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -122,6 +213,10 @@ class Kit(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     location = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='kits',
+    )
     # Legacy field kept for backwards compatibility with older data.
     kit_type_legacy = models.CharField(max_length=20, null=True, blank=True)
     kit_type_string = models.CharField(max_length=20, default='')
@@ -300,6 +395,10 @@ class StockUsage(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     admin_notes = models.TextField(null=True, blank=True)
     stock_deleted = models.BooleanField(default=False)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='stock_usages',
+    )
     kit = models.ForeignKey(Kit, on_delete=models.SET_NULL, null=True, blank=True, related_name='usages')
     kit_type = models.ForeignKey(
         KitType, on_delete=models.SET_NULL, null=True, blank=True, related_name='usages',

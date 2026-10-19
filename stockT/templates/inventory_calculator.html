@@ -1,71 +1,279 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Inventory Calculator - Stock Management System{% endblock %}
+{% block title %}Advanced Calculator - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/inventory-calculator.css' %}">
-<link rel="stylesheet" href="{% static 'css/calculator.css' %}">
+<link rel="stylesheet" href="{% static 'css/advanced-calculator.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="calculator-container">
-    <h1><i class="fas fa-calculator"></i> Inventory Calculator</h1>
+<div class="calc-page">
 
-    <div class="calculator-grid">
-        <div class="calculator-card">
-            <h2>Tape Length</h2>
-            <div class="form-group">
-                <label for="tapeWidth">Tape Width (mm)</label>
-                <input type="number" id="tapeWidth" class="form-control" value="18" min="1">
-            </div>
-            <div class="form-group">
-                <label for="tapeQty">Number of Rolls</label>
-                <input type="number" id="tapeQty" class="form-control" value="1" min="0">
-            </div>
-            <button id="calcTapeBtn" class="btn btn-primary">Calculate</button>
-            <div id="tapeResult" class="calculator-result"></div>
-        </div>
+    <header class="calc-page-header">
+        <h1><i class="fas fa-calculator"></i> Advanced Calculator</h1>
+        <p>Standard &amp; scientific maths, live preview, unit conversion and stock tools — all in one friendly workspace.</p>
+    </header>
 
-        <div class="calculator-card">
-            <h2>General Quantity</h2>
-            <div class="form-group">
-                <label for="itemQty">Items per Kit</label>
-                <input type="number" id="itemQty" class="form-control" value="1" min="0">
-            </div>
-            <div class="form-group">
-                <label for="kitQty">Number of Kits</label>
-                <input type="number" id="kitQty" class="form-control" value="1" min="0">
-            </div>
-            <button id="calcItemsBtn" class="btn btn-primary">Calculate</button>
-            <div id="itemsResult" class="calculator-result"></div>
-        </div>
+    {# ---------- Mode tabs ---------- #}
+    <div class="calc-modes" role="tablist" aria-label="Calculator modes">
+        <button type="button" class="calc-mode-btn is-active" role="tab" aria-selected="true"
+                data-mode="standard" id="tab-standard">
+            <i class="fas fa-table-cells-large"></i> Standard
+        </button>
+        <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
+                data-mode="scientific" id="tab-scientific">
+            <i class="fas fa-square-root-variable"></i> Scientific
+        </button>
+        <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
+                data-mode="converter" id="tab-converter">
+            <i class="fas fa-right-left"></i> Converter
+        </button>
+        <button type="button" class="calc-mode-btn" role="tab" aria-selected="false"
+                data-mode="inventory" id="tab-inventory">
+            <i class="fas fa-boxes-stacked"></i> Stock Tools
+        </button>
     </div>
+
+    {# ---------- Calculator + history ---------- #}
+    <div class="calc-workspace">
+        <div class="calc-view" data-view="calculator" role="tabpanel"
+             aria-labelledby="tab-standard">
+
+            <section class="calc-panel" aria-label="Calculator">
+                <div class="calc-display">
+                    <div class="calc-display-top">
+                        <span class="calc-memory-flag" id="calc-memory-flag" title="Memory empty"></span>
+                        <div class="calc-display-actions">
+                            <button type="button" class="calc-chip-btn" id="calc-angle-btn"
+                                    aria-label="Angle mode: DEG (click to switch)">DEG</button>
+                            <button type="button" class="calc-chip-btn" id="calc-copy-result"
+                                    aria-label="Copy current result">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    <input type="text" id="calc-expression" inputmode="text"
+                           autocomplete="off" spellcheck="false"
+                           placeholder="Type an expression or use the keys…"
+                           aria-label="Expression">
+                    <div id="calc-preview" aria-live="polite"></div>
+                </div>
+
+                {# Smart keys: parens + constants always visible; full set in Scientific mode #}
+                <div class="calc-sci" id="calc-sci-keys" aria-label="Scientific functions">
+                    <div class="calc-sci-row">
+                        <button type="button" class="calc-key" data-action="insert" data-value="(" data-key="(">(</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value=")" data-key=")">)</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value="π">π</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value="e">e</button>
+                        <button type="button" class="calc-key" data-action="ans">ANS</button>
+                    </div>
+                    <div class="calc-sci-row calc-sci-row--extra">
+                        <button type="button" class="calc-key" data-action="func" data-value="sin">sin</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="cos">cos</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="tan">tan</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="ln">ln</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="log">log</button>
+                    </div>
+                    <div class="calc-sci-row calc-sci-row--extra">
+                        <button type="button" class="calc-key" data-action="func" data-value="asin">sin⁻¹</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="acos">cos⁻¹</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="atan">tan⁻¹</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="sqrt">√</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value="^" data-key="^">xʸ</button>
+                    </div>
+                    <div class="calc-sci-row calc-sci-row--extra">
+                        <button type="button" class="calc-key" data-action="insert" data-value="!">x!</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value="1÷(">1/x</button>
+                        <button type="button" class="calc-key" data-action="insert" data-value="^2">x²</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="cbrt">∛</button>
+                        <button type="button" class="calc-key" data-action="func" data-value="abs">abs</button>
+                    </div>
+                </div>
+
+                {# Memory keys #}
+                <div class="calc-memory-keys" id="calc-memory-keys" aria-label="Memory keys">
+                    <button type="button" class="calc-key" data-action="mem-clear">MC</button>
+                    <button type="button" class="calc-key" data-action="mem-recall">MR</button>
+                    <button type="button" class="calc-key" data-action="mem-add">M+</button>
+                    <button type="button" class="calc-key" data-action="mem-sub">M−</button>
+                    <button type="button" class="calc-key" data-action="mem-store">MS</button>
+                </div>
+
+                {# Main keypad #}
+                <div class="calc-keypad" id="calc-keypad" aria-label="Calculator keypad">
+                    <button type="button" class="calc-key calc-key--util" data-action="clear" aria-label="Clear all">AC</button>
+                    <button type="button" class="calc-key calc-key--util" data-action="back" aria-label="Backspace"><i class="fas fa-delete-left"></i></button>
+                    <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="%" data-key="%">%</button>
+                    <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="÷" data-key="÷">÷</button>
+
+                    <button type="button" class="calc-key" data-action="insert" data-value="7" data-key="7">7</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="8" data-key="8">8</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="9" data-key="9">9</button>
+                    <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="×" data-key="×">×</button>
+
+                    <button type="button" class="calc-key" data-action="insert" data-value="4" data-key="4">4</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="5" data-key="5">5</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="6" data-key="6">6</button>
+                    <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="−" data-key="-">−</button>
+
+                    <button type="button" class="calc-key" data-action="insert" data-value="1" data-key="1">1</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="2" data-key="2">2</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="3" data-key="3">3</button>
+                    <button type="button" class="calc-key calc-key--op" data-action="insert" data-value="+" data-key="+">+</button>
+
+                    <button type="button" class="calc-key calc-key--util" data-action="negate" aria-label="Toggle sign">±</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="0" data-key="0">0</button>
+                    <button type="button" class="calc-key" data-action="insert" data-value="." data-key="." >.</button>
+                    <button type="button" class="calc-key calc-key--eq" data-action="equals" aria-label="Equals">=</button>
+                </div>
+
+                <p class="calc-kbd-hint">
+                    Keyboard: <kbd>0–9</kbd> <kbd>+ − * /</kbd> <kbd>( )</kbd> <kbd>Enter</kbd> = equals &nbsp;·&nbsp;
+                    <kbd>Esc</kbd> = clear &nbsp;·&nbsp; <kbd>Backspace</kbd> = delete &nbsp;·&nbsp; <kbd>^</kbd> power
+                </p>
+            </section>
+        </div>
+
+        {# History sidebar #}
+        <aside class="calc-history" aria-label="Calculation history">
+            <div class="calc-history-head">
+                <h2><i class="fas fa-clock-rotate-left"></i> History</h2>
+                <button type="button" class="calc-link-btn" id="calc-history-clear" disabled>
+                    <i class="fas fa-trash-can"></i> Clear
+                </button>
+            </div>
+            <div class="calc-history-empty" id="calc-history-empty">
+                <i class="fas fa-inbox"></i>
+                No calculations yet — your results will appear here.<br>
+                Click any result to reuse it.
+            </div>
+            <ul class="calc-history-list" id="calc-history-list"></ul>
+        </aside>
+    </div>
+
+    {# ---------- Converter ---------- #}
+    <div class="calc-view" data-view="converter" role="tabpanel" aria-labelledby="tab-converter" hidden>
+        <section class="calc-tool-panel">
+            <h2><i class="fas fa-right-left"></i> Unit Converter</h2>
+            <p class="calc-tool-sub">Instant, two-way conversions for the units you use in stock — length, mass, volume and area.</p>
+
+            <div class="calc-chip-row" id="conv-categories" role="group" aria-label="Conversion category">
+                <button type="button" class="calc-chip is-active" data-category="length" aria-pressed="true">Length</button>
+                <button type="button" class="calc-chip" data-category="mass" aria-pressed="false">Mass / Weight</button>
+                <button type="button" class="calc-chip" data-category="volume" aria-pressed="false">Volume</button>
+                <button type="button" class="calc-chip" data-category="area" aria-pressed="false">Area</button>
+            </div>
+
+            <div class="calc-conv-grid">
+                <div class="calc-field">
+                    <label for="conv-from-value">From</label>
+                    <input type="number" id="conv-from-value" value="1" step="any" inputmode="decimal">
+                    <select id="conv-from-unit" aria-label="From unit"></select>
+                </div>
+                <button type="button" class="calc-conv-swap" id="conv-swap" aria-label="Swap units">
+                    <i class="fas fa-arrows-rotate"></i>
+                </button>
+                <div class="calc-field">
+                    <label for="conv-to-value">To</label>
+                    <input type="number" id="conv-to-value" step="any" inputmode="decimal">
+                    <select id="conv-to-unit" aria-label="To unit"></select>
+                </div>
+            </div>
+
+            <div class="calc-conv-note">
+                <i class="fas fa-lightbulb"></i>
+                <span>Tip: edit either side — the other updates instantly. Use the swap button to flip the conversion.</span>
+            </div>
+        </section>
+    </div>
+
+    {# ---------- Stock tools ---------- #}
+    <div class="calc-view" data-view="inventory" role="tabpanel" aria-labelledby="tab-inventory" hidden>
+        <section class="calc-tool-panel">
+            <h2><i class="fas fa-boxes-stacked"></i> Stock Tools</h2>
+            <p class="calc-tool-sub">Quick, purpose-built calculators for everyday stock work. Results update as you type.</p>
+
+            <div class="calc-tool-grid">
+
+                <div class="calc-tool-card">
+                    <h3><i class="fas fa-tape"></i> Tape &amp; VHB Rolls</h3>
+                    <p>How much tape do you have? Each standard roll is 33&nbsp;m long.</p>
+                    <div class="calc-field">
+                        <label for="tape-rolls">Number of rolls</label>
+                        <input type="number" id="tape-rolls" value="1" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-field">
+                        <label for="tape-width">Tape width (mm)</label>
+                        <input type="number" id="tape-width" value="18" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-out-row">
+                        <div class="calc-out">
+                            <span class="calc-out-label">Total length</span>
+                            <span class="calc-out-value" id="tape-length-out">33 m</span>
+                        </div>
+                        <div class="calc-out">
+                            <span class="calc-out-label">Total area</span>
+                            <span class="calc-out-value" id="tape-area-out">0.594 m²</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calc-tool-card">
+                    <h3><i class="fas fa-scissors"></i> Pieces From a Roll</h3>
+                    <p>How many pieces can you cut from the tape you have?</p>
+                    <div class="calc-field">
+                        <label for="piece-length">Piece length (mm)</label>
+                        <input type="number" id="piece-length" value="350" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-field">
+                        <label for="piece-wastage">Allowance / wastage (%)</label>
+                        <input type="number" id="piece-wastage" value="5" min="0" max="100" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-out-row">
+                        <div class="calc-out">
+                            <span class="calc-out-label">Usable pieces</span>
+                            <span class="calc-out-value" id="pieces-out">89</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calc-tool-card">
+                    <h3><i class="fas fa-box-open"></i> Kit Builder</h3>
+                    <p>Total items needed across kits, with an optional spare percentage.</p>
+                    <div class="calc-field">
+                        <label for="kit-items">Items per kit</label>
+                        <input type="number" id="kit-items" value="10" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-field">
+                        <label for="kit-count">Number of kits</label>
+                        <input type="number" id="kit-count" value="5" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-field">
+                        <label for="kit-spare">Spare / buffer (%)</label>
+                        <input type="number" id="kit-spare" value="10" min="0" max="100" step="any" inputmode="decimal">
+                    </div>
+                    <div class="calc-out-row">
+                        <div class="calc-out">
+                            <span class="calc-out-label">Total items</span>
+                            <span class="calc-out-value" id="kit-out">55</span>
+                        </div>
+                        <div class="calc-out">
+                            <span class="calc-out-label">Before spares</span>
+                            <span class="calc-out-value" id="kit-base-out">50 base</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <div class="calc-toast" id="calc-toast" role="status"></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/calculator.js' %}"></script>
-<script>
-    // Simple calculator fallback if calculator.js targets other element ids
-    (function() {
-        function calcTape() {
-            const width = parseFloat(document.getElementById('tapeWidth').value) || 0;
-            const qty = parseFloat(document.getElementById('tapeQty').value) || 0;
-            const totalLength = qty * 33;
-            const totalArea = totalLength * (width / 1000);
-            document.getElementById('tapeResult').innerHTML =
-                `<p><strong>${totalLength.toFixed(2)} m</strong> total length</p>` +
-                `<p><strong>${totalArea.toFixed(4)} m²</strong> total area</p>`;
-        }
-        function calcItems() {
-            const items = parseFloat(document.getElementById('itemQty').value) || 0;
-            const kits = parseFloat(document.getElementById('kitQty').value) || 0;
-            document.getElementById('itemsResult').innerHTML =
-                `<p><strong>${items * kits}</strong> items in total</p>`;
-        }
-        document.getElementById('calcTapeBtn').addEventListener('click', calcTape);
-        document.getElementById('calcItemsBtn').addEventListener('click', calcItems);
-    })();
-</script>
+<script src="{% static 'js/advanced-calculator.js' %}"></script>
 {% endblock %}

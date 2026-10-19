@@ -14,17 +14,15 @@
 {% if public_view %}
 <div class="hero-section">
     <h1>Stock Management System</h1>
-    <p>Track kits, monitor stock usage and manage inventory in one place.</p>
+    <p>Track kits, monitor stock usage and manage inventory in one place — with your own private workspace.</p>
     <div class="hero-actions">
-        {% if registration_open %}
-        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Set Up Workspace</a>
-        {% endif %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create Free Account</a>
         <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Login</a>
     </div>
 </div>
 
 <section class="why-register">
-    <h2>{% if registration_open %}Why Register?{% else %}One Workspace. Your Team.{% endif %}</h2>
+    <h2>Why Register?</h2>
     <div class="carousel-container">
         <div class="why-register-cards">
             <div class="register-card-item"><i class="fas fa-clipboard-list"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>

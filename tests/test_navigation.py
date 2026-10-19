@@ -62,8 +62,8 @@ class TestFlashMessages:
 
 
 class TestRegistrationContext:
-    def test_registration_open_flag_drives_nav(self, client, register_workspace):
-        assert 'Set Up Workspace' in client.get('/').content.decode()
+    def test_register_link_always_in_nav(self, client, register_workspace):
+        assert 'Register' in client.get('/').content.decode()
         register_workspace()
         client.logout()
-        assert 'Set Up Workspace' not in client.get('/').content.decode()
+        assert 'Register' in client.get('/').content.decode()

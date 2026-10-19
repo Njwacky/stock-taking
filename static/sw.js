@@ -1,5 +1,5 @@
 // Service Worker for Stock Tracker PWA
-const CACHE_NAME = 'stock-tracker-v1.1';
+const CACHE_NAME = 'stock-tracker-v1.2';
 const OFFLINE_URL = '/offline/';
 const urlsToCache = [
   '/',
@@ -8,12 +8,14 @@ const urlsToCache = [
   '/static/css/navbar.css',
   '/static/css/footer.css',
   '/static/css/calculator.css',
+  '/static/css/advanced-calculator.css',
   '/static/css/table_data.css',
   '/static/css/dashboard-controls.css',
   '/static/css/most-received-kits.css',
   '/static/css/base.css',
   '/static/js/base.js',
   '/static/js/calculator.js',
+  '/static/js/advanced-calculator.js',
   '/static/js/floating-comment.js',
   '/static/images/light_blue.png',
   '/static/images/red.png',

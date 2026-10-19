@@ -1411,3 +1411,123 @@ div.empty-state {
         animation: none;
     }
 }
+
+/* --------------------------------------------------------------------------
+   Workspace switcher (account menu block)
+   -------------------------------------------------------------------------- */
+
+.nav-ws-block {
+    padding: 8px 10px 4px;
+}
+
+.nav-ws-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.nav-ws-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gradient);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.nav-ws-current span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-ws-current i { opacity: 0.9; }
+
+.nav-ws-switch {
+    margin: 0 2px 6px;
+}
+
+.nav-ws-switch select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    min-height: 38px;
+    cursor: pointer;
+}
+
+.nav-ws-switch select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+/* Workspace settings page pieces (members table + add-member form) */
+.ws-settings-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.4fr);
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 820px) {
+    .ws-settings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ws-members-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.ws-members-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+}
+
+.ws-members-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.ws-role-chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    padding: 3px 10px;
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+.ws-role-chip.is-owner {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.ws-role-chip.is-admin {
+    background: var(--warning-bg);
+    color: var(--warning);
+}

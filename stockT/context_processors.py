@@ -1,11 +1,22 @@
 """Template context processors for the stockT application."""
 from .models import ContactInfo, PasswordResetRequest, StockUsage
-from .workspace import registration_open
+from .workspace import current_workspace, registration_open, user_workspaces
 
 
 def workspace_context(request):
-    """Expose single-workspace state (e.g. whether signup is still open)."""
-    return {'registration_open': registration_open()}
+    """Expose workspace state to every template: registration flag, the
+    active workspace and the user's workspace list (for the switcher)."""
+    user = getattr(request, 'user', None)
+    active = None
+    workspaces = []
+    if user is not None and user.is_authenticated:
+        active = current_workspace(request)
+        workspaces = list(user_workspaces(user))
+    return {
+        'registration_open': registration_open(),
+        'current_workspace': active,
+        'user_workspaces': workspaces,
+    }
 
 
 def pending_reset_requests(request):

@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import ContactInfo, StockUsage, UserComment
+from .models import ContactInfo, StockUsage, UserComment, Workspace
 
 User = get_user_model()
 
@@ -102,6 +102,58 @@ class ContactInfoForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+
+class WorkspaceForm(forms.ModelForm):
+    """Create or rename a workspace."""
+
+    class Meta:
+        model = Workspace
+        fields = ('name',)
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. Production Store',
+                'maxlength': 100,
+            }),
+        }
+
+    def clean_name(self):
+        name = (self.cleaned_data.get('name') or '').strip()
+        if not name:
+            raise forms.ValidationError('A workspace name is required.')
+        return name
+
+
+class WorkspaceMemberAddForm(forms.Form):
+    """Add an existing registered user to a workspace by username."""
+
+    ROLE_CHOICES = [
+        ('admin', 'Admin — can manage stock and members'),
+        ('member', 'Member — can use stock features'),
+    ]
+
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'placeholder': 'Username of a registered user',
+        }),
+    )
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES, initial='member',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        user = User.objects.filter(username__iexact=username).first()
+        if not user:
+            raise forms.ValidationError(
+                'No registered user with that username. They can register themselves first.'
+            )
+        if not user.is_active:
+            raise forms.ValidationError('That account is deactivated.')
+        self.cleaned_data['user'] = user
+        return username
 
 
 class StockUsageForm(forms.ModelForm):
