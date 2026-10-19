@@ -197,9 +197,10 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_SSL_REDIRECT = False  # Disabled for local HTTP access
 SESSION_COOKIE_SECURE = False  # Disabled for local HTTP access
 CSRF_COOKIE_SECURE = False  # Disabled for local HTTP access
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_SECONDS = 31536000  # 1 year
+# HSTS settings only apply when using HTTPS, disabled for local HTTP access
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_SECONDS = 0
 
 # CSRF Trusted Origins for local network access
 CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')

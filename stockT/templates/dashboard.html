@@ -89,6 +89,12 @@
         <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Selected</button>
         {% endif %}
     </div>
+    <div id="sticky-bulk-actions-bar" class="sticky-bulk-actions-bar" style="display:none">
+        <span><span id="sticky-selected-count">0</span> selected</span>
+        {% if user.is_manager %}
+        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Selected</button>
+        {% endif %}
+    </div>
 
     <div id="table-container">
         {% include 'partials/kit_table.html' %}
