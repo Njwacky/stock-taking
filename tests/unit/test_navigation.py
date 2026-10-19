@@ -21,14 +21,17 @@ class TestNavMarkup:
         assert 'Change Password' in content
         assert 'Logout' in content
 
-    def test_primary_navigation_includes_profile(self, as_member):
+    def test_mobile_primary_navigation_uses_account_menu_for_profile(self, as_member):
         content = as_member.get('/').content.decode()
         for label in [
-            'Dashboard', 'Add Stock', 'Track Usage', 'Distribute', 'Calculator', 'Profile',
+            'Dashboard', 'Add Stock', 'Track Usage', 'Distribute', 'Calculator',
         ]:
             assert label in content
         assert content.count('<span>Dashboard</span>') == 1
         assert content.count('<span>Track Usage</span>') == 1
+        assert '<span>Profile</span>' not in content
+        assert 'aria-hidden="true">More</span>' in content
+        assert 'href="/profile/"' in content
         assert 'href="/profile/" aria-current="page"' in as_member.get('/profile/').content.decode()
 
     def test_theme_toggle_is_available_to_all_users(self, client, as_member):

@@ -277,6 +277,13 @@ body {
     white-space: nowrap;
 }
 
+.nav-mobile-menu-label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .nav-caret {
     font-size: 10px;
     opacity: 0.8;
@@ -3308,6 +3315,10 @@ textarea.form-control {
         display: none;
     }
 
+    body.has-mobile-tabbar .nav-mobile-menu-label {
+        display: inline-flex;
+    }
+
     body.has-mobile-tabbar .nav-avatar {
         width: 30px;
         height: 30px;
@@ -3319,6 +3330,13 @@ textarea.form-control {
         flex: 0 0 auto;
         margin: 0;
         padding: 0;
+    }
+
+    body.has-mobile-tabbar .nav-user-btn {
+        width: auto;
+        min-width: 58px;
+        gap: 5px;
+        padding: 0 8px;
     }
 
     body.has-mobile-tabbar .nav-menu {
@@ -3336,7 +3354,7 @@ textarea.form-control {
         inset: auto 0 0;
         z-index: 10020;
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         align-items: stretch;
         gap: 2px;
         width: 100%;
