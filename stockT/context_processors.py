@@ -50,5 +50,6 @@ def pending_stock_usage_count(request):
             count = StockUsage.objects.filter(
                 workspace=workspace,
                 status=StockUsage.STATUS_PENDING,
+                deleted_at__isnull=True,
             ).count()
     return {'pending_stock_usage_count': count}

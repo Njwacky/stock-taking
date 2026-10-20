@@ -6,6 +6,7 @@ JavaScript contracts (static/js/*.js).
 """
 import csv
 import json
+import logging
 from datetime import timedelta
 
 from django.contrib import messages
@@ -66,6 +67,7 @@ from .workspace import (
 )
 
 User = get_user_model()
+logger = logging.getLogger('stockT')
 
 
 # ---------------------------------------------------------------------------
@@ -233,6 +235,32 @@ def dashboard(request):
     summary['total_quantity'] = summary['total_quantity'] or 0
     summary['kit_types'] = summary_scope.values('kit_type_fk').distinct().count()
 
+    # "Needs attention" panel data (managers only): kit types at/below their
+    # reorder level, plus stock expiring within 30 days (or already expired).
+    attention_low_stock = []
+    attention_expiring = []
+    if is_workspace_manager(request.user, workspace):
+        today = timezone.localdate()
+        horizon = today + timedelta(days=30)
+        active_kits = _ws_rows(Kit.objects.filter(is_active=True), workspace)
+        totals = {
+            row['kit_type_fk_id']: row['total']
+            for row in active_kits.values('kit_type_fk_id').annotate(total=Sum('quantity'))
+        }
+        for kit_type in _ws_kit_types(workspace).filter(reorder_level__isnull=False, is_active=True):
+            total = totals.get(kit_type.id, 0)
+            if total <= kit_type.reorder_level:
+                attention_low_stock.append({
+                    'name': kit_type.name,
+                    'total': total,
+                    'reorder_level': kit_type.reorder_level,
+                })
+        attention_expiring = list(
+            active_kits.filter(expiration_date__isnull=False, expiration_date__lte=horizon)
+            .select_related('kit_type_fk', 'user')
+            .order_by('expiration_date')[:8]
+        )
+
     context = {
         'public_view': False,
         'kits': page_obj.object_list,
@@ -242,6 +270,9 @@ def dashboard(request):
         'summary': summary,
         'users': workspace_member_users(workspace) if is_workspace_manager(request.user, workspace) else [],
         'filters': filters,
+        'attention_low_stock': attention_low_stock,
+        'attention_expiring': attention_expiring,
+        'today': timezone.localdate(),
     }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -566,17 +597,40 @@ def manage_kit_types(request):
             code = (request.POST.get('code') or '').strip()
             description = (request.POST.get('description') or '').strip()
             unit = (request.POST.get('unit_of_measure') or 'pieces').strip() or 'pieces'
+            reorder_level, reorder_error = _parse_reorder_level(
+                request.POST.get('reorder_level'),
+            )
             existing = _ws_kit_types(workspace).filter(Q(name__iexact=name) | Q(code__iexact=code))
             if not name or not code:
                 messages.error(request, 'Name and code are required.')
             elif existing.exists():
                 messages.error(request, 'A kit type with that name or code already exists in this workspace.')
+            elif reorder_error:
+                messages.error(request, reorder_error)
             else:
                 KitType.objects.create(
                     name=name, code=code, description=description or None,
-                    unit_of_measure=unit, created_by=request.user, workspace=workspace,
+                    unit_of_measure=unit, reorder_level=reorder_level,
+                    created_by=request.user, workspace=workspace,
                 )
                 messages.success(request, f'Kit type “{name}” added.')
+        elif action == 'set_reorder':
+            kit_type = get_object_or_404(_ws_kit_types(workspace), id=request.POST.get('kit_type_id'))
+            reorder_level, reorder_error = _parse_reorder_level(
+                request.POST.get('reorder_level'),
+            )
+            if reorder_error:
+                messages.error(request, reorder_error)
+            else:
+                kit_type.reorder_level = reorder_level
+                kit_type.save(update_fields=['reorder_level'])
+                if reorder_level is None:
+                    messages.success(request, f'Reorder alert cleared for “{kit_type.name}”.')
+                else:
+                    messages.success(
+                        request,
+                        f'Reorder alert set for “{kit_type.name}” at {reorder_level} {kit_type.unit_of_measure}.',
+                    )
         elif action == 'toggle':
             kit_type = get_object_or_404(_ws_kit_types(workspace), id=request.POST.get('kit_type_id'))
             kit_type.is_active = not kit_type.is_active
@@ -586,6 +640,23 @@ def manage_kit_types(request):
 
     kit_types = _ws_kit_types(workspace).order_by('name')
     return render(request, 'manage_kit_types.html', {'kit_types': kit_types})
+
+
+def _parse_reorder_level(raw):
+    """Parse an optional reorder level from a form field.
+
+    Returns ``(value, error_message)``; empty input means "no alert" (None).
+    """
+    raw = (raw or '').strip()
+    if not raw:
+        return None, None
+    try:
+        level = int(raw)
+    except (TypeError, ValueError):
+        return None, 'Reorder level must be a whole number (or left empty).'
+    if level < 0:
+        return None, 'Reorder level cannot be negative.'
+    return level, None
 
 
 def custom_404(request, exception=None):
@@ -940,8 +1011,27 @@ def stock_usage_tracking(request):
     """Log stock usage at /tracking/."""
     workspace = _ws(request)
     kit_types = _ws_kit_types(workspace).filter(is_active=True).order_by('name')
-    recent = _ws_rows(StockUsage.objects.filter(user=request.user), workspace)[:8]
-    form = StockUsageForm(request.POST or None)
+    recent = _ws_rows(
+        StockUsage.objects.filter(user=request.user, deleted_at__isnull=True), workspace,
+    )[:8]
+
+    # Pre-select a type for the one-click "Track" action on the dashboard
+    # (`?kit_type=<id>`), and keep the documented legacy `?kit_id=` link
+    # working by mapping that kit to its type.
+    initial = {}
+    preselect_type = request.GET.get('kit_type', '')
+    preselect_kit = request.GET.get('kit_id', '')
+    if preselect_kit.isdigit():
+        source_kit = _ws_rows(Kit.objects.filter(is_active=True), workspace).filter(
+            id=int(preselect_kit),
+        ).first()
+        if source_kit and source_kit.kit_type_fk_id:
+            initial['kit_type'] = source_kit.kit_type_fk_id
+    elif preselect_type.isdigit():
+        if kit_types.filter(id=int(preselect_type)).exists():
+            initial['kit_type'] = int(preselect_type)
+
+    form = StockUsageForm(request.POST or None, initial=initial)
     form.fields['kit_type'].queryset = kit_types
 
     if request.method == 'POST':
@@ -966,11 +1056,15 @@ def stock_usage_tracking(request):
 @login_required
 def stock_usage_history(request):
     workspace = _ws(request)
+    valid_statuses = dict(StockUsage.STATUS_CHOICES)
     status_filter = request.GET.get('status', '')
+    if status_filter not in valid_statuses:
+        status_filter = ''
+    base = _ws_rows(StockUsage.objects.filter(deleted_at__isnull=True), workspace)
     if is_workspace_manager(request.user, workspace):
-        usages = _ws_rows(StockUsage.objects.all(), workspace).select_related('user', 'kit_type', 'reviewed_by')
+        usages = base.select_related('user', 'kit_type', 'reviewed_by')
     else:
-        usages = _ws_rows(StockUsage.objects.filter(user=request.user), workspace).select_related('user', 'kit_type', 'reviewed_by')
+        usages = base.filter(user=request.user).select_related('user', 'kit_type', 'reviewed_by')
     if status_filter:
         usages = usages.filter(status=status_filter)
     return render(request, 'stock_usage_history.html', {
@@ -993,12 +1087,16 @@ def review_stock_usage(request, usage_id):
         return redirect(request.POST.get('next') or 'stock_usage_history')
 
     already_processed = False
+    usage = None
     try:
         # Lock the request so two managers cannot approve the same request at
         # once. The signal's stock deduction runs inside this transaction too.
         with transaction.atomic():
             usage = get_object_or_404(
-                _ws_rows(StockUsage.objects.select_for_update(), workspace),
+                _ws_rows(
+                    StockUsage.objects.select_for_update(),
+                    workspace,
+                ).filter(deleted_at__isnull=True),
                 id=usage_id,
             )
             if usage.status != StockUsage.STATUS_PENDING:
@@ -1021,23 +1119,64 @@ def review_stock_usage(request, usage_id):
 
     if already_processed:
         messages.info(request, 'This usage request has already been reviewed or is no longer pending.')
-    elif action == 'approve':
-        messages.success(request, 'Usage approved and stock updated.')
     else:
-        messages.success(request, 'Usage request rejected.')
+        _notify_requester_of_decision(usage, action)
+        if action == 'approve':
+            messages.success(request, 'Usage approved and stock updated.')
+        else:
+            messages.success(request, 'Usage request rejected.')
     return redirect(request.POST.get('next') or 'stock_usage_history')
+
+
+def _notify_requester_of_decision(usage, action):
+    """Tell the requesting member how their usage request turned out.
+
+    Managers were already notified when the request was submitted; without
+    this the requester had to keep re-checking the history page.
+    """
+    if usage is None or usage.user_id is None:
+        return
+    try:
+        if action == 'approve':
+            title = 'Stock usage approved'
+            message = (
+                f'Your request to use {usage.quantity_used} × {usage.kit_type_name} '
+                'was approved and stock has been updated.'
+            )
+        else:
+            title = 'Stock usage rejected'
+            message = (
+                f'Your request to use {usage.quantity_used} × {usage.kit_type_name} '
+                'was rejected.'
+            )
+            if usage.admin_notes:
+                message += f' Note: {usage.admin_notes}'
+        notification = NotificationLog.objects.create(
+            notification_type='stock_usage_decision',
+            title=title,
+            message=message,
+        )
+        notification.sent_to.set([usage.user])
+    except Exception:  # pragma: no cover - notifications must never break reviews
+        logger.exception('Failed to notify requester of usage decision')
 
 
 @login_required
 @require_POST
 def delete_stock_usage(request, usage_id):
+    """Remove a usage record from the UI (soft delete — audit stays intact)."""
     workspace = _ws(request)
     if not is_workspace_manager(request.user, workspace):
         messages.error(request, 'You do not have permission to delete usage records.')
         return redirect('stock_usage_history')
-    usage = get_object_or_404(_ws_rows(StockUsage.objects.all(), workspace), id=usage_id)
-    usage.delete()
-    messages.success(request, 'Usage record deleted.')
+    usage = get_object_or_404(
+        _ws_rows(StockUsage.objects.filter(deleted_at__isnull=True), workspace),
+        id=usage_id,
+    )
+    usage.deleted_at = timezone.now()
+    usage.deleted_by = request.user
+    usage.save(update_fields=['deleted_at', 'deleted_by'])
+    messages.success(request, 'Usage record removed. It is kept in the audit trail.')
     return redirect('stock_usage_history')
 
 
@@ -1388,8 +1527,29 @@ def mark_notification_read(request, notification_id):
 # Analytics
 # ---------------------------------------------------------------------------
 
-def _analytics_allowed(user):
-    return user.is_authenticated and user.is_manager
+def _analytics_workspace(request):
+    """Active workspace when the user may view its analytics, else None.
+
+    Analytics are tenant-scoped like the rest of the app: managers of a
+    workspace see only that workspace's sessions, page views and devices.
+    Global managers/admins qualify through ``is_workspace_manager`` too.
+    """
+    user = getattr(request, 'user', None)
+    if user is None or not user.is_authenticated:
+        return None
+    workspace = _ws(request)
+    if workspace is not None and is_workspace_manager(user, workspace):
+        return workspace
+    return None
+
+
+def _range_param(request, key='range', allowed=(7, 14, 30), default=14):
+    """Read an integer window parameter without ever raising (HTTP-safe)."""
+    try:
+        value = int(request.GET.get(key, default))
+    except (TypeError, ValueError):
+        return default
+    return value if value in allowed else default
 
 
 PAGE_LABELS = {
@@ -1442,8 +1602,12 @@ def _sparkline(values, width=96, height=30):
     return ' '.join(points)
 
 
-def _analytics_series(days):
-    """Aggregate sessions, page views, devices and users for each day."""
+def _analytics_series(days, workspace=None):
+    """Aggregate sessions, page views, devices and users for each day.
+
+    When ``workspace`` is given, only that tenant's tracked sessions (and the
+    page views belonging to them) are counted.
+    """
     end = timezone.localdate()
     start = end - timedelta(days=days - 1)
 
@@ -1460,10 +1624,16 @@ def _analytics_series(days):
             rows = rows.annotate(total=Count('id'))
         return {row['day']: row['total'] for row in rows}
 
-    sessions = daily_map(SessionTracker.objects.all(), 'started_at')
-    page_views = daily_map(PageView.objects.all(), 'viewed_at')
-    devices = daily_map(SessionTracker.objects.all(), 'started_at', 'device')
-    users = daily_map(SessionTracker.objects.filter(user__isnull=False), 'started_at', 'user')
+    sessions = SessionTracker.objects.all()
+    page_views = PageView.objects.all()
+    if workspace is not None:
+        sessions = sessions.filter(workspace=workspace)
+        page_views = page_views.filter(session__workspace=workspace)
+
+    sessions_map = daily_map(sessions, 'started_at')
+    page_views_map = daily_map(page_views, 'viewed_at')
+    devices_map = daily_map(sessions, 'started_at', 'device')
+    users_map = daily_map(sessions.filter(user__isnull=False), 'started_at', 'user')
 
     series = []
     for offset in range(days):
@@ -1471,17 +1641,20 @@ def _analytics_series(days):
         series.append({
             'date': day,
             'label': day.strftime('%d %b'),
-            'sessions': sessions.get(day, 0),
-            'page_views': page_views.get(day, 0),
-            'devices': devices.get(day, 0),
-            'users': users.get(day, 0),
+            'sessions': sessions_map.get(day, 0),
+            'page_views': page_views_map.get(day, 0),
+            'devices': devices_map.get(day, 0),
+            'users': users_map.get(day, 0),
         })
     return series
 
 
-def _period_totals(start, end):
+def _period_totals(start, end, workspace=None):
     sessions = SessionTracker.objects.filter(started_at__date__gte=start, started_at__date__lte=end)
     views = PageView.objects.filter(viewed_at__date__gte=start, viewed_at__date__lte=end)
+    if workspace is not None:
+        sessions = sessions.filter(workspace=workspace)
+        views = views.filter(session__workspace=workspace)
     return {
         'sessions': sessions.count(),
         'page_views': views.count(),
@@ -1498,28 +1671,25 @@ def _delta(current, previous):
 
 @login_required
 def analytics_dashboard(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
 
-    try:
-        days = int(request.GET.get('range', 14))
-    except (TypeError, ValueError):
-        days = 14
-    if days not in (7, 14, 30):
-        days = 14
-
-    series = _analytics_series(days)
+    days = _range_param(request)
+    series = _analytics_series(days, workspace)
     end = timezone.localdate()
     start = end - timedelta(days=days - 1)
     previous_end = start - timedelta(days=1)
     previous_start = previous_end - timedelta(days=days - 1)
 
-    current = _period_totals(start, end)
-    previous = _period_totals(previous_start, previous_end)
+    current = _period_totals(start, end, workspace)
+    previous = _period_totals(previous_start, previous_end, workspace)
 
     now = timezone.now()
-    online = SessionTracker.objects.filter(last_activity__gte=now - timedelta(minutes=5)).count()
+    online = SessionTracker.objects.filter(
+        workspace=workspace, last_activity__gte=now - timedelta(minutes=5),
+    ).count()
 
     kpis = [
         {
@@ -1559,7 +1729,10 @@ def analytics_dashboard(request):
     top_pages = []
     top_page_rows = (
         PageView.objects
-        .filter(viewed_at__date__gte=start, viewed_at__date__lte=end)
+        .filter(
+            session__workspace=workspace,
+            viewed_at__date__gte=start, viewed_at__date__lte=end,
+        )
         .values('page_url')
         .annotate(views=Count('id'), sessions=Count('session', distinct=True))
         .order_by('-views')[:6]
@@ -1576,7 +1749,7 @@ def analytics_dashboard(request):
 
     device_mix = []
     device_rows = (
-        DeviceTracker.objects
+        AnalyticsService.scoped_devices(workspace)
         .filter(last_seen__date__gte=start, last_seen__date__lte=end)
         .values('device_type')
         .annotate(total=Count('id'))
@@ -1593,7 +1766,10 @@ def analytics_dashboard(request):
     active_staff = []
     staff_rows = (
         SessionTracker.objects
-        .filter(started_at__date__gte=start, started_at__date__lte=end, user__isnull=False)
+        .filter(
+            workspace=workspace,
+            started_at__date__gte=start, started_at__date__lte=end, user__isnull=False,
+        )
         .values('user__username', 'user__first_name', 'user__last_name')
         .annotate(sessions=Count('id'), views=Sum('pages_visited'))
         .order_by('-sessions')[:5]
@@ -1631,7 +1807,7 @@ def analytics_dashboard(request):
     period_delta_sessions = _delta(current['sessions'], previous['sessions'])
 
     return render(request, 'analytics.html', {
-        'stats': AnalyticsService.get_live_stats(),
+        'stats': AnalyticsService.get_live_stats(workspace=workspace),
         'chart_data': chart_series,
         'kpis': kpis,
         'top_pages': top_pages,
@@ -1652,20 +1828,16 @@ def analytics_dashboard(request):
 @login_required
 def analytics_export_csv(request):
     """Download the analytics daily breakdown as CSV."""
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-    try:
-        days = int(request.GET.get('range', 14))
-    except (TypeError, ValueError):
-        days = 14
-    if days not in (7, 14, 30):
-        days = 14
+    days = _range_param(request)
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="analytics-{days}-days.csv"'
     writer = csv.writer(response)
     writer.writerow(['Date', 'Sessions', 'Page views', 'Active users', 'Devices', 'Views per session'])
-    for row in reversed(_analytics_series(days)):
+    for row in reversed(_analytics_series(days, workspace)):
         writer.writerow([
             row['date'].isoformat(),
             row['sessions'],
@@ -1679,22 +1851,30 @@ def analytics_export_csv(request):
 
 @login_required
 def analytics_live_stats(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-    return JsonResponse({'success': True, 'stats': AnalyticsService.get_live_stats()})
+    return JsonResponse({
+        'success': True,
+        'stats': AnalyticsService.get_live_stats(workspace=workspace),
+    })
 
 
 @login_required
 def analytics_chart_data(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-    days = int(request.GET.get('days', 14) or 14)
-    return JsonResponse({'success': True, 'data': AnalyticsService.get_chart_data(days=days)})
+    days = _range_param(request, key='days', allowed=(7, 14, 30, 90))
+    return JsonResponse({
+        'success': True,
+        'data': AnalyticsService.get_chart_data(days=days, workspace=workspace),
+    })
 
 
 @login_required
 def analytics_notifications(request):
-    if not _analytics_allowed(request.user):
+    if _analytics_workspace(request) is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
     from .models import UsageMilestone
@@ -1708,17 +1888,21 @@ def analytics_notifications(request):
 
 @login_required
 def analytics_devices(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
 
     device_type = request.GET.get('type', '').strip()
-    devices = DeviceTracker.objects.all().select_related('user').order_by('-last_seen')
+    devices = (
+        AnalyticsService.scoped_devices(workspace)
+        .select_related('user').order_by('-last_seen')
+    )
     if device_type:
         devices = devices.filter(device_type__iexact=device_type)
 
     type_rows = (
-        DeviceTracker.objects.values('device_type')
+        AnalyticsService.scoped_devices(workspace).values('device_type')
         .annotate(total=Count('id'))
         .order_by('-total')
     )
@@ -1727,11 +1911,12 @@ def analytics_devices(request):
         for row in type_rows
     ]
     week_ago = timezone.now() - timedelta(days=7)
+    scoped_devices = AnalyticsService.scoped_devices(workspace)
     summary = {
-        'total': DeviceTracker.objects.count(),
-        'active': DeviceTracker.objects.filter(is_active=True).count(),
-        'week': DeviceTracker.objects.filter(last_seen__gte=week_ago).count(),
-        'sessions': SessionTracker.objects.count(),
+        'total': scoped_devices.count(),
+        'active': scoped_devices.filter(is_active=True).count(),
+        'week': scoped_devices.filter(last_seen__gte=week_ago).count(),
+        'sessions': SessionTracker.objects.filter(workspace=workspace).count(),
     }
 
     return render(request, 'analytics_devices.html', {
@@ -1744,7 +1929,12 @@ def analytics_devices(request):
 
 @login_required
 def generate_daily_report(request):
-    if not _analytics_allowed(request.user):
+    """Regenerate the app-wide DailyStats row (global managers only).
+
+    DailyStats is an app-level aggregate with a unique date key, so unlike
+    the dashboard it cannot be scoped per workspace.
+    """
+    if _analytics_workspace(request) is None or not request.user.is_manager:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     date = AnalyticsService.generate_daily_stats()
     return JsonResponse({

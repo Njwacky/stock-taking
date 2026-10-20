@@ -52,6 +52,17 @@ def _env_bool(name, default=False):
     raise ImproperlyConfigured(f'{name} must be a boolean value.')
 
 
+def _env_int(name, default):
+    """Read an integer environment value with a validated fallback."""
+    value = _env(name, default)
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ImproperlyConfigured(f'{name} must be an integer value.')
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -315,6 +326,21 @@ if SECURE_HSTS_SECONDS < 0:
 # by default in production; local runserver requests bypass the proxy.
 if _env_bool('USE_X_FORWARDED_PROTO', not DEBUG):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Client IPs for device analytics are taken from X-Forwarded-For only when a
+# reverse proxy is in front of the app (default: production). With no proxy a
+# client could otherwise spoof its own address in the tracking data.
+TRUST_X_FORWARDED_FOR = _env_bool('TRUST_X_FORWARDED_FOR', not DEBUG)
+
+# Analytics data retention: page views/sessions/devices beyond these ages are
+# purged by `manage.py analytics_cleanup`, and stored client IPs are redacted
+# sooner than the behavioural data itself (privacy by default).
+ANALYTICS_RETENTION_DAYS = _env_int('ANALYTICS_RETENTION_DAYS', 180)
+ANALYTICS_IP_RETENTION_DAYS = _env_int('ANALYTICS_IP_RETENTION_DAYS', 30)
+if ANALYTICS_RETENTION_DAYS < 1:
+    raise ImproperlyConfigured('ANALYTICS_RETENTION_DAYS must be at least 1.')
+if ANALYTICS_IP_RETENTION_DAYS < 0:
+    raise ImproperlyConfigured('ANALYTICS_IP_RETENTION_DAYS cannot be negative.')
 
 CSRF_TRUSTED_ORIGINS_ENV = str(_env(
     'CSRF_TRUSTED_ORIGINS',

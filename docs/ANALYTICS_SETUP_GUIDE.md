@@ -67,21 +67,20 @@ Add a link to the analytics dashboard in your `base.html` navbar (for admins onl
 ```
 
 ### 6. Set Up Daily Report Generation (Optional)
-To automatically generate daily reports, add a cron job or scheduled task:
+The app ships with management commands for this — schedule them instead of
+running shell one-liners:
 
 **Linux/Mac (crontab):**
 ```bash
-# Run daily at midnight
-0 0 * * * cd /path/to/summerlife && python manage.py shell -c "from stockT.analytics_service import AnalyticsService; AnalyticsService.generate_daily_stats()"
+# Aggregate yesterday's stats, check milestones, close idle sessions (01:00)
+0 1 * * * cd /path/to/app && python manage.py analytics_daily_stats
+# Purge analytics beyond retention, redact old IPs (01:30)
+30 1 * * * cd /path/to/app && python manage.py analytics_cleanup
 ```
 
-**Windows (Task Scheduler):**
-Create a batch file `generate_daily_report.bat`:
-```batch
-cd C:\Users\njway\OneDrive\Desktop\summerlife
-python manage.py shell -c "from stockT.analytics_service import AnalyticsService; AnalyticsService.generate_daily_stats()"
-```
-Then schedule it to run daily at midnight.
+`analytics_cleanup` respects `ANALYTICS_RETENTION_DAYS` (default 180) and
+`ANALYTICS_IP_RETENTION_DAYS` (default 30) from the environment, and supports
+`--dry-run` to preview what it would remove.
 
 ## Usage
 
@@ -143,9 +142,34 @@ You'll automatically receive notifications when you reach:
 
 ## Privacy Considerations
 - Device IDs are randomly generated UUIDs (not personally identifiable)
-- IP addresses are stored but can be disabled if needed
+- Client IPs are taken from `X-Forwarded-For` only when a reverse proxy is
+  trusted (`TRUST_X_FORWARDED_FOR`, default on in production), so they cannot
+  be spoofed when running directly
+- Stored IPs are automatically redacted after `ANALYTICS_IP_RETENTION_DAYS`
+  (default 30 days) by `manage.py analytics_cleanup`
+- The `device_id` cookie is `HttpOnly` (server-side only) and `SameSite=Lax`
 - Users can be anonymous (not logged in)
-- No sensitive personal data is collected
+
+## Current Behaviour (2026 refresh)
+
+- **Workspace (tenant) scoping** — every dashboard, KPI, chart, CSV export
+  and device list only counts the active workspace's members. Sessions record
+  their workspace when they start (and adopt it on login). Managers of one
+  workspace can never see another workspace's activity.
+- **Access** — analytics pages require workspace manager/owner (or global
+  manager/admin) on that workspace; the app-wide DailyStats report additionally
+  requires a global manager/admin role.
+- **AJAX is never a page view** — the dashboard's once-a-minute
+  `/analytics/live-stats/` poll sends the standard `X-Requested-With` header
+  and only refreshes liveness, so the dashboard no longer inflates its own
+  page-view numbers.
+- **Sessions close on idle** — after 30 minutes without activity the tracked
+  session is finalised with a real `ended_at`/`duration` and the next request
+  starts a fresh session, so "average session duration" is meaningful.
+- **Milestone notifications** go to global managers/admins only — not to
+  every member of every workspace.
+- **Retention** — run `manage.py analytics_cleanup` nightly (see step 6);
+  it purges old page views/sessions/devices and redacts old IPs.
 
 ## Customization
 
