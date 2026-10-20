@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Add Contact - Stock Management System{% endblock %}
+{% block title %}Add Contact · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="form-page">
     <div class="form-card">
-        <h1><i class="fas fa-address-book" aria-hidden="true"></i> Add Footer Contact</h1>
+        <h1>Add Footer Contact</h1>
         <form method="post">
             {% csrf_token %}
             {% for field in form %}

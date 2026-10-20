@@ -118,6 +118,15 @@ MIDDLEWARE = [
     'stockT.middleware.analytics_middleware.AnalyticsMiddleware',  # Analytics tracking
 ]
 
+if DEBUG:
+    # Local development is embedded in preview panes, so the default DENY
+    # clickjacking header would prevent the app from rendering there.
+    # Production keeps XFrameOptionsMiddleware enabled.
+    MIDDLEWARE = [
+        middleware for middleware in MIDDLEWARE
+        if middleware != 'django.middleware.clickjacking.XFrameOptionsMiddleware'
+    ]
+
 ROOT_URLCONF = 'app_conf.urls'
 
 # Templates

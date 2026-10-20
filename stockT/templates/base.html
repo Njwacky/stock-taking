@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Stock Management System{% endblock %}</title>
+    <title>{% block title %}Stock Tracker{% endblock %}</title>
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#2E6347">
+    <meta name="theme-color" content="#f7f8f6">
     <script>
         try {
             if (localStorage.getItem('stock-theme') === 'dark') {
@@ -16,180 +16,328 @@
             console.warn('Could not restore the saved theme preference:', error);
         }
     </script>
+    <link rel="preload" href="{% static 'fonts/inter-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="icon" type="image/png" href="{% static 'images/light_blue.png' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
     {% block extra_css %}{% endblock %}
-    <!-- Shared UI layer loads last so legacy and page-specific styles use the
-         same typography, spacing, controls, tables, and responsive patterns. -->
-    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261019">
+    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261020b">
 </head>
-<body{% if user.is_authenticated %} class="has-mobile-tabbar"{% endif %}>
+<body{% if user.is_authenticated %} class="has-mobile-tabbar"{% else %} class="app-body app-body--guest"{% endif %}>
     <a href="#main" class="skip-link">Skip to content</a>
-    <nav class="navbar" aria-label="Primary">
-        <a href="{% url 'dashboard' %}" class="nav-brand">
-            <i class="fas fa-boxes-stacked" aria-hidden="true"></i>
-            <span>Stock Tracker</span>
-        </a>
-        {% comment %}
-        Primary navigation is five destinations: Dashboard · Add Stock · Track
-        Usage · Distribute · Calculator.
-        Utilities such as Notifications, Manage Users, Analytics, and Admins
-        plus Profile live in the account menu. On mobile, primary destinations
-        stay visible in a fixed bottom bar; use More for the other destinations.
-        {% endcomment %}
-        <div id="navLinks" class="nav-links">
-            <a class="nav-link" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fas fa-chart-line" aria-hidden="true"></i><span>Dashboard</span></a>
-            {% if user.is_authenticated %}
-            <a class="nav-link" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}><i class="fas fa-plus" aria-hidden="true"></i><span>Add Stock</span></a>
-            <a class="nav-link" href="{% url 'stock_usage_tracking' %}"{% if '/tracking' in request.path %} aria-current="page"{% endif %}><i class="fas fa-clipboard-list" aria-hidden="true"></i><span>Track Usage</span></a>
-            <a class="nav-link" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}><i class="fas fa-share-nodes" aria-hidden="true"></i><span>Distribute</span></a>
-            <a class="nav-link" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}><i class="fas fa-calculator" aria-hidden="true"></i><span>Calculator</span></a>
-            {% else %}
-            <a class="nav-link nav-pill-btn" href="{% url 'login' %}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i><span>Login</span></a>
-            <a class="nav-link nav-pill-accent" href="{% url 'register' %}"><i class="fas fa-user-plus" aria-hidden="true"></i><span>Register</span></a>
-            {% endif %}
-        </div>
-        <div class="nav-tools">
-            <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
-                <i class="fas fa-moon" aria-hidden="true"></i>
-            </button>
+
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true" focusable="false">
+        <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+        <symbol id="i-plus-box" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
+        <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M9 4.5h6a1 1 0 0 1 1 1v1H8v-1a1 1 0 0 1 1-1Z"/><path d="M8 6H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H16"/><path d="M8.5 11h7M8.5 15h4.5"/></symbol>
+        <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.3 10.8 7.4-3.6M8.3 13.2l7.4 3.6"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19.5h16"/><path d="M7 16V9.5M12 16V5.5M17 16v-4"/></symbol>
+        <symbol id="i-history" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 8.9"/><path d="M4.5 4.5v4.4h4.4M12 8v4.5l3 1.8"/></symbol>
+        <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.8 19.5c.5-3.1 2.6-4.8 5.2-4.8s4.7 1.7 5.2 4.8"/><path d="M15.5 6.1a3 3 0 0 1 0 5.8M17.3 14.9c2 .4 3.4 2 3.8 4.6"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 14.5a7.4 7.4 0 0 0 0-5l1.7-1.2-2-3.4-1.9.9a7.5 7.5 0 0 0-4.3-2.5L12.5 1h-4l-.4 2.3A7.5 7.5 0 0 0 3.8 5.8l-1.9-.9-2 3.4 1.7 1.2a7.4 7.4 0 0 0 0 5l-1.7 1.2 2 3.4 1.9-.9a7.5 7.5 0 0 0 4.3 2.5l.4 2.3h4l.4-2.3a7.5 7.5 0 0 0 4.3-2.5l1.9.9 2-3.4Z"/></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 12 0c0 4 1.2 5.4 1.7 6H4.3c.5-.6 1.7-2 1.7-6Z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/></symbol>
+        <symbol id="i-boxes" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 11.9V21"/></symbol>
+        <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8-9 9-8-8Z"/><circle cx="8" cy="8" r="1.4"/></symbol>
+        <symbol id="i-message" viewBox="0 0 24 24"><path d="M20.5 12.2c0 4-3.8 7.2-8.5 7.2-1 0-2-.1-2.9-.4L4 21l1.2-3.7a6.9 6.9 0 0 1-2.7-5.1C2.5 8.2 6.3 5 11 5s9.5 3.2 9.5 7.2Z"/></symbol>
+        <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="3.5"/><path d="m10.6 13 8.9-8.9M16.5 7l2.5 2.5M14 9.5 16.5 12"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 20 6v5.5c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-2.5Z"/><path d="m8.8 12 2.1 2.1 4.3-4.2"/></symbol>
+        <symbol id="i-contact" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><circle cx="12" cy="9.5" r="2.5"/><path d="M8 17c.4-2 1.9-3 4-3s3.6 1 4 3"/></symbol>
+        <symbol id="i-trend" viewBox="0 0 24 24"><path d="m4 16 5-5 4 3 6.5-6.5"/><path d="M15 7.5h4.5V12"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.2 8.2 0 1 0 20 14.2Z"/></symbol>
+        <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol>
+        <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+        <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v10M8 10.5l4 4 4-4M4.5 18.5v1a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-1"/></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4.5h3.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10.5 8 6.5 12l4 4M6.5 12H15"/></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.8 3.2-5.8 7-5.8s6.4 2 7 5.8"/></symbol>
+        <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.2a2.4 2.4 0 1 1 3.3 2.2c-.7.3-1 .8-1 1.5v.3"/><path d="M12 16.8h.01"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 8.5 4.5L12 12 3.5 7.5 12 3Z"/><path d="m3.5 12 8.5 4.5 8.5-4.5M3.5 16.5 12 21l8.5-4.5"/></symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+        <symbol id="i-device" viewBox="0 0 24 24"><rect x="7" y="2.8" width="10" height="18.4" rx="2"/><path d="M11 18.4h2"/></symbol>
+        <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4.5a4 4 0 0 1-8 0V4Z"/><path d="M8 5.5H4.5V8a3.5 3.5 0 0 0 3.5 3.5M16 5.5h3.5V8a3.5 3.5 0 0 1-3.5 3.5M12 12.5V17M8.5 20.5h7"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v4.8l3 1.8"/></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.2 2.3 3.3 5.2 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.2-3.3-8.5S9.8 5.8 12 3.5Z"/></symbol>
+        <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 5.5h16v13H4v-13Z"/><path d="M4 13.5h4.5l1.5 2h4l1.5-2H20"/></symbol>
+        <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-3-3l-10 10v3Z"/><path d="m13.8 7.2 3 3"/></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V4.8h5V7M6.5 7l.8 11.4a1.6 1.6 0 0 0 1.6 1.5h6.2a1.6 1.6 0 0 0 1.6-1.5L17.5 7"/></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6-5.6 6-10.4A6 6 0 0 0 6 10.6C6 15.4 12 21 12 21Z"/><circle cx="12" cy="10.4" r="2.2"/></symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.8 12S6.5 6.2 12 6.2 21.2 12 21.2 12 17.5 17.8 12 17.8 2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4.5V9h-4.5"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 6.5"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 6.5V5.5a1.5 1.5 0 0 0-1.5-1.5h-8A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15h1"/></symbol>
+        <symbol id="i-backspace" viewBox="0 0 24 24"><path d="M9 5.5h10.5A1.5 1.5 0 0 1 21 7v10a1.5 1.5 0 0 1-1.5 1.5H9L3 12l6-6.5Z"/><path d="m11.5 9.5 5 5M16.5 9.5l-5 5"/></symbol>
+        <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8.5h13M13.5 5 17 8.5 13.5 12M20 15.5H7M10.5 12 7 15.5 10.5 19"/></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M10.5 6.5 5 12l5.5 5.5"/></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><path d="M20.5 3.5 3.8 10.2l6.4 2.9 2.9 6.4 7.4-16Z"/><path d="m10.2 13.1 4.6-4.6"/></symbol>
+        <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+        <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="7" rx="1.6"/><path d="M7 16h10v4H7z"/></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24"><path d="M7.4 3.5h2.2l1.4 3.6-1.8 1.3a10.8 10.8 0 0 0 4.4 4.4l1.3-1.8 3.6 1.4v2.2a2 2 0 0 1-2.2 2A15.4 15.4 0 0 1 5.4 5.7a2 2 0 0 1 2-2.2Z"/></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/><path d="M12 14v2"/></symbol>
+        <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="m4.5 7 7.5 5.5L19.5 7"/></symbol>
+        <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 20.5V5.5a1.5 1.5 0 0 1 1.5-1.5h8A1.5 1.5 0 0 1 15 5.5v15"/><path d="M15 10h4.5a1.5 1.5 0 0 1 1.5 1.5v9M8 8h3M8 12h3M8 16h3M3 20.5h18"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4.5 21 20H3l9-15.5Z"/><path d="M12 10v4.2M12 17.2h.01"/></symbol>
+        <symbol id="i-toggle" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="16" cy="12" r="2.6"/></symbol>
+    </svg>
+
+    <div class="app-shell{% if not user.is_authenticated %} app-shell--guest{% endif %}">
         {% if user.is_authenticated %}
-            <div class="nav-user" id="navUser">
-                <button type="button" id="navUserBtn" class="nav-user-btn" aria-label="Account menu for {{ user.username }}" aria-controls="navMenu" aria-expanded="false">
-                    <span class="nav-avatar" aria-hidden="true">{{ user.username|first|upper }}</span>
-                    <span class="nav-user-name">{{ user.username }}</span>
-                    <span class="nav-mobile-menu-label" aria-hidden="true">More</span>
-                    {% if pending_reset_requests_count or pending_stock_usage_count %}
-                    <span class="nav-badge">{{ pending_reset_requests_count|add:pending_stock_usage_count }}</span>
-                    {% endif %}
-                    <span class="nav-caret" aria-hidden="true">&#9662;</span>
+        <div class="sidebar-scrim" data-sidebar-close hidden></div>
+        <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-head">
+                <a href="{% url 'dashboard' %}" class="brand">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 10.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5ZM9 16.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5Z" fill="#fff" fill-opacity=".92"/><path d="M20 16.5h3v5h-3v-5Z" fill="#fff" fill-opacity=".45"/></svg>
+                    </span>
+                    <span class="brand-copy">
+                        <span class="brand-name">Stock Tracker</span>
+                        <span class="brand-meta">Inventory operations</span>
+                    </span>
+                </a>
+                <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Close navigation">
+                    <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
                 </button>
-                <div class="nav-menu" id="navMenu">
-                    <div class="nav-ws-block">
-                        <div class="nav-ws-label">Workspace</div>
-                        <div class="nav-ws-current" title="Active workspace">
-                            <i class="fas fa-layer-group" aria-hidden="true"></i>
-                            <span>{{ current_workspace.name|default:"My Workspace" }}</span>
-                        </div>
-                        {% if user_workspaces|length > 1 %}
-                        <form class="nav-ws-switch" method="post" action="{% url 'workspace_switch' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="next" value="{{ request.path }}">
-                            <select name="workspace_id" aria-label="Switch workspace"
-                                    onchange="this.form.submit()">
-                                {% for ws in user_workspaces %}
-                                <option value="{{ ws.id }}" {% if ws.id == current_workspace.id %}selected{% endif %}>{{ ws.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </form>
-                        {% endif %}
-                        <a href="{% url 'workspace_create' %}"><i class="fas fa-plus" aria-hidden="true"></i> New workspace</a>
-                        <a href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}><i class="fas fa-sliders" aria-hidden="true"></i> Workspace settings</a>
-                    </div>
-                    <div class="nav-menu-sep"></div>
-                    <a href="{% url 'notifications' %}"{% if '/notifications' in request.path %} aria-current="page"{% endif %}>
-                        <i class="fas fa-bell" aria-hidden="true"></i> Notifications
-                        {% if pending_reset_requests_count or pending_stock_usage_count %}
-                        <span class="nav-badge">{{ pending_reset_requests_count|add:pending_stock_usage_count }}</span>
-                        {% endif %}
+            </div>
+
+            <div class="workspace-switcher">
+                <div class="workspace-label">Workspace</div>
+                {% if user_workspaces|length > 1 %}
+                <form method="post" action="{% url 'workspace_switch' %}" class="workspace-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <label class="visually-hidden" for="workspaceSelect">Switch workspace</label>
+                    <select id="workspaceSelect" name="workspace_id" onchange="this.form.submit()">
+                        {% for ws in user_workspaces %}
+                        <option value="{{ ws.id }}" {% if ws.id == current_workspace.id %}selected{% endif %}>{{ ws.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <svg class="icon workspace-chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+                </form>
+                {% else %}
+                <div class="workspace-name">
+                    <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
+                    <span>{{ current_workspace.name|default:"My Workspace" }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Sections">
+                <div class="nav-group">
+                    <div class="nav-group-label">Operations</div>
+                    <a class="nav-item" href="{% url 'dashboard' %}"{% if request.path == '/' %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg><span>Dashboard</span>
                     </a>
-                    <a href="{% url 'my_comments' %}"{% if '/comments/my' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comment-dots" aria-hidden="true"></i> My Feedback</a>
-                    <a href="{% url 'profile' %}"{% if '/profile' in request.path %} aria-current="page"{% endif %}><i class="fas fa-id-badge" aria-hidden="true"></i> Profile</a>
-                    <a href="{% url 'change_password' %}"{% if '/change-password' in request.path %} aria-current="page"{% endif %}><i class="fas fa-lock" aria-hidden="true"></i> Change Password</a>
-                    {% if can_manage_workspace or user.is_manager %}
-                    <div class="nav-menu-sep"></div>
+                    <a class="nav-item" href="{% url 'add_items' %}"{% if '/add-items' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-plus-box"></use></svg><span>Add Stock</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'stock_usage_tracking' %}"{% if request.path == '/tracking/' %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg><span>Track Usage</span>
+                        {% if pending_stock_usage_count %}<span class="nav-count">{{ pending_stock_usage_count }}</span>{% endif %}
+                    </a>
+                    <a class="nav-item" href="{% url 'stock_usage_history' %}"{% if '/tracking/history' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-history"></use></svg><span>Usage History</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'stock_distribution' %}"{% if '/stock-distribution' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-share"></use></svg><span>Distribute</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Insights</div>
+                    <a class="nav-item" href="{% url 'most_received_kits' %}"{% if '/most-received' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-trend"></use></svg><span>Stock Ranking</span>
+                    </a>
+                    {% if user.is_manager %}
+                    <a class="nav-item" href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path or '/devices' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg><span>Analytics</span>
+                    </a>
                     {% endif %}
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Tools</div>
+                    <a class="nav-item" href="{% url 'inventory_calculator' %}"{% if '/calculator' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-calculator"></use></svg><span>Calculator</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Workspace</div>
+                    <a class="nav-item" href="{% url 'workspace_settings' %}"{% if '/workspace/settings' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg><span>Workspace Settings</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'workspace_create' %}"{% if '/workspace/create' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg><span>New workspace</span>
+                    </a>
+                </div>
+
+                {% if can_manage_workspace or user.is_manager or user.is_superuser %}
+                <div class="nav-group">
+                    <div class="nav-group-label">Administration</div>
                     {% if can_manage_workspace %}
-                    <a href="{% url 'manage_kit_types' %}"{% if '/kit-types' in request.path %} aria-current="page"{% endif %}><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Kit Types</a>
+                    <a class="nav-item" href="{% url 'manage_kit_types' %}"{% if '/kit-types' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg><span>Kit Types</span>
+                    </a>
                     {% endif %}
                     {% if user.is_manager %}
-                    <a href="{% url 'manage_reset_requests' %}"{% if '/password-reset/manage' in request.path or '/password-reset/process' in request.path %} aria-current="page"{% endif %}>
-                        <i class="fas fa-key" aria-hidden="true"></i> Password Resets
-                        {% if pending_reset_requests_count %}<span class="nav-badge">{{ pending_reset_requests_count }}</span>{% endif %}
+                    <a class="nav-item" href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg><span>Manage Users</span>
                     </a>
-                    <a href="{% url 'manage_users' %}"{% if '/manage-users' in request.path or '/edit-user' in request.path %} aria-current="page"{% endif %}><i class="fas fa-users-gear" aria-hidden="true"></i> Manage Users</a>
-                    <a href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path or '/comments/update' in request.path %} aria-current="page"{% endif %}><i class="fas fa-comments" aria-hidden="true"></i> Review Feedback</a>
-                    <a href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path %} aria-current="page"{% endif %}><i class="fas fa-chart-pie" aria-hidden="true"></i> Analytics</a>
+                    <a class="nav-item" href="{% url 'manage_comments' %}"{% if '/comments/manage' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-message"></use></svg><span>Feedback</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'manage_reset_requests' %}"{% if '/password-reset/manage' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg><span>Password Resets</span>
+                        {% if pending_reset_requests_count %}<span class="nav-count">{{ pending_reset_requests_count }}</span>{% endif %}
+                    </a>
                     {% endif %}
                     {% if user.is_superuser %}
-                    <div class="nav-menu-sep"></div>
-                    <a href="{% url 'manage_admins' %}"{% if '/admin/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-user-shield" aria-hidden="true"></i> Admins</a>
-                    <a href="{% url 'manage_footer_contacts' %}"{% if '/footer/' in request.path %} aria-current="page"{% endif %}><i class="fas fa-address-book" aria-hidden="true"></i> Manage Footer</a>
+                    <a class="nav-item" href="{% url 'manage_admins' %}"{% if '/admin/manage' in request.path or '/admin/create' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg><span>Administrators</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'manage_footer_contacts' %}"{% if '/footer/contacts' in request.path %} aria-current="page"{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-contact"></use></svg><span>Contacts</span>
+                    </a>
                     {% endif %}
-                    <div class="nav-menu-sep"></div>
-                    <a href="{% url 'logout' %}"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Logout</a>
                 </div>
-            </div>
-        {% endif %}
-        </div>
-    </nav>
+                {% endif %}
+            </nav>
 
-    <main class="main-content" id="main" tabindex="-1">
-        {% if messages %}
-        <div class="messages-container" role="status" aria-live="polite">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }}" data-auto-dismiss>
-                <i class="alert-icon fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>
-                <span class="alert-text">{{ message }}</span>
-                <button type="button" class="alert-close" aria-label="Dismiss message">&times;</button>
+            <div class="sidebar-foot">
+                <button type="button" id="floatingCommentBtn" class="sidebar-feedback" aria-label="Send feedback" aria-controls="floatingCommentPanel" aria-expanded="false">
+                    <svg class="icon" aria-hidden="true"><use href="#i-help"></use></svg>
+                    <span>Help &amp; feedback</span>
+                </button>
             </div>
-            {% endfor %}
-        </div>
+        </aside>
         {% endif %}
-        {% block content %}{% endblock %}
-    </main>
 
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock Tracker</h3>
-                <p>Efficient stock and inventory management.</p>
-            </div>
-            {% if footer_contacts %}
-            <div class="footer-section">
-                <h3>Contact</h3>
-                <ul class="footer-contacts">
-                    {% for contact in footer_contacts %}
-                    <li><strong>{{ contact.label }}:</strong> {{ contact.value }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="app-main">
+            {% if user.is_authenticated %}
+            <header class="topbar">
+                <button type="button" class="icon-btn topbar-menu" id="sidebarToggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+                    <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
+                </button>
+                <div class="topbar-context">
+                    <span class="topbar-eyebrow">{{ current_workspace.name|default:"My Workspace" }}</span>
+                    <span class="topbar-divider" aria-hidden="true"></span>
+                    <span class="topbar-date">{% now "l, j F Y" %}</span>
+                </div>
+                <div class="topbar-actions">
+                    <a href="{% url 'add_items' %}" class="btn btn-primary btn-sm topbar-add">
+                        <svg class="icon" aria-hidden="true"><use href="#i-plus-box"></use></svg>
+                        <span>Add Stock</span>
+                    </a>
+                    <button type="button" class="icon-btn" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
+                        <svg class="icon theme-icon-moon" aria-hidden="true"><use href="#i-moon"></use></svg>
+                        <svg class="icon theme-icon-sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+                    </button>
+                    <a href="{% url 'notifications' %}" class="icon-btn topbar-bell" aria-label="Notifications{% if pending_reset_requests_count or pending_stock_usage_count %} ({{ pending_reset_requests_count|add:pending_stock_usage_count }} unread){% endif %}">
+                        <svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg>
+                        {% if pending_reset_requests_count or pending_stock_usage_count %}
+                        <span class="icon-btn-dot" aria-hidden="true"></span>
+                        {% endif %}
+                    </a>
+                    <div class="nav-user" id="navUser">
+                        <button type="button" id="navUserBtn" class="nav-user-btn" aria-label="Account menu for {{ user.username }}" aria-controls="navMenu" aria-expanded="false">
+                            <span class="nav-avatar" aria-hidden="true">{{ user.username|first|upper }}</span>
+                            <span class="nav-user-copy">
+                                <span class="nav-user-name">{{ user.get_full_name|default:user.username }}</span>
+                                <span class="nav-user-role">{{ user.role_display }}</span>
+                            </span>
+                            <span class="nav-mobile-menu-label" aria-hidden="true">More</span>
+                            <svg class="icon nav-caret" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+                        </button>
+                        <div class="nav-menu" id="navMenu">
+                            <div class="nav-menu-head">
+                                <span class="nav-avatar nav-avatar--lg" aria-hidden="true">{{ user.username|first|upper }}</span>
+                                <div>
+                                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                    <span class="nav-menu-email">{{ user.email|default:user.username }}</span>
+                                </div>
+                            </div>
+                            <div class="nav-menu-sep"></div>
+                            <a href="{% url 'profile' %}"{% if '/profile' in request.path %} aria-current="page"{% endif %}><svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg> Profile</a>
+                            <a href="{% url 'my_comments' %}"><svg class="icon" aria-hidden="true"><use href="#i-message"></use></svg> My feedback</a>
+                            <a href="{% url 'change_password' %}"><svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg> Change Password</a>
+                            <div class="nav-menu-sep"></div>
+                            <a href="{% url 'logout' %}"><svg class="icon" aria-hidden="true"><use href="#i-logout"></use></svg> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            {% else %}
+            <header class="public-nav">
+                <a href="{% url 'dashboard' %}" class="brand">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 10.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5ZM9 16.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5Z" fill="#fff" fill-opacity=".92"/><path d="M20 16.5h3v5h-3v-5Z" fill="#fff" fill-opacity=".45"/></svg>
+                    </span>
+                    <span class="brand-copy">
+                        <span class="brand-name">Stock Tracker</span>
+                        <span class="brand-meta">Inventory operations</span>
+                    </span>
+                </a>
+                <div class="public-nav-actions">
+                    <button type="button" class="icon-btn" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
+                        <svg class="icon theme-icon-moon" aria-hidden="true"><use href="#i-moon"></use></svg>
+                        <svg class="icon theme-icon-sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+                    </button>
+                    <a href="{% url 'login' %}" class="btn btn-ghost">Login</a>
+                    {% if registration_open %}<a href="{% url 'register' %}" class="btn btn-primary">Register</a>{% endif %}
+                </div>
+            </header>
             {% endif %}
-            <div class="footer-section">
-                <h3>Links</h3>
-                <ul>
-                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    {% if user.is_authenticated %}
-                    <li><a href="{% url 'my_comments' %}">My Feedback</a></li>
-                    {% endif %}
-                    {% if user.is_superuser %}
-                    <li><a href="{% url 'manage_footer_contacts' %}">Manage Footer</a></li>
-                    {% endif %}
-                </ul>
-            </div>
+
+            <main class="content{% if not user.is_authenticated %} content--public{% endif %}" id="main" tabindex="-1">
+                {% if messages %}
+                <div class="messages-container" role="status" aria-live="polite">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}" data-auto-dismiss>
+                        <span class="alert-icon" aria-hidden="true">
+                            <svg class="icon"><use href="#{% if message.tags == 'success' %}i-trend{% elif message.tags == 'error' %}i-close{% elif message.tags == 'warning' %}i-bell{% else %}i-help{% endif %}"></use></svg>
+                        </span>
+                        <span class="alert-text">{{ message }}</span>
+                        <button type="button" class="alert-close" aria-label="Dismiss message">
+                            <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="app-footer">
+                <p>&copy; {% now "Y" %} Stock Tracker</p>
+                {% if footer_contacts %}
+                <div class="app-footer-contacts">
+                    {% for contact in footer_contacts %}
+                    <span>{{ contact.label }}: <strong>{{ contact.value }}</strong></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </footer>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; {% now "Y" %} Stock Management System</p>
-        </div>
-    </footer>
+    </div>
 
     {% if user.is_authenticated %}
-    <!-- Floating feedback widget -->
-    <button type="button" id="floatingCommentBtn" class="floating-comment-btn" aria-label="Send feedback" aria-controls="floatingCommentPanel" aria-expanded="false">
-        <i class="fas fa-comment-dots" aria-hidden="true"></i>
-    </button>
     <div id="floatingCommentPanel" class="floating-comment-panel" role="region" aria-label="Feedback panel" aria-hidden="true">
         <div class="floating-panel-header">
-            <h4><i class="fas fa-comment-dots" aria-hidden="true"></i> Feedback</h4>
-            <button type="button" id="floatingPanelClose" class="floating-panel-close" aria-label="Close feedback panel">&times;</button>
+            <h2 class="floating-panel-title">Send feedback</h2>
+            <button type="button" id="floatingPanelClose" class="floating-panel-close" aria-label="Close feedback panel">
+                <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+            </button>
         </div>
         <div class="floating-tabs" role="tablist" aria-label="Feedback options">
             <button id="feedback-tab-submit" class="floating-tab active" data-tab="submit" type="button" role="tab" aria-selected="true" aria-controls="submitTab" tabindex="0">Submit</button>
-            <button id="feedback-tab-comments" class="floating-tab" data-tab="myComments" type="button" role="tab" aria-selected="false" aria-controls="myCommentsTab" tabindex="-1">My Feedback</button>
+            <button id="feedback-tab-comments" class="floating-tab" data-tab="myComments" type="button" role="tab" aria-selected="false" aria-controls="myCommentsTab" tabindex="-1">My feedback</button>
         </div>
         <div id="submitTab" class="floating-tab-content active" role="tabpanel" aria-labelledby="feedback-tab-submit" tabindex="0">
             <form id="floatingCommentForm" method="post" action="{% url 'submit_comment' %}">
@@ -197,9 +345,9 @@
                 <div class="form-group">
                     <label class="visually-hidden" for="floatingCommentCategory">Category</label>
                     <select id="floatingCommentCategory" name="category" class="form-control" required>
-                        <option value="">Category...</option>
-                        <option value="bug">Bug Report</option>
-                        <option value="feature">Feature Request</option>
+                        <option value="">Select a category</option>
+                        <option value="bug">Bug report</option>
+                        <option value="feature">Feature request</option>
                         <option value="improvement">Improvement</option>
                         <option value="question">Question</option>
                         <option value="other">Other</option>
@@ -211,9 +359,9 @@
                 </div>
                 <div class="form-group">
                     <label class="visually-hidden" for="floatingCommentMessage">Your message</label>
-                    <textarea id="floatingCommentMessage" name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
+                    <textarea id="floatingCommentMessage" name="message" class="form-control" placeholder="Describe the issue or idea" rows="4" required></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send</button>
+                <button type="submit" class="btn btn-primary btn-block">Send feedback</button>
             </form>
         </div>
         <div id="myCommentsTab" class="floating-tab-content" role="tabpanel" aria-labelledby="feedback-tab-comments" tabindex="0" hidden>

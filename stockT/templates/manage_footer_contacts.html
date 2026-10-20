@@ -1,19 +1,27 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Footer Contacts - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Footer Contacts · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-address-book" aria-hidden="true"></i> Footer Contacts</h1>
-        <a href="{% url 'add_footer_contact' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add Contact</a>
-    </div>
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Footer contacts</h1>
+            <p class="dashboard-subtitle">Phone numbers, email addresses and links shown in the public footer.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'add_footer_contact' %}" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Add contact</a>
+        </div>
+    </header>
 
+    <section class="panel table-panel">
+    <div class="panel-head">
+        <div>
+            <h2>Contact details</h2>
+            <p>{{ contacts|length }} entr{{ contacts|length|pluralize:"y,ies" }} configured.</p>
+        </div>
+    </div>
     <div class="table-scroll-region" role="region" tabindex="0" aria-label="Footer contacts">
     <table class="data-table">
         <thead>
@@ -33,17 +41,17 @@
                 <td>{{ contact.get_contact_type_display }}</td>
                 <td>{{ contact.label }}</td>
                 <td>{{ contact.value }}</td>
-                <td>{% if contact.is_active %}<span class="visually-hidden">Active</span><i class="fas fa-check text-success" aria-hidden="true"></i>{% else %}<span class="visually-hidden">Inactive</span><i class="fas fa-times text-danger" aria-hidden="true"></i>{% endif %}</td>
+                <td>{% if contact.is_active %}<span class="visually-hidden">Active</span><svg class="icon text-success" aria-hidden="true"><use href="#i-check"></use></svg>{% else %}<span class="visually-hidden">Inactive</span><svg class="icon text-danger" aria-hidden="true"><use href="#i-close"></use></svg>{% endif %}</td>
                 <td>
-                    <a href="{% url 'edit_footer_contact' contact.id %}" class="btn btn-secondary btn-sm" aria-label="Edit {{ contact.label }}" title="Edit contact"><i class="fas fa-pen" aria-hidden="true"></i></a>
+                    <a href="{% url 'edit_footer_contact' contact.id %}" class="btn btn-secondary btn-sm" aria-label="Edit {{ contact.label }}" title="Edit contact"><svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg></a>
                     <form method="post" action="{% url 'toggle_footer_contact' contact.id %}" class="inline-form">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-warning btn-sm" aria-label="Toggle {{ contact.label }} status" title="Toggle contact status"><i class="fas fa-toggle-on" aria-hidden="true"></i></button>
+                        <button type="submit" class="btn btn-warning btn-sm" aria-label="Toggle {{ contact.label }} status" title="Toggle contact status"><svg class="icon" aria-hidden="true"><use href="#i-toggle"></use></svg></button>
                     </form>
                     <form method="post" action="{% url 'delete_footer_contact' contact.id %}" class="inline-form"
                           onsubmit="return confirm('Delete this contact?');">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm" aria-label="Delete {{ contact.label }}" title="Delete contact"><i class="fas fa-trash" aria-hidden="true"></i></button>
+                        <button type="submit" class="btn btn-danger btn-sm" aria-label="Delete {{ contact.label }}" title="Delete contact"><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg></button>
                     </form>
                 </td>
             </tr>
@@ -53,5 +61,6 @@
         </tbody>
     </table>
     </div>
+    </section>
 </div>
 {% endblock %}

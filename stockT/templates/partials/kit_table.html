@@ -18,7 +18,7 @@
             {% if can_manage_workspace %}
             <td class="select-column"><input type="checkbox" class="kit-checkbox" name="kit_ids" value="{{ kit.id }}" aria-label="Select {{ kit.kit_type_name }} stock item, quantity {{ kit.quantity }}"></td>
             {% endif %}
-            <td>{{ kit.kit_type_name }}</td>
+            <td><span class="kit-name">{{ kit.kit_type_name }}</span>{% if kit.notes %}<span class="kit-sub">{{ kit.notes|truncatechars:44 }}</span>{% endif %}</td>
             <td class="cell-quantity">{{ kit.quantity }}</td>
             <td><span class="condition-badge condition-{{ kit.condition }}">{{ kit.get_condition_display }}</span></td>
             {% if can_manage_workspace %}<td><a href="{% url 'user_profile' kit.user.id %}">{{ kit.user.username }}</a></td>{% endif %}

@@ -1,44 +1,59 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Usage Milestones - Stock Management System{% endblock %}
+{% block title %}Usage milestones · Stock Tracker{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-trophy" aria-hidden="true"></i> Usage Milestones</h1>
-        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie" aria-hidden="true"></i> Back to Analytics</a>
+<header class="page-header">
+    <div class="dashboard-heading">
+        <h1>Usage milestones</h1>
+        <p class="dashboard-subtitle">Automatic markers for growth in users, sessions, page views and devices.</p>
     </div>
+    <div class="dashboard-header-actions">
+        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary">
+            <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
+            Back to analytics
+        </a>
+    </div>
+</header>
 
-    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Usage milestones">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th scope="col">Reached</th>
-                <th scope="col">Type</th>
-                <th scope="col">Threshold</th>
-                <th scope="col">Message</th>
-                <th scope="col">Notified</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for milestone in milestones %}
-            <tr>
-                <td>{{ milestone.achieved_at|date:"Y-m-d H:i" }}</td>
-                <td>{{ milestone.milestone_type }}</td>
-                <td>{{ milestone.threshold }}</td>
-                <td>{{ milestone.message|default:"-" }}</td>
-                <td>{% if milestone.notified %}<span class="visually-hidden">Yes</span><i class="fas fa-check text-success" aria-hidden="true"></i>{% else %}<span class="visually-hidden">No</span><i class="fas fa-minus" aria-hidden="true"></i>{% endif %}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="empty-state">No milestones achieved yet.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<dl class="metric-strip">
+    <div><dt>Milestones reached</dt><dd>{{ milestone_count }}</dd></div>
+    <div><dt>Most recent</dt><dd>{% if latest_milestone %}{{ latest_milestone.achieved_at|date:"j M Y" }}{% else %}—{% endif %}</dd></div>
+    <div><dt>Latest threshold</dt><dd>{% if latest_milestone %}{{ latest_milestone.threshold }}{% else %}—{% endif %}</dd></div>
+</dl>
+
+{% if milestones %}
+<div class="milestone-list">
+    {% for milestone in milestones %}
+    <article class="milestone-card">
+        <span class="milestone-medal" aria-hidden="true">
+            <svg class="icon"><use href="#i-trophy"></use></svg>
+        </span>
+        <div class="milestone-body">
+            <div class="milestone-title">{{ milestone.milestone_type|title }} reached {{ milestone.threshold }}</div>
+            <p class="milestone-text">{{ milestone.message|default:"A new usage threshold was crossed." }}</p>
+            <div class="milestone-meta">
+                <span>{{ milestone.achieved_at|date:"j M Y, H:i" }}</span>
+                <span>·</span>
+                <span>
+                    {% if milestone.notified %}Team notified{% else %}Not yet announced{% endif %}
+                </span>
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="panel">
+    <div class="empty-block">
+        <p>No milestones reached yet.</p>
+        <span>Milestones are created automatically as usage passes each threshold.</span>
     </div>
 </div>
+{% endif %}
 {% endblock %}

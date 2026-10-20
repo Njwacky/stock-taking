@@ -1,17 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Stock Distribution - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Stock Distribution · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="distribution-page">
     <header class="dashboard-header">
         <div class="dashboard-heading">
-            <h1><i class="fas fa-share-nodes" aria-hidden="true"></i> Stock Distribution</h1>
+            <h1>Stock Distribution</h1>
             <p class="dashboard-subtitle">Assign stock to a workspace member. Confirm each distribution with your password.</p>
         </div>
     </header>
@@ -75,7 +71,7 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-share" aria-hidden="true"></i> Distribute Stock</button>
+                <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-share"></use></svg> Distribute Stock</button>
             </div>
         </form>
 

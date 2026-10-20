@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Workspace Settings - Stock Management System{% endblock %}
+{% block title %}Workspace Settings · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="workspace-settings-page">
     <header class="dashboard-header">
         <div class="dashboard-heading">
-            <h1><i class="fas fa-sliders" aria-hidden="true"></i> Workspace Settings</h1>
+            <h1>Workspace Settings</h1>
             <p class="dashboard-subtitle">Managing <strong>{{ workspace.name }}</strong> · Your role: {{ membership.get_role_display|default:"Member" }}.</p>
         </div>
     </header>
@@ -16,7 +16,7 @@
         <section class="ws-settings-panel" aria-labelledby="workspace-general-title">
             <div class="dashboard-section-heading">
                 <div>
-                    <h2 id="workspace-general-title"><i class="fas fa-pen" aria-hidden="true"></i> General</h2>
+                    <h2 id="workspace-general-title">General</h2>
                     <p>Update the name shown to workspace members.</p>
                 </div>
             </div>
@@ -30,19 +30,19 @@
                     {{ form.name }}
                     {% if form.name.errors %}<div class="field-errors">{{ form.name.errors }}</div>{% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Save name</button>
+                <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Save name</button>
             </form>
             {% else %}
-            <p class="ws-settings-note"><i class="fas fa-circle-info" aria-hidden="true"></i> Only workspace owners and admins can rename this workspace.</p>
+            <p class="ws-settings-note"><svg class="icon" aria-hidden="true"><use href="#i-help"></use></svg> Only workspace owners and admins can rename this workspace.</p>
             {% endif %}
 
-            <p class="ws-settings-note"><i class="fas fa-lightbulb" aria-hidden="true"></i> Workspaces keep stock, kit types and usage separate. <a href="{% url 'workspace_create' %}">Create another workspace</a> whenever you need one.</p>
+            <p class="ws-settings-note"><svg class="icon" aria-hidden="true"><use href="#i-help"></use></svg> Workspaces keep stock, kit types and usage separate. <a href="{% url 'workspace_create' %}">Create another workspace</a> whenever you need one.</p>
         </section>
 
         <section class="ws-settings-panel" aria-labelledby="workspace-members-title">
             <div class="dashboard-section-heading">
                 <div>
-                    <h2 id="workspace-members-title"><i class="fas fa-users" aria-hidden="true"></i> Members</h2>
+                    <h2 id="workspace-members-title">Members</h2>
                     <p>{{ members|length }} member{{ members|length|pluralize }} in this workspace.</p>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                     <label for="{{ add_member_form.role.id_for_label }}">Role</label>
                     {{ add_member_form.role }}
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> Add member</button>
+                <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg> Add member</button>
             </form>
             {% endif %}
 

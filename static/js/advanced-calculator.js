@@ -843,6 +843,11 @@
             var show = view.dataset.view === mode;
             view.hidden = !show;
         });
+        // history belongs to the calculator modes only
+        var historyPanel = document.querySelector('.calc-history');
+        if (historyPanel) {
+            historyPanel.hidden = !(mode === 'standard' || mode === 'scientific');
+        }
         // scientific & standard share the calculator view
         var calculatorView = document.querySelector('.calc-view[data-view="calculator"]');
         if (calculatorView && (mode === 'standard' || mode === 'scientific')) {

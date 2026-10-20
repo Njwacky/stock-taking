@@ -1,54 +1,87 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Edit User - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/edit-user.css' %}">
-{% endblock %}
+{% block title %}Edit {{ target.username }} · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="edit-user-container">
-    <h1><i class="fas fa-user-pen" aria-hidden="true"></i> Edit User: {{ target.username }}</h1>
-
-    <form method="post" class="edit-user-form">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
-            {% if field.field.widget.input_type == 'checkbox' %}
-            {{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {% else %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% endif %}
-            {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+<div class="manage-users-container">
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Edit user</h1>
+            <p class="dashboard-subtitle">
+                {{ target.username }}
+                <span class="role-badge role-{{ target.role }}">{{ target.role_display }}</span>
+                {% if not target.is_active %}<span class="status-badge status-inactive">Inactive</span>{% endif %}
+            </p>
         </div>
-        {% endfor %}
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="{% url 'manage_users' %}" class="btn btn-secondary">Cancel</a>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'user_profile' target.id %}" class="btn btn-secondary">View profile</a>
+            <a href="{% url 'manage_users' %}" class="btn btn-secondary">Back to users</a>
         </div>
-    </form>
+    </header>
 
-    {% if not restricted %}
-    <div class="form-card" style="margin-top:28px">
-        <h2 style="margin:0 0 8px;font-size:1.2rem"><i class="fas fa-key" aria-hidden="true"></i> Set New Password</h2>
-        <p class="text-muted">Reset this user's password directly (e.g. a new starter phoned in).</p>
-        <form method="post" action="{% url 'set_user_password' target.id %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="id_new_password">New password</label>
-                <input type="password" name="new_password" id="id_new_password" class="form-control" required>
+    <section class="panel" aria-labelledby="account-details-title">
+        <div class="panel-head">
+            <div>
+                <h2 id="account-details-title">Account details</h2>
+                <p>Name, contact information, role and access.</p>
             </div>
-            <div class="form-group">
-                <label for="id_confirm_password">Confirm password</label>
-                <input type="password" name="confirm_password" id="id_confirm_password" class="form-control" required>
+        </div>
+
+        <form method="post" class="edit-user-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="field-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="form-grid">
+                {% for field in form %}
+                <div class="form-group{% if field.field.widget.input_type == 'checkbox' %} form-check{% endif %}">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                    {{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% else %}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}<small class="form-help">{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-warning"><i class="fas fa-key" aria-hidden="true"></i> Set Password</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a href="{% url 'manage_users' %}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
-    </div>
+    </section>
+
+    {% if not restricted %}
+    <section class="panel" aria-labelledby="password-title">
+        <div class="panel-head">
+            <div>
+                <h2 id="password-title">Set a new password</h2>
+                <p>Use this when someone cannot sign in. They can change it again afterwards.</p>
+            </div>
+        </div>
+        <form method="post" action="{% url 'set_user_password' target.id %}">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="id_new_password">New password</label>
+                    <input type="password" name="new_password" id="id_new_password" class="form-control" autocomplete="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_confirm_password">Confirm password</label>
+                    <input type="password" name="confirm_password" id="id_confirm_password" class="form-control" autocomplete="new-password" required>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning">
+                    <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+                    Set password
+                </button>
+            </div>
+        </form>
+    </section>
     {% endif %}
 </div>
 {% endblock %}

@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show loading state
             submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitButton.innerHTML = '<span class="loading-spinner">Sending…</span>';
             
             fetch(this.action, {
                 method: 'POST',

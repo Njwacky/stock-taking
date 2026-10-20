@@ -1,5 +1,10 @@
 // Add Items functionality with CRUD for existing kits
 document.addEventListener('DOMContentLoaded', function() {
+    // Icon helper — pulls a glyph from the inline SVG sprite in base.html.
+    function icon(name, className) {
+        return `<svg class="icon${className ? ' ' + className : ''}" aria-hidden="true"><use href="#${name}"></use></svg>`;
+    }
+
     const userSelect = document.getElementById('user');
     const checkboxes = document.querySelectorAll('.modern-checkbox');
     const quantityInputs = document.querySelectorAll('.quantity-input');
@@ -114,10 +119,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (submitBtn.disabled) {
             const prompt = userSelected ? 'Select at least one item' : 'Select a user and at least one item';
-            submitBtn.innerHTML = `<i class="fa fa-plus" aria-hidden="true"></i><span>${prompt}</span>`;
+            submitBtn.innerHTML = `${icon('i-plus')}<span>${prompt}</span>`;
         } else {
             const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            submitBtn.innerHTML = `<i class="fa fa-plus" aria-hidden="true"></i><span>Add ${selectedCount} kit${selectedCount === 1 ? '' : 's'}</span>`;
+            submitBtn.innerHTML = `${icon('i-plus')}<span>Add ${selectedCount} kit${selectedCount === 1 ? '' : 's'}</span>`;
         }
     }
 
@@ -250,9 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadUserKits(userId) {
         try {
             kitsListContainer.innerHTML = `
-                <div class="loading-kits">
-                    <i class="fa fa-spinner fa-spin"></i>
-                    <span>Loading existing kits...</span>
+                <div class="loading-kits" role="status">
+                    <span class="loading-spinner">Loading existing stock…</span>
                 </div>
             `;
             
@@ -291,12 +295,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="kit-meta">
                         <div class="kit-meta-item">
-                            <i class="fa fa-cubes"></i>
-                            <span>Quantity: ${escapeHtml(kit.quantity)}</span>
+                            ${icon('i-boxes')}
+                            <span>Qty ${escapeHtml(kit.quantity)}</span>
                         </div>
                         <div class="kit-meta-item">
-                            <i class="fa fa-calendar"></i>
-                            <span>Added: ${escapeHtml(formatDate(kit.timestamp))}</span>
+                            ${icon('i-calendar')}
+                            <span>${escapeHtml(formatDate(kit.timestamp))}</span>
                         </div>
                         <div class="kit-meta-item">
                             <span class="condition-badge condition-${escapeHtml(kit.condition)}">${escapeHtml(kit.condition)}</span>
@@ -304,23 +308,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     ${kit.location || kit.notes || kit.expiration_date ? `
                         <div class="kit-details-preview">
-                            ${kit.location ? `<div><i class="fa fa-map-marker-alt"></i> ${escapeHtml(kit.location)}</div>` : ''}
-                            ${kit.expiration_date ? `<div><i class="fa fa-calendar-alt"></i> Expires: ${escapeHtml(formatDate(kit.expiration_date))}</div>` : ''}
-                            ${kit.notes ? `<div><i class="fa fa-sticky-note"></i> ${escapeHtml(kit.notes)}</div>` : ''}
+                            ${kit.location ? `<span class="kit-detail-chip">${icon('i-pin')}${escapeHtml(kit.location)}</span>` : ''}
+                            ${kit.expiration_date ? `<span class="kit-detail-chip">${icon('i-calendar')}Expires ${escapeHtml(formatDate(kit.expiration_date))}</span>` : ''}
+                            ${kit.notes ? `<span class="kit-detail-chip kit-detail-chip--note">${escapeHtml(kit.notes)}</span>` : ''}
                         </div>
                     ` : ''}
                 </div>
                 <div class="kit-actions">
                     <button type="button" class="kit-action-btn kit-view-btn" data-kit-action="view" data-kit-id="${escapeHtml(kit.id)}" title="View kit details">
-                        <i class="fa fa-eye"></i>
+                        ${icon('i-eye')}
                         View
                     </button>
                     <button type="button" class="kit-action-btn kit-edit-btn" data-kit-action="edit" data-kit-id="${escapeHtml(kit.id)}" title="Edit kit">
-                        <i class="fa fa-edit"></i>
+                        ${icon('i-edit')}
                         Edit
                     </button>
                     <button type="button" class="kit-action-btn kit-delete-btn" data-kit-action="delete" data-kit-id="${escapeHtml(kit.id)}" title="Delete kit">
-                        <i class="fa fa-trash"></i>
+                        ${icon('i-trash')}
                         Delete
                     </button>
                 </div>
@@ -355,26 +359,41 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kit) {
             const kitDetails = `
                 <div class="kit-details-modal">
-                    <h5>${escapeHtml(kit.kit_type)}</h5>
-                    <div class="row">
-                        <div class="col-md-6"><strong>Quantity:</strong> ${escapeHtml(kit.quantity)}</div>
-                        <div class="col-md-6"><strong>Condition:</strong> ${escapeHtml(kit.condition)}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><strong>Location:</strong> ${escapeHtml(kit.location || 'Not specified')}</div>
-                        <div class="col-md-6"><strong>Status:</strong> ${kit.is_active ? 'Active' : 'Inactive'}</div>
-                    </div>
-                    ${kit.expiration_date ? `<div class="row"><div class="col-12"><strong>Expiration Date:</strong> ${escapeHtml(formatDate(kit.expiration_date))}</div></div>` : ''}
-                    ${kit.notes ? `<div class="row"><div class="col-12"><strong>Notes:</strong> ${escapeHtml(kit.notes)}</div></div>` : ''}
-                    <div class="row">
-                        <div class="col-md-6"><strong>Created:</strong> ${escapeHtml(formatDate(kit.timestamp))}</div>
-                        <div class="col-md-6"><strong>Last Updated:</strong> ${escapeHtml(formatDate(kit.last_updated))}</div>
-                    </div>
+                    <dl class="detail-list">
+                        <div class="detail-row">
+                            <dt>Quantity</dt>
+                            <dd>${escapeHtml(kit.quantity)}</dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Condition</dt>
+                            <dd><span class="condition-badge condition-${escapeHtml(kit.condition)}">${escapeHtml(kit.condition)}</span></dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Location</dt>
+                            <dd>${escapeHtml(kit.location || 'Not recorded')}</dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Status</dt>
+                            <dd>${kit.is_active ? 'Active' : 'Inactive'}</dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Added</dt>
+                            <dd>${escapeHtml(formatDate(kit.timestamp))}</dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Last updated</dt>
+                            <dd>${escapeHtml(formatDate(kit.last_updated))}</dd>
+                        </div>
+                        ${kit.expiration_date ? `<div class="detail-row"><dt>Expires</dt><dd>${escapeHtml(formatDate(kit.expiration_date))}</dd></div>` : ''}
+                        ${kit.notes ? `<div class="detail-row detail-row--stacked"><dt>Notes</dt><dd>${escapeHtml(kit.notes)}</dd></div>` : ''}
+                    </dl>
                 </div>
             `;
             
             kitEditModalBody.innerHTML = kitDetails;
+            document.getElementById('kit-edit-title').textContent = 'Stock item details';
             saveKitChangesBtn.style.display = 'none';
+            kitEditModal.hidden = false;
             kitEditModal.style.display = 'flex';
         }
     }
@@ -393,27 +412,29 @@ document.addEventListener('DOMContentLoaded', function() {
                             <!-- Kit types will be loaded via AJAX -->
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="editQuantity">Quantity</label>
-                        <input type="number" class="form-control" id="editQuantity" name="quantity" min="1" value="${escapeHtml(kit.quantity)}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editCondition">Condition</label>
-                        <select class="form-control" id="editCondition" name="condition">
-                            <option value="new" ${kit.condition === 'new' ? 'selected' : ''}>New</option>
-                            <option value="good" ${kit.condition === 'good' ? 'selected' : ''}>Good</option>
-                            <option value="fair" ${kit.condition === 'fair' ? 'selected' : ''}>Fair</option>
-                            <option value="poor" ${kit.condition === 'poor' ? 'selected' : ''}>Poor</option>
-                            <option value="damaged" ${kit.condition === 'damaged' ? 'selected' : ''}>Damaged</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editLocation">Location</label>
-                        <input type="text" class="form-control" id="editLocation" name="location" value="${escapeHtml(kit.location || '')}">
-                    </div>
-                    <div class="form-group">
-                        <label for="editExpirationDate">Expiration Date</label>
-                        <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" value="${escapeHtml(kit.expiration_date || '')}">
+                    <div class="edit-grid">
+                        <div class="form-group">
+                            <label for="editQuantity">Quantity</label>
+                            <input type="number" class="form-control" id="editQuantity" name="quantity" min="1" value="${escapeHtml(kit.quantity)}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCondition">Condition</label>
+                            <select class="form-control" id="editCondition" name="condition">
+                                <option value="new" ${kit.condition === 'new' ? 'selected' : ''}>New</option>
+                                <option value="good" ${kit.condition === 'good' ? 'selected' : ''}>Good</option>
+                                <option value="fair" ${kit.condition === 'fair' ? 'selected' : ''}>Fair</option>
+                                <option value="poor" ${kit.condition === 'poor' ? 'selected' : ''}>Poor</option>
+                                <option value="damaged" ${kit.condition === 'damaged' ? 'selected' : ''}>Damaged</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editLocation">Location</label>
+                            <input type="text" class="form-control" id="editLocation" name="location" value="${escapeHtml(kit.location || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editExpirationDate">Expires</label>
+                            <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" value="${escapeHtml(kit.expiration_date || '')}">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="editNotes">Notes</label>
@@ -431,7 +452,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             kitEditModalBody.innerHTML = editForm;
+            document.getElementById('kit-edit-title').textContent = 'Edit stock item';
             saveKitChangesBtn.style.display = 'inline-block';
+            kitEditModal.hidden = false;
             kitEditModal.style.display = 'flex';
             
             // Load kit types for the dropdown
@@ -528,6 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Close modal
                 kitEditModal.style.display = 'none';
+                kitEditModal.hidden = true;
                 
                 // Show success message
                 showSuccess('Kit updated successfully!');
@@ -553,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('deleteKitQuantity').textContent = kit.quantity;
             document.getElementById('deleteKitOwner').textContent = selectedUserName.textContent;
             
+            kitDeleteModal.hidden = false;
             kitDeleteModal.style.display = 'flex';
         }
     }
@@ -579,6 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Close modal
                 kitDeleteModal.style.display = 'none';
+                kitDeleteModal.hidden = true;
                 
                 // Show success message
                 showSuccess('Kit deleted successfully!');
@@ -609,18 +635,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showAlert(message, type, iconName) {
         const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.setAttribute('role', type === 'danger' ? 'alert' : 'status');
 
-        const icon = document.createElement('i');
-        icon.className = `fa fa-${iconName}`;
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'alert-icon';
+        iconWrap.innerHTML = icon(iconName === 'exclamation-triangle' ? 'i-alert' : 'i-check');
         const messageNode = document.createElement('span');
+        messageNode.className = 'alert-text';
         messageNode.textContent = message;
         const closeButton = document.createElement('button');
         closeButton.type = 'button';
-        closeButton.className = 'close';
-        closeButton.dataset.dismiss = 'alert';
-        closeButton.textContent = '\u00d7';
-        alertDiv.append(icon, messageNode, closeButton);
+        closeButton.className = 'alert-close';
+        closeButton.setAttribute('aria-label', 'Dismiss message');
+        closeButton.innerHTML = icon('i-close');
+        closeButton.addEventListener('click', () => alertDiv.remove());
+        alertDiv.append(iconWrap, messageNode, closeButton);
 
         const container = document.querySelector('.add-items-container');
         if (!container) {
@@ -629,17 +659,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         container.insertBefore(alertDiv, container.firstChild);
 
-        setTimeout(() => {
-            alertDiv.classList.remove('show');
-            setTimeout(() => alertDiv.remove(), 150);
-        }, 5000);
+        setTimeout(() => alertDiv.remove(), 6000);
     }
 
     // Modal close buttons
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', function() {
             const modal = this.closest('.modal');
-            if (modal) modal.style.display = 'none';
+            if (modal) {
+                modal.style.display = 'none';
+                modal.hidden = true;
+            }
         });
     });
     
@@ -647,7 +677,10 @@ document.addEventListener('DOMContentLoaded', function() {
     [kitEditModal, kitDeleteModal].forEach(modal => {
         if (modal) {
             modal.addEventListener('click', function(e) {
-                if (e.target === modal) modal.style.display = 'none';
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    modal.hidden = true;
+                }
             });
         }
     });

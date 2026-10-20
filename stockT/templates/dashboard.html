@@ -1,85 +1,196 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard-controls.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-<link rel="stylesheet" href="{% static 'css/most-received-kits.css' %}">
-{% endblock %}
+{% block title %}Dashboard · Stock Tracker{% endblock %}
 
 {% block content %}
 {% if public_view %}
-<div class="hero-section">
-    <h1>Stock Management System</h1>
-    <p>Track kits, monitor stock usage and manage inventory in one place — with your own private workspace.</p>
-    <div class="hero-actions">
-        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create Free Account</a>
-        <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Login</a>
-    </div>
-</div>
-
-<section class="why-register">
-    <h2>Why Register?</h2>
-    <div class="carousel-container">
-        <div class="why-register-cards">
-            <div class="register-card-item"><i class="fas fa-clipboard-list" aria-hidden="true"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>
-            <div class="register-card-item"><i class="fas fa-chart-pie" aria-hidden="true"></i><h3>Insights</h3><p>See what stock you have at a glance.</p></div>
-            <div class="register-card-item"><i class="fas fa-qrcode" aria-hidden="true"></i><h3>QR Profile</h3><p>Share your profile with a scannable code.</p></div>
-            <div class="register-card-item"><i class="fas fa-comments" aria-hidden="true"></i><h3>Feedback</h3><p>Report bugs and request features.</p></div>
-            <div class="register-card-item"><i class="fas fa-mobile-screen" aria-hidden="true"></i><h3>PWA</h3><p>Install the app on any device.</p></div>
-            <div class="register-card-item"><i class="fas fa-shield-halved" aria-hidden="true"></i><h3>Secure</h3><p>Role-based access keeps data safe.</p></div>
+<section class="hero">
+    <div class="hero-copy">
+        <span class="eyebrow">Inventory control for small teams</span>
+        <h1>Every kit accounted for, <em>every issue on record.</em></h1>
+        <p>
+            Stock Tracker is a private workspace for the equipment your team signs out — tape,
+            tools, PPE, consumables. Record what went where, who has it and what is running low,
+            without a spreadsheet held together by hope.
+        </p>
+        <div class="hero-actions">
+            {% if registration_open %}
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create your workspace</a>
+            {% endif %}
+            <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Sign in</a>
         </div>
-        <div class="carousel-dots" aria-label="Registration benefits carousel pages">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <p class="hero-note">Each workspace starts with the standard kit types already configured.</p>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+        <div class="hero-app">
+            <div class="hero-app-bar">
+                <span class="hero-app-mark"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".45"/><rect x="3" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".45"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".2"/></svg></span>
+                <span class="hero-app-title">Naledi's Workspace</span>
+                <span class="hero-app-role">Manager</span>
+            </div>
+            <div class="hero-app-body">
+                <div class="hero-app-tabs">
+                    <span class="is-active">Inventory</span>
+                    <span>Usage</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="hero-table">
+                    <div class="hero-table-head">
+                        <span>Kit type</span>
+                        <span>Qty</span>
+                        <span>Condition</span>
+                    </div>
+                    <div class="hero-table-row">
+                        <span>VHB Tape 18mm</span>
+                        <span class="hero-qty">42</span>
+                        <span class="hero-tag">Good</span>
+                    </div>
+                    <div class="hero-table-row">
+                        <span>Nitrile Gloves L</span>
+                        <span class="hero-qty">18</span>
+                        <span class="hero-tag">New</span>
+                    </div>
+                    <div class="hero-table-row">
+                        <span>Insulation Tape</span>
+                        <span class="hero-qty">9</span>
+                        <span class="hero-tag hero-tag--warn">Fair</span>
+                    </div>
+                    <div class="hero-table-row">
+                        <span>Cable Ties 200mm</span>
+                        <span class="hero-qty">120</span>
+                        <span class="hero-tag">Good</span>
+                    </div>
+                </div>
+                <div class="hero-app-foot">
+                    <span>27 items · 9 kit types</span>
+                    <span>Updated just now</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-badge">
+            <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+            Private workspace · role-based access
         </div>
     </div>
 </section>
+
+<section class="feature-grid" aria-labelledby="included-title">
+    <h2 id="included-title" class="visually-hidden">What's included</h2>
+    <article class="feature-card">
+        <svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>
+        <h3>Issued, used, returned</h3>
+        <p>Usage requests are logged against the person and kit, then approved or rejected by a manager. Nothing disappears silently.</p>
+    </article>
+    <article class="feature-card">
+        <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
+        <h3>Numbers you can act on</h3>
+        <p>Stock by kit type, usage over time and a full ranking of what leaves the store fastest.</p>
+    </article>
+    <article class="feature-card">
+        <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
+        <h3>One workspace per site</h3>
+        <p>Teams keep their own kit types, members and stock. Switch workspaces without mixing records.</p>
+    </article>
+</section>
+
+<section class="landing-band">
+    <div>
+        <h2>Built for the store room, not the boardroom</h2>
+        <p>Set up in a minute. Your first kit types are already there.</p>
+    </div>
+    <div class="cluster">
+        {% if registration_open %}<a href="{% url 'register' %}" class="btn btn-primary">Create account</a>{% endif %}
+        <a href="{% url 'login' %}" class="btn btn-secondary">Sign in</a>
+    </div>
+</section>
+
 {% else %}
-<header class="dashboard-header">
+
+<header class="page-header">
     <div class="dashboard-heading">
-        <h1><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</h1>
-        <p class="dashboard-subtitle">Review inventory, search stock and keep your workspace up to date.</p>
+        <h1>Inventory</h1>
+        <p class="dashboard-subtitle">
+            {{ current_workspace.name|default:"Your workspace" }} ·
+            {% if can_manage_workspace %}Filter, review and manage every member's stock.{% else %}The stock currently assigned to you.{% endif %}
+        </p>
     </div>
     <div class="dashboard-header-actions">
-        <a href="{% url 'export_kits_csv' %}?{{ request.GET.urlencode }}" class="btn btn-secondary"><i class="fas fa-download" aria-hidden="true"></i> Export CSV</a>
-        <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add Stock</a>
+        <a href="{% url 'export_kits_csv' %}?{{ request.GET.urlencode }}" class="btn btn-secondary">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+            Export CSV
+        </a>
+        <a href="{% url 'add_items' %}" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus-box"></use></svg>
+            Add stock
+        </a>
     </div>
 </header>
 
-<section class="dashboard-stats" aria-labelledby="stock-summary-title">
-    <div class="dashboard-section-heading">
-        <div>
-            <h2 id="stock-summary-title">Current stock by kit type</h2>
-            <p>Total quantity currently recorded in this workspace.</p>
-        </div>
-    </div>
-    <div class="chart-wrapper">
-        <canvas id="kitsPieChart" width="320" height="320" role="img" aria-label="Chart showing stock quantity by kit type"></canvas>
-        <div id="chartLegend" class="chart-legend" role="region" aria-label="Stock quantity breakdown"></div>
-    </div>
-    {{ kit_stats|json_script:"kitStatsData" }}
-</section>
+<div class="kpi-grid">
+    <article class="kpi-card">
+        <div class="kpi-card-top"><span class="kpi-label">Units on hand</span><span class="kpi-icon"><svg class="icon" aria-hidden="true"><use href="#i-boxes"></use></svg></span></div>
+        <div class="kpi-value">{{ summary.total_quantity }}</div>
+        <div class="kpi-foot">{{ summary.items }} line item{{ summary.items|pluralize }}</div>
+    </article>
+    <article class="kpi-card">
+        <div class="kpi-card-top"><span class="kpi-label">Kit types</span><span class="kpi-icon"><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg></span></div>
+        <div class="kpi-value">{{ summary.kit_types }}</div>
+        <div class="kpi-foot">Distinct types in use</div>
+    </article>
+    <article class="kpi-card">
+        <div class="kpi-card-top"><span class="kpi-label">Stock records</span><span class="kpi-icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg></span></div>
+        <div class="kpi-value">{{ summary.items }}</div>
+        <div class="kpi-foot">Across {{ summary.locations }} location{{ summary.locations|pluralize }}</div>
+    </article>
+    <article class="kpi-card">
+        <div class="kpi-card-top"><span class="kpi-label">Locations</span><span class="kpi-icon"><svg class="icon" aria-hidden="true"><use href="#i-globe"></use></svg></span></div>
+        <div class="kpi-value">{{ summary.locations }}</div>
+        <div class="kpi-foot">Storage points recorded</div>
+    </article>
+</div>
 
-<form id="filter-form" method="get" class="dashboard-controls" aria-label="Filter stock items">
+{% if kit_stats %}
+<section class="panel stock-summary" aria-labelledby="stock-summary-title">
+    <div class="panel-head">
+        <div>
+            <h2 id="stock-summary-title">Stock by kit type</h2>
+            <p>Quantity currently recorded against each type.</p>
+        </div>
+        <a href="{% url 'most_received_kits' %}" class="panel-link">Full ranking</a>
+    </div>
+    <div class="stock-distribution-list" id="stockBars">
+        {% for stat in kit_stats %}
+        <div class="stock-bar">
+            <div class="stock-bar-head">
+                <span class="stock-bar-name">{{ stat.kit_type }}</span>
+                <span class="stock-bar-value">{{ stat.total_quantity }} <small>units · {{ stat.user_count }} user{{ stat.user_count|pluralize }}</small></span>
+            </div>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width: {{ stat.bar_width }}%"></div></div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<form id="filter-form" method="get" class="dashboard-controls" aria-label="Filter stock items" role="search">
     <div class="filter-fields">
+        <div class="filter-field filter-field--search">
+            <label for="filter-search">Search inventory</label>
+            <input id="filter-search" type="search" name="search" class="form-control" placeholder="Kit type, user, location or notes" value="{{ filters.search }}">
+        </div>
         {% if can_manage_workspace %}
         <div class="filter-field">
-            <label for="filter-user">User</label>
+            <label for="filter-user">Member</label>
             <select id="filter-user" name="user" class="form-control">
-                <option value="">All users</option>
+                <option value="">All members</option>
                 {% for u in users %}
                 <option value="{{ u.username }}" {% if filters.user == u.username %}selected{% endif %}>{{ u.username }}</option>
                 {% endfor %}
             </select>
         </div>
         {% endif %}
-        <div class="filter-field filter-field--search">
-            <label for="filter-search">Search inventory</label>
-            <input id="filter-search" type="search" name="search" class="form-control" placeholder="Kit type, user, location or notes" value="{{ filters.search }}">
-        </div>
         <div class="filter-field">
             <label for="filter-sort">Sort by</label>
             <select id="filter-sort" name="sort" class="form-control">
@@ -92,13 +203,19 @@
         <div class="filter-field">
             <label for="filter-order">Order</label>
             <select id="filter-order" name="order" class="form-control">
-                <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descending</option>
-                <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascending</option>
+                <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Newest first</option>
+                <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Oldest first</option>
             </select>
         </div>
     </div>
     <div class="filter-actions">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter" aria-hidden="true"></i> Apply filters</button>
+        {% if filters.search or filters.user %}
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost btn-sm">Clear</a>
+        {% endif %}
+        <button type="submit" class="btn btn-secondary">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+            Apply
+        </button>
     </div>
 </form>
 
@@ -106,24 +223,27 @@
 <form id="bulk-delete-form" method="post" aria-label="Select and delete stock items">
     {% csrf_token %}
     <input type="hidden" name="action" value="bulk_delete">
-    <div id="bulk-actions-bar" class="bulk-actions-bar" aria-live="polite">
-        <span><strong id="selected-count">0</strong> selected</span>
-        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete Selected</button>
-    </div>
-    <div id="sticky-bulk-actions-bar" class="sticky-bulk-actions-bar" style="display:none" aria-live="polite">
+    <div id="sticky-bulk-actions-bar" class="sticky-bulk-actions-bar" style="display: none" aria-live="polite">
         <span><strong id="sticky-selected-count">0</strong> selected</span>
-        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete Selected</button>
+        <button type="submit" class="btn btn-danger btn-sm">Delete Selected</button>
     </div>
-{% else %}
-<div class="dashboard-table-area">
 {% endif %}
+
+<div class="inventory-card">
+    <div class="inventory-card-head">
+        <h2>Stock items</h2>
+        <div class="inventory-meta">
+            <span>{{ paginator.count }} item{{ paginator.count|pluralize }}</span>
+            {% if paginator.num_pages > 1 %}<span>·</span><span>Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>{% endif %}
+        </div>
+    </div>
     <div id="table-container" class="table-scroll-region" role="region" tabindex="0" aria-label="Stock items table">
         {% include 'partials/kit_table.html' %}
     </div>
+</div>
+
 {% if can_manage_workspace %}
 </form>
-{% else %}
-</div>
 {% endif %}
 
 <div id="pagination-container">
@@ -133,6 +253,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ kit_stats|json_script:"kitStatsData" }}
 <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}
