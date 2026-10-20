@@ -3709,3 +3709,83 @@ body:has(.auth-layout) .public-footer { display: none; }
 .notification-read .icon { width: 12px; height: 12px; }
 
 .notification-item form { flex: 0 0 auto; }
+
+/* Dashboard: "Needs attention" panel ------------------------------------- */
+
+.attention-panel {
+    border-color: var(--warning-soft);
+}
+
+.attention-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.attention-column-title {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.attention-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.attention-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+}
+
+.attention-item--low {
+    border-color: var(--warning-soft);
+    background: var(--warning-soft);
+}
+
+.attention-item--expiring {
+    border-color: var(--warning-soft);
+}
+
+.attention-item--expired {
+    border-color: var(--danger-soft);
+    background: var(--danger-soft);
+}
+
+.attention-name {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.attention-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Kit types: inline reorder-level editor ---------------------------------- */
+
+.reorder-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.reorder-form .form-control-sm {
+    width: 84px;
+    padding: 4px 6px;
+    font-size: 13px;
+}

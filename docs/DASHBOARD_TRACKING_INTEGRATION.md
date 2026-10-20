@@ -1,5 +1,14 @@
 # Dashboard Tracking Integration - Implementation Summary
 
+> **Status (2026 refresh):** the one-click Track flow described here is now
+> actually implemented in the current code base. The stock table has an
+> actions column with a **Track** button linking to
+> `/tracking/?kit_type=<kit-type-id>` (legacy `/tracking/?kit_id=<kit-id>`
+> is also honoured and mapped to the kit's type), and
+> `views.stock_usage_tracking` pre-selects that type in the usage form.
+> The "Remaining" column described below is not present — quantity lives in
+> the Quantity column.
+
 ## Overview
 Integrated stock usage tracking directly from the dashboard. Users can now click a "Track" button next to any kit item, which takes them to the tracking page with that specific kit pre-selected.
 

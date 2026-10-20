@@ -158,6 +158,9 @@ class KitType(models.Model):
     code = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     unit_of_measure = models.CharField(max_length=50, default='pieces')
+    # Low-stock threshold: when the workspace's total active quantity for
+    # this type falls to/below the level, managers are alerted.
+    reorder_level = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     workspace = models.ForeignKey(
@@ -395,6 +398,13 @@ class StockUsage(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     admin_notes = models.TextField(null=True, blank=True)
     stock_deleted = models.BooleanField(default=False)
+    # Soft delete: records are flagged, never destroyed, so the audit trail
+    # of who used what (and what stock moved) stays intact.
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='deleted_usages',
+    )
     workspace = models.ForeignKey(
         Workspace, on_delete=models.CASCADE, null=True, blank=True,
         related_name='stock_usages',
@@ -491,6 +501,12 @@ class SessionTracker(models.Model):
     device = models.ForeignKey(DeviceTracker, on_delete=models.CASCADE, related_name='sessions')
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions',
+    )
+    # Tenant scope captured when the session starts (and filled in on login)
+    # so each workspace's analytics only ever include its own members.
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='tracked_sessions',
     )
 
     class Meta:

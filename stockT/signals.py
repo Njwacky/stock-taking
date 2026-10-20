@@ -9,11 +9,12 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q, Sum
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import Kit, NotificationLog, StockUsage, User
+from .models import Kit, KitType, NotificationLog, StockUsage, User, WorkspaceMember
 
 logger = logging.getLogger('stockT')
 
@@ -95,6 +96,9 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                 f'{available} available, {instance.quantity_used} requested.'
             )
 
+        touched_kit_types = {
+            kit.kit_type_fk_id for kit in kits if kit.kit_type_fk_id
+        }
         remaining = instance.quantity_used
         for kit in kits:
             if remaining <= 0:
@@ -125,6 +129,58 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
         )
         instance.status = StockUsage.STATUS_COMPLETED
         instance.stock_deleted = True
+
+    _notify_low_stock(instance.workspace_id, touched_kit_types)
+
+
+def _notify_low_stock(workspace_id, kit_type_ids):
+    """Alert workspace managers when an approval leaves stock at/below its
+    reorder level.
+
+    Runs after the deduction so the notified quantities are the real ones.
+    Never raises — notifications must not roll back an approval.
+    """
+    if not workspace_id or not kit_type_ids:
+        return
+    try:
+        low = []
+        kit_types = KitType.objects.filter(
+            id__in=kit_type_ids, reorder_level__isnull=False, is_active=True,
+        )
+        for kit_type in kit_types:
+            total = (
+                Kit.objects.filter(
+                    kit_type_fk=kit_type,
+                    workspace_id=workspace_id,
+                    is_active=True,
+                ).aggregate(total=Sum('quantity'))['total']
+                or 0
+            )
+            if total <= kit_type.reorder_level:
+                low.append((kit_type.name, total, kit_type.reorder_level))
+        if not low:
+            return
+        lines = ', '.join(
+            f'{name} ({total}/{level} left)' for name, total, level in low
+        )
+        managers = User.objects.filter(
+            Q(is_superuser=True)
+            | Q(role__in=[User.ROLE_ADMIN, User.ROLE_MANAGER])
+            | Q(
+                workspace_memberships__workspace_id=workspace_id,
+                workspace_memberships__role__in=[
+                    WorkspaceMember.ROLE_OWNER, WorkspaceMember.ROLE_ADMIN,
+                ],
+            )
+        ).distinct()
+        notification = NotificationLog.objects.create(
+            notification_type='low_stock',
+            title='Stock running low',
+            message=f'Reorder threshold reached for: {lines}.',
+        )
+        notification.sent_to.set(managers)
+    except Exception:  # pragma: no cover - alerts must never break approvals
+        logger.exception('Failed to send low-stock notification')
 
 
 @receiver(pre_delete, sender=Kit)

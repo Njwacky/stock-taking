@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
     {% block extra_css %}{% endblock %}
-    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261020b">
+    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261020c">
 </head>
 <body{% if user.is_authenticated %} class="has-mobile-tabbar"{% else %} class="app-body app-body--guest"{% endif %}>
     <a href="#main" class="skip-link">Skip to content</a>
@@ -154,7 +154,7 @@
                     <a class="nav-item" href="{% url 'most_received_kits' %}"{% if '/most-received' in request.path %} aria-current="page"{% endif %}>
                         <svg class="icon" aria-hidden="true"><use href="#i-trend"></use></svg><span>Stock Ranking</span>
                     </a>
-                    {% if user.is_manager %}
+                    {% if can_manage_workspace %}
                     <a class="nav-item" href="{% url 'analytics_dashboard' %}"{% if '/analytics' in request.path or '/devices' in request.path %} aria-current="page"{% endif %}>
                         <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg><span>Analytics</span>
                     </a>

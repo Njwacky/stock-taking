@@ -41,6 +41,11 @@
                 <label for="new-kit-description">Description <span class="text-muted">(optional)</span></label>
                 <input id="new-kit-description" type="text" name="description" class="form-control">
             </div>
+            <div class="form-group">
+                <label for="new-kit-reorder">Reorder level <span class="text-muted">(optional)</span></label>
+                <input id="new-kit-reorder" type="number" name="reorder_level" min="0" step="1" class="form-control" placeholder="e.g. 20">
+                <small class="text-muted">Alert managers when total stock drops to this level.</small>
+            </div>
         </div>
         <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Add kit type</button>
     </form>
@@ -54,6 +59,7 @@
                     <th scope="col">Code</th>
                     <th scope="col">Unit</th>
                     <th scope="col">Description</th>
+                    <th scope="col">Reorder at</th>
                     <th scope="col">Status</th>
                     <th scope="col">Actions</th>
                 </tr>
@@ -65,6 +71,15 @@
                     <td><code>{{ t.code }}</code></td>
                     <td>{{ t.unit_of_measure }}</td>
                     <td>{{ t.description|default:"—" }}</td>
+                    <td>
+                        <form method="post" class="inline-form reorder-form" aria-label="Set reorder level for {{ t.name }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_reorder">
+                            <input type="hidden" name="kit_type_id" value="{{ t.id }}">
+                            <input type="number" name="reorder_level" min="0" step="1" class="form-control form-control-sm" value="{{ t.reorder_level|default_if_none:'' }}" aria-label="Reorder level for {{ t.name }}">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">Save</button>
+                        </form>
+                    </td>
                     <td>{% if t.is_active %}<span class="status-badge status-approved">Active</span>{% else %}<span class="status-badge status-dismissed">Inactive</span>{% endif %}</td>
                     <td>
                         <form method="post" class="inline-form">
@@ -80,7 +95,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="empty-state">No kit types yet. Add one using the form above.</td></tr>
+                <tr><td colspan="7" class="empty-state">No kit types yet. Add one using the form above.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -151,6 +151,48 @@
     </article>
 </div>
 
+{% if attention_low_stock or attention_expiring %}
+<section class="panel attention-panel" aria-labelledby="attention-title">
+    <div class="panel-head">
+        <div>
+            <h2 id="attention-title">Needs attention</h2>
+            <p>Low stock and items expiring in the next 30 days.</p>
+        </div>
+    </div>
+    <div class="attention-grid">
+        {% if attention_low_stock %}
+        <div class="attention-column">
+            <h3 class="attention-column-title">Low stock</h3>
+            <ul class="attention-list">
+                {% for row in attention_low_stock %}
+                <li class="attention-item attention-item--low">
+                    <span class="attention-name">{{ row.name }}</span>
+                    <span class="attention-meta">{{ row.total }} left · reorder at {{ row.reorder_level }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if attention_expiring %}
+        <div class="attention-column">
+            <h3 class="attention-column-title">Expiring soon</h3>
+            <ul class="attention-list">
+                {% for kit in attention_expiring %}
+                <li class="attention-item {% if kit.expiration_date < today %}attention-item--expired{% else %}attention-item--expiring{% endif %}">
+                    <span class="attention-name">{{ kit.kit_type_name }}</span>
+                    <span class="attention-meta">
+                        {% if kit.expiration_date < today %}Expired{% else %}Expires{% endif %}
+                        {{ kit.expiration_date|date:"M j, Y" }} · qty {{ kit.quantity }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
 {% if kit_stats %}
 <section class="panel stock-summary" aria-labelledby="stock-summary-title">
     <div class="panel-head">
