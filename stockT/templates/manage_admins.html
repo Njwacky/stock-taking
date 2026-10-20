@@ -1,19 +1,27 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Manage Admins - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Manage Admins · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-user-shield" aria-hidden="true"></i> Manage Administrators</h1>
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Create Admin</a>
-    </div>
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Administrators</h1>
+            <p class="dashboard-subtitle">People who can manage users, kit types and workspace settings.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'create_admin' %}" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Create admin</a>
+        </div>
+    </header>
 
+    <section class="panel table-panel">
+    <div class="panel-head">
+        <div>
+            <h2>Admin accounts</h2>
+            <p>{{ admins|length }} account{{ admins|length|pluralize }} with elevated access.</p>
+        </div>
+    </div>
     <div class="table-scroll-region" role="region" tabindex="0" aria-label="Administrators">
     <table class="data-table">
         <thead>
@@ -30,14 +38,14 @@
             <tr>
                 <td>{{ admin_user.username }}</td>
                 <td>{{ admin_user.first_name }} {{ admin_user.last_name }}</td>
-                <td>{{ admin_user.role_display }}</td>
-                <td>{% if admin_user.is_superuser %}<span class="visually-hidden">Yes</span><i class="fas fa-check text-success" aria-hidden="true"></i>{% else %}<span class="visually-hidden">No</span><i class="fas fa-minus" aria-hidden="true"></i>{% endif %}</td>
+                <td><span class="role-badge role-{{ admin_user.role }}">{{ admin_user.role_display }}</span></td>
+                <td>{% if admin_user.is_superuser %}<span class="visually-hidden">Yes</span><svg class="icon text-success" aria-hidden="true"><use href="#i-check"></use></svg>{% else %}<span class="visually-hidden">No</span><svg class="icon" aria-hidden="true"><use href="#i-minus"></use></svg>{% endif %}</td>
                 <td>
                     {% if admin_user.id != user.id %}
                     <form method="post" action="{% url 'demote_admin' admin_user.id %}" class="inline-form"
                           onsubmit="return confirm('Demote {{ admin_user.username }}?');">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-arrow-down" aria-hidden="true"></i> Demote</button>
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-minus"></use></svg> Demote</button>
                     </form>
                     {% else %}
                     <span class="text-muted">(you)</span>
@@ -50,5 +58,6 @@
         </tbody>
     </table>
     </div>
+    </section>
 </div>
 {% endblock %}

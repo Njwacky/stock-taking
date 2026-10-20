@@ -1,39 +1,111 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Create Account - Stock Management System{% endblock %}
+{% block title %}Create account · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card auth-card-wide">
-        <h1><i class="fas fa-user-plus" aria-hidden="true"></i> Create Your Account</h1>
-        <p class="auth-lead">
-            Everyone can register. You instantly get <strong>your own workspace</strong>
-            with the standard kit types ready to go — and you can invite your team
-            or create more workspaces any time.
-        </p>
-        <form method="post" class="register-form">
-            {% csrf_token %}
-            {% if form.non_field_errors %}
-            <div class="field-errors">{{ form.non_field_errors }}</div>
-            {% endif %}
-            {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<small class="form-help">{{ field.help_text }}</small>{% endif %}
-                {% if field.errors %}
-                <div class="field-errors">{{ field.errors }}</div>
+<div class="auth-layout auth-layout--wide">
+    <div class="auth-main">
+        <div>
+            <span class="eyebrow">Get started</span>
+            <h1>Create your workspace</h1>
+            <p class="auth-lead">
+                Your account comes with a private workspace and the standard kit types.
+                You can invite teammates and create more workspaces later.
+            </p>
+
+            <form method="post" class="register-form" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="alert alert-error" role="alert">
+                    <span class="alert-text">{{ form.non_field_errors }}</span>
+                </div>
                 {% endif %}
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">Username</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="field-errors">{{ form.username.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Work email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="field-errors">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">First name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="field-errors">{{ form.first_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Last name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div class="field-errors">{{ form.last_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.clock_number.id_for_label }}">Clock number</label>
+                        {{ form.clock_number }}
+                        {% if form.clock_number.errors %}<div class="field-errors">{{ form.clock_number.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.department.id_for_label }}">Department</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}<div class="field-errors">{{ form.department.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.phone_number.id_for_label }}">Phone number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}<div class="field-errors">{{ form.phone_number.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.password1.id_for_label }}">Password</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}<div class="field-errors">{{ form.password1.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}<div class="field-errors">{{ form.password2.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                {% if form.password1.help_text %}
+                <div class="form-help password-help">{{ form.password1.help_text|safe }}</div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary btn-lg">Create My Workspace</button>
+            </form>
+
+            <div class="auth-links">
+                <span>Already have an account? <a href="{% url 'login' %}">Sign in</a></span>
             </div>
-            {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block btn-lg">
-                <i class="fas fa-rocket" aria-hidden="true"></i> Create My Workspace
-            </button>
-        </form>
-        <div class="login-links">
-            Already have an account? <a href="{% url 'login' %}">Login</a>
         </div>
     </div>
+
+    <aside class="auth-aside" aria-label="What your workspace includes">
+        <div class="auth-aside-inner">
+            <span class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 10.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5ZM9 16.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5Z" fill="#fff" fill-opacity=".92"/><path d="M20 16.5h3v5h-3v-5Z" fill="#fff" fill-opacity=".45"/></svg>
+                </span>
+                <span class="brand-copy">
+                    <span class="brand-name">Stock Tracker</span>
+                    <span class="brand-meta">Inventory operations</span>
+                </span>
+            </span>
+            <p class="auth-quote">Set up in a minute. Useful from day one.</p>
+            <ul class="auth-points">
+                <li><svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg> A private workspace, owned by you</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg> Standard kit types pre-configured</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg> Invite the team when you are ready</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-device"></use></svg> Works on desktop, tablet and phone</li>
+            </ul>
+        </div>
+        <p class="auth-aside-foot">Stock Tracker · internal inventory system</p>
+    </aside>
 </div>
 {% endblock %}

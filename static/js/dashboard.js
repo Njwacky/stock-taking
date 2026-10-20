@@ -1,602 +1,256 @@
-// Global variables for dashboard functionality
-let currentParams = {
-    user: '',
-    search: '',
-    sort: 'timestamp',
-    order: 'desc',
-    page: '1'
-};
+/* Inventory workspace: filters, pagination and bulk selection. */
+(function () {
+    'use strict';
 
-// Carousel functionality for Why Register section
-let currentSlideIndex = 0;
-let carouselAutoAdvanceInterval;
-let totalSlides = 3; // Total number of slides (each shows 2 cards)
-const cardsPerSlide = 2; // Number of cards per slide
-const totalCards = 6; // Total number of register cards
+    const state = {
+        user: '',
+        search: '',
+        sort: 'timestamp',
+        order: 'desc',
+        page: '1',
+    };
 
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Keep filter controls and pagination in sync with a bookmarked/shared URL.
-    const initialParams = new URLSearchParams(window.location.search);
-    currentParams.user = initialParams.get('user') || '';
-    currentParams.search = initialParams.get('search') || '';
-    currentParams.sort = initialParams.get('sort') || 'timestamp';
-    currentParams.order = initialParams.get('order') || 'desc';
-    currentParams.page = initialParams.get('page') || '1';
+    const $ = (id) => document.getElementById(id);
 
-    // Initialize selection display
-    updateSelection();
-    
-    // Add event listeners for checkboxes
-    const checkboxes = document.querySelectorAll('.kit-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelection);
-    });
-    
-    // Bind select-all checkbox
-    const selectAllCheckbox = document.getElementById('select-all');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', toggleSelectAll);
-    }
-    
-    // Bind filter form to use AJAX instead of full page reload
-    const filterForm = document.getElementById('filter-form');
-    if (filterForm) {
-        filterForm.addEventListener('submit', loadDashboardData);
+    function readStateFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        state.user = params.get('user') || '';
+        state.search = params.get('search') || '';
+        state.sort = params.get('sort') || 'timestamp';
+        state.order = params.get('order') || 'desc';
+        state.page = params.get('page') || '1';
     }
 
-    // Confirm bulk deletion and prevent an empty submission.
-    const bulkDeleteForm = document.getElementById('bulk-delete-form');
-    if (bulkDeleteForm) {
-        bulkDeleteForm.addEventListener('submit', function(event) {
-            const count = document.querySelectorAll('.kit-checkbox:checked').length;
-            if (count === 0) {
-                event.preventDefault();
-                window.alert('Select at least one stock item first.');
-                return;
-            }
-            if (!window.confirm(`Delete ${count} selected stock item(s)? This cannot be undone.`)) {
-                event.preventDefault();
-            }
+    function selectedItems() {
+        return document.querySelectorAll('.kit-checkbox:checked');
+    }
+
+    function syncSelection() {
+        const all = document.querySelectorAll('.kit-checkbox');
+        const checked = selectedItems();
+        const count = checked.length;
+
+        const stickyCount = $('sticky-selected-count');
+        const regularCount = $('selected-count');
+        if (stickyCount) stickyCount.textContent = count;
+        if (regularCount) regularCount.textContent = count;
+
+        const stickyBar = $('sticky-bulk-actions-bar');
+        const regularBar = $('bulk-actions-bar');
+        [stickyBar, regularBar].forEach((bar) => {
+            if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
         });
+
+        const selectAll = $('select-all');
+        if (selectAll) {
+            selectAll.checked = count > 0 && count === all.length;
+            selectAll.indeterminate = count > 0 && count < all.length;
+        }
     }
-    
-    // Initialize pie chart if user is authenticated and data exists
-    initializePieChart();
-    
-    // Initialize carousel if it exists on the page
-    initializeCarousel();
-    
-    // Keep pagination working after AJAX replaces its links.
-    const paginationContainer = document.getElementById('pagination-container');
-    if (paginationContainer) {
-        paginationContainer.addEventListener('click', function(event) {
-            const link = event.target.closest('.page-link');
-            if (!link) {
-                return;
-            }
-            event.preventDefault();
-            loadPage(link.dataset.page);
+
+    function bindRowCheckboxes() {
+        document.querySelectorAll('.kit-checkbox').forEach((box) => {
+            box.addEventListener('change', syncSelection);
         });
-    }
-
-    // Restore the visible controls and table when navigating browser history.
-    window.addEventListener('popstate', function(event) {
-        const url = event.state && event.state.path
-            ? new URL(event.state.path, window.location.origin)
-            : new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
-        currentParams.user = params.get('user') || '';
-        currentParams.search = params.get('search') || '';
-        currentParams.sort = params.get('sort') || 'timestamp';
-        currentParams.order = params.get('order') || 'desc';
-        currentParams.page = params.get('page') || '1';
-        syncFilterControlsFromParams();
-        fetchDashboardData(false);
-    });
-});
-
-// Initialize carousel functionality
-function initializeCarousel() {
-    const carouselTrack = document.querySelector('.why-register-cards');
-    const dots = document.querySelectorAll('.dot');
-    
-    if (carouselTrack && dots.length > 0) {
-        // Start auto-advance
-        startCarouselAutoAdvance();
-        
-        // Pause auto-advance on hover
-        const carouselContainer = document.querySelector('.carousel-container');
-        if (carouselContainer) {
-            carouselContainer.addEventListener('mouseenter', stopCarouselAutoAdvance);
-            carouselContainer.addEventListener('mouseleave', startCarouselAutoAdvance);
+        const selectAll = $('select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('.kit-checkbox').forEach((box) => {
+                    box.checked = selectAll.checked;
+                });
+                syncSelection();
+            });
         }
     }
-}
 
-// Move carousel in specified direction
-function moveCarousel(direction) {
-    const totalSlides = 3; // Total number of slides
-    
-    currentSlideIndex += direction;
-    
-    // Wrap around at the ends
-    if (currentSlideIndex >= totalSlides) {
-        currentSlideIndex = 0;
-    } else if (currentSlideIndex < 0) {
-        currentSlideIndex = totalSlides - 1;
-    }
-    
-    updateCarousel();
-}
-
-// Go to specific slide
-function currentSlide(slideIndex) {
-    currentSlideIndex = slideIndex - 1; // Convert to 0-based index
-    updateCarousel();
-}
-
-// Handle keyboard events for carousel dots
-function handleDotKeydown(event, slideIndex) {
-    // Check if Enter or Space key was pressed
-    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
-        event.preventDefault(); // Prevent default behavior (like scrolling for space)
-        currentSlide(slideIndex); // Navigate to the slide
-    }
-}
-
-// Update carousel position and dots
-function updateCarousel() {
-    const carouselTrack = document.querySelector('.why-register-cards');
-    const dots = document.querySelectorAll('.dot');
-    
-    if (carouselTrack) {
-        // Calculate the translateX value
-        const cardWidth = 220; // Card width (200px) + gap (20px)
-        const translateX = -(currentSlideIndex * cardWidth * cardsPerSlide);
-        carouselTrack.style.transform = `translateX(${translateX}px)`;
-    }
-    
-    // Update active dot
-    dots.forEach((dot, index) => {
-        dot.classList.remove('active');
-        if (index === currentSlideIndex) {
-            dot.classList.add('active');
+    function showLoading() {
+        let overlay = $('loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'loading-overlay';
+            overlay.setAttribute('role', 'status');
+            overlay.setAttribute('aria-live', 'polite');
+            overlay.innerHTML = '<div class="loading-spinner">Loading inventory…</div>';
+            document.body.appendChild(overlay);
         }
-    });
-}
-
-// Start auto-advance functionality
-function startCarouselAutoAdvance() {
-    // Clear any existing interval
-    stopCarouselAutoAdvance();
-    
-    // Set new interval for auto-advance (5 seconds)
-    carouselAutoAdvanceInterval = setInterval(() => {
-        moveCarousel(1);
-    }, 5000);
-}
-
-// Stop auto-advance functionality
-function stopCarouselAutoAdvance() {
-    if (carouselAutoAdvanceInterval) {
-        clearInterval(carouselAutoAdvanceInterval);
-        carouselAutoAdvanceInterval = null;
+        overlay.style.display = 'flex';
     }
-}
 
-// Update selection count and show/hide bulk actions
-function updateSelection() {
-    const checkboxes = document.querySelectorAll('.kit-checkbox');
-    const checkedBoxes = document.querySelectorAll('.kit-checkbox:checked');
-    const count = checkedBoxes.length;
-    
-    // Update both sticky and regular bulk action counters
-    const stickyCountElement = document.getElementById('sticky-selected-count');
-    const regularCountElement = document.getElementById('selected-count');
-    
-    if (stickyCountElement) {
-        stickyCountElement.textContent = count;
+    function hideLoading() {
+        const overlay = $('loading-overlay');
+        if (overlay) overlay.style.display = 'none';
     }
-    
-    if (regularCountElement) {
-        regularCountElement.textContent = count;
-    }
-    
-    // Show/hide bulk action bars based on selection
-    const stickyBulkActionsBar = document.getElementById('sticky-bulk-actions-bar');
-    const regularBulkActionsBar = document.getElementById('bulk-actions-bar');
-    
-    if (count > 0) {
-        if (stickyBulkActionsBar) {
-            stickyBulkActionsBar.style.display = 'flex';
-        }
-        if (regularBulkActionsBar) {
-            regularBulkActionsBar.style.display = 'flex';
-        }
-    } else {
-        if (stickyBulkActionsBar) {
-            stickyBulkActionsBar.style.display = 'none';
-        }
-        if (regularBulkActionsBar) {
-            regularBulkActionsBar.style.display = 'none';
-        }
-    }
-    
-    // Update select-all checkbox state
-    const selectAllCheckbox = document.getElementById('select-all');
-    if (selectAllCheckbox) {
-        if (count === 0) {
-            selectAllCheckbox.indeterminate = false;
-            selectAllCheckbox.checked = false;
-        } else if (count === checkboxes.length) {
-            selectAllCheckbox.indeterminate = false;
-            selectAllCheckbox.checked = true;
-        } else {
-            selectAllCheckbox.indeterminate = true;
-        }
-    }
-}
 
-// Toggle select all checkboxes
-function toggleSelectAll() {
-    const selectAllCheckbox = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.kit-checkbox');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-    });
-    
-    updateSelection();
-}
+    function renderStockBars(rows) {
+        const container = $('stockBars');
+        if (!container || !Array.isArray(rows) || !rows.length) return;
 
-// Clear selection and hide bulk actions
-function clearSelection() {
-    const checkboxes = document.querySelectorAll('.kit-checkbox');
-    const selectAllCheckbox = document.getElementById('select-all');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
-    
-    if (selectAllCheckbox) {
-        selectAllCheckbox.checked = false;
-        selectAllCheckbox.indeterminate = false;
-    }
-    
-    updateSelection();
-}
+        const peak = rows.reduce(
+            (max, row) => Math.max(max, Number(row.total_quantity) || 0),
+            0
+        );
+        const fragment = document.createDocumentFragment();
 
-// Submit bulk delete form
-function submitBulkDelete() {
-    const form = document.getElementById('bulk-delete-form');
-    const checkedBoxes = document.querySelectorAll('.kit-checkbox:checked');
-    
-    if (checkedBoxes.length === 0) {
-        alert('Please select at least one kit to delete.');
-        return;
-    }
-    
-    if (confirm(`Are you sure you want to delete ${checkedBoxes.length} selected kit(s)?`)) {
-        form.submit();
-    }
-}
+        rows.forEach((row) => {
+            const quantity = Number(row.total_quantity) || 0;
+            const users = Number(row.user_count) || 0;
 
-// Load dashboard data with AJAX
-function loadDashboardData(event) {
-    if (event) {
-        event.preventDefault();
-    }
-    
-    const form = document.getElementById('filter-form');
-    const formData = new FormData(form);
-    
-    // Update every control before fetching so search, sort, order and user
-    // filters work together and remain reflected in the URL.
-    currentParams.user = formData.get('user') || '';
-    currentParams.search = formData.get('search') || '';
-    currentParams.sort = formData.get('sort') || 'timestamp';
-    currentParams.order = formData.get('order') || 'desc';
-    currentParams.page = '1';
-    
-    fetchDashboardData();
-}
+            const item = document.createElement('div');
+            item.className = 'stock-bar';
 
-// Load sorted data
-function loadSortData(sortBy, currentOrder) {
-    currentParams.sort = sortBy;
-    currentParams.order = currentOrder === 'desc' ? 'asc' : 'desc';
-    currentParams.page = '1';
-    
-    fetchDashboardData();
-}
+            const head = document.createElement('div');
+            head.className = 'stock-bar-head';
 
-// Load specific page
-function loadPage(pageNumber) {
-    currentParams.page = pageNumber.toString();
-    fetchDashboardData();
-}
+            const name = document.createElement('span');
+            name.className = 'stock-bar-name';
+            name.textContent = row.kit_type || 'Unassigned';
 
-function syncFilterControlsFromParams() {
-    const form = document.getElementById('filter-form');
-    if (!form) {
-        return;
-    }
-    ['user', 'search', 'sort', 'order'].forEach(name => {
-        const control = form.elements.namedItem(name);
-        if (control) {
-            control.value = currentParams[name] || (name === 'sort' ? 'timestamp' : name === 'order' ? 'desc' : '');
-        }
-    });
-}
+            const value = document.createElement('span');
+            value.className = 'stock-bar-value';
+            value.textContent = quantity.toLocaleString();
+            const meta = document.createElement('small');
+            meta.textContent = ` units · ${users} user${users === 1 ? '' : 's'}`;
+            value.append(meta);
 
-// Fetch dashboard data via AJAX. History restoration fetches without adding a
-// second history entry so the browser's Back and Forward buttons keep working.
-function fetchDashboardData(pushHistory = true) {
-    const queryString = new URLSearchParams(currentParams).toString();
-    const url = `${window.location.pathname}?${queryString}`;
-    
-    // Show loading indicator
-    showLoading();
-    
-    // Update browser history for a new user action only.
-    if (pushHistory) {
-        history.pushState({ path: url }, '', url);
-    }
-    
-    // Make AJAX request to fetch new data
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Update the table content
-            updateTableContent(data.table_html);
-            
-            // Update pagination
-            updatePagination(data.pagination_html);
-            
-            // Update pie chart if data exists
-            if (data.kit_stats) {
-                updatePieChart(data.kit_stats);
-            }
-            
-            // Update selection management
-            updateSelection();
-        } else {
-            // If there's an error, fall back to full page reload
-            window.location.href = url;
-        }
-    })
-    .catch(error => {
-        console.error('AJAX request failed:', error);
-        // Fall back to full page reload on error
-        window.location.href = url;
-    })
-    .finally(() => {
-        hideLoading();
-    });
-}
+            head.append(name, value);
 
-// Show loading indicator
-function showLoading() {
-    // Create loading overlay if it doesn't exist
-    if (!document.getElementById('loading-overlay')) {
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.id = 'loading-overlay';
-        loadingOverlay.setAttribute('role', 'status');
-        loadingOverlay.setAttribute('aria-live', 'polite');
-        loadingOverlay.innerHTML = `
-            <div class="loading-spinner">
-                <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
-                <span>Loading stock items…</span>
-            </div>
-        `;
-        document.body.appendChild(loadingOverlay);
-    }
-    document.getElementById('loading-overlay').style.display = 'flex';
-}
+            const track = document.createElement('div');
+            track.className = 'stock-bar-track';
+            const fill = document.createElement('div');
+            fill.className = 'stock-bar-fill';
+            fill.style.width = `${peak ? Math.round((quantity / peak) * 100) : 0}%`;
+            track.appendChild(fill);
 
-// Hide loading indicator
-function hideLoading() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'none';
-    }
-}
-
-// Update table content with new HTML
-function updateTableContent(tableHTML) {
-    const tableContainer = document.getElementById('table-container');
-    if (tableContainer && tableHTML) {
-        tableContainer.innerHTML = tableHTML;
-        
-        // Re-attach event listeners to new checkboxes
-        const checkboxes = document.querySelectorAll('.kit-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelection);
+            item.append(head, track);
+            fragment.appendChild(item);
         });
-        
-        // Re-attach event listener to select-all checkbox
-        const selectAllCheckbox = document.getElementById('select-all');
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', toggleSelectAll);
+
+        container.replaceChildren(fragment);
+    }
+
+    function updateTable(html) {
+        const container = $('table-container');
+        if (container && html) {
+            container.innerHTML = html;
+            bindRowCheckboxes();
+            syncSelection();
         }
     }
-}
 
-// Update pagination with new HTML. The container uses delegated click handling,
-// so links continue to work even after their markup is replaced.
-function updatePagination(paginationHTML) {
-    const paginationContainer = document.getElementById('pagination-container');
-    if (paginationContainer) {
-        paginationContainer.innerHTML = paginationHTML || '';
-    }
-}
-
-// Update pie chart with new data
-function updatePieChart(kitStatsData) {
-    const chartDataElement = document.getElementById('kitStatsData');
-    if (chartDataElement && kitStatsData) {
-        // Update the hidden JSON data
-        chartDataElement.textContent = JSON.stringify(kitStatsData);
-        
-        // Re-initialize the pie chart
-        const chartCanvas = document.getElementById('kitsPieChart');
-        if (chartCanvas) {
-            // Destroy existing chart instance if it exists
-            const existingChart = Chart.getChart(chartCanvas);
-            if (existingChart) {
-                existingChart.destroy();
-            }
-            
-            // Re-initialize the chart
-            initializePieChart();
+    function updatePagination(html) {
+        const container = $('pagination-container');
+        if (container && typeof html === 'string') {
+            container.innerHTML = html;
         }
     }
-}
 
-// Initialize pie chart for most received kits
-function initializePieChart() {
-    const chartCanvas = document.getElementById('kitsPieChart');
-    const chartDataElement = document.getElementById('kitStatsData');
-    
-    if (!chartCanvas || !chartDataElement) {
-        return;
+    function queryString() {
+        return new URLSearchParams(state).toString();
     }
-    
-    try {
-        // Parse the JSON data from the hidden div
-        const chartData = JSON.parse(chartDataElement.textContent);
-        
-        if (!chartData || chartData.length === 0) {
-            // Hide the chart section if no data
-            const statsContainer = document.querySelector('.dashboard-stats');
-            if (statsContainer) {
-                statsContainer.style.display = 'none';
-            }
-            return;
+
+    function fetchData(pushHistory) {
+        const url = `${window.location.pathname}?${queryString()}`;
+        showLoading();
+        if (pushHistory) {
+            window.history.pushState({ path: url }, '', url);
         }
-        
-        // Prepare data for Chart.js
-        const labels = chartData.map(item => item.kit_type || 'Unknown');
-        const data = chartData.map(item => item.total_quantity || 0);
-        
-        // Generate colors for the pie chart — brand categorical palette
-        // (forest green, brick, bronze, sage, accent, rose, bark, clay)
-        const colors = [
-            '#2E6347', '#78352E', '#8a5a33', '#5a8f74',
-            '#18B864', '#B72818', '#4a3330', '#c98578',
-            '#a8c4b5', '#744a22', '#24503a', '#a5645b'
-        ];
-        
-        const backgroundColors = data.map((_, index) => colors[index % colors.length]);
-        
-        // Slice separators follow the card surface in light and dark themes
-        const cardBg = getComputedStyle(document.documentElement)
-            .getPropertyValue('--card-bg').trim() || '#ffffff';
-        
-        // Create the pie chart
-        const ctx = chartCanvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: backgroundColors,
-                    borderColor: cardBg,
-                    borderWidth: 2
-                }]
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false // Hide the built-in Chart.js legend with round dots
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error('Request failed');
+                return response.json();
+            })
+            .then((data) => {
+                if (!data.success) {
+                    window.location.href = url;
+                    return;
                 }
+                updateTable(data.table_html);
+                updatePagination(data.pagination_html);
+                renderStockBars(data.kit_stats);
+            })
+            .catch(() => {
+                window.location.href = url;
+            })
+            .finally(hideLoading);
+    }
+
+    function applyFilters(event) {
+        if (event) event.preventDefault();
+        const form = $('filter-form');
+        if (!form) return;
+        const data = new FormData(form);
+        state.user = data.get('user') || '';
+        state.search = data.get('search') || '';
+        state.sort = data.get('sort') || 'timestamp';
+        state.order = data.get('order') || 'desc';
+        state.page = '1';
+        fetchData(true);
+    }
+
+    function syncControls() {
+        const form = $('filter-form');
+        if (!form) return;
+        ['user', 'search', 'sort', 'order'].forEach((name) => {
+            const control = form.elements.namedItem(name);
+            if (control) {
+                control.value = state[name] || (name === 'sort' ? 'timestamp' : name === 'order' ? 'desc' : '');
             }
         });
-        
-        // Generate custom legend if needed
-        generateChartLegend(chartData, colors);
-        
-    } catch (error) {
-        console.error('Error initializing pie chart:', error);
-        // Hide the chart section if there's an error
-        const statsContainer = document.querySelector('.dashboard-stats');
-        if (statsContainer) {
-            statsContainer.style.display = 'none';
+    }
+
+    readStateFromUrl();
+
+    document.addEventListener('DOMContentLoaded', function () {
+        syncSelection();
+        bindRowCheckboxes();
+
+        const filterForm = $('filter-form');
+        if (filterForm) filterForm.addEventListener('submit', applyFilters);
+
+        const bulkForm = $('bulk-delete-form');
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', function (event) {
+                const count = selectedItems().length;
+                if (!count) {
+                    event.preventDefault();
+                    window.alert('Select at least one stock item first.');
+                    return;
+                }
+                if (!window.confirm(`Delete ${count} selected stock item(s)? This cannot be undone.`)) {
+                    event.preventDefault();
+                }
+            });
         }
-    }
-}
 
-// Generate an accessible legend without inserting kit type names as HTML.
-function generateChartLegend(chartData, colors) {
-    const legendContainer = document.getElementById('chartLegend');
-    if (!legendContainer || !chartData || chartData.length === 0) {
-        return;
-    }
+        const pagination = $('pagination-container');
+        if (pagination) {
+            pagination.addEventListener('click', function (event) {
+                const link = event.target.closest('.page-link');
+                if (!link || !link.dataset.page) return;
+                event.preventDefault();
+                state.page = link.dataset.page;
+                fetchData(true);
+            });
+        }
 
-    const total = chartData.reduce((sum, item) => sum + (Number(item.total_quantity) || 0), 0);
-    const list = document.createElement('div');
-    list.className = 'chart-legend-container';
-    list.setAttribute('role', 'list');
-
-    chartData.forEach((item, index) => {
-        const quantity = Number(item.total_quantity) || 0;
-        const userCount = Number(item.user_count) || 0;
-        const percentage = total > 0 ? ((quantity / total) * 100).toFixed(1) : '0.0';
-        const color = colors[index % colors.length];
-
-        const legendItem = document.createElement('div');
-        legendItem.className = 'legend-item';
-        legendItem.setAttribute('role', 'listitem');
-
-        const swatch = document.createElement('div');
-        swatch.className = 'legend-color';
-        swatch.style.backgroundColor = color;
-        swatch.setAttribute('aria-hidden', 'true');
-
-        const info = document.createElement('div');
-        info.className = 'legend-info';
-
-        const label = document.createElement('div');
-        label.className = 'legend-label';
-        label.textContent = item.kit_type || 'Unknown';
-
-        const stats = document.createElement('div');
-        stats.className = 'legend-stats';
-        const unitLabel = quantity === 1 ? 'unit' : 'units';
-        const userLabel = userCount === 1 ? 'user' : 'users';
-        stats.textContent = `${quantity.toLocaleString()} ${unitLabel} (${percentage}%) · ${userCount.toLocaleString()} ${userLabel}`;
-
-        info.append(label, stats);
-        legendItem.append(swatch, info);
-        list.appendChild(legendItem);
+        window.addEventListener('popstate', function (event) {
+            const url = event.state && event.state.path
+                ? new URL(event.state.path, window.location.origin)
+                : new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            state.user = params.get('user') || '';
+            state.search = params.get('search') || '';
+            state.sort = params.get('sort') || 'timestamp';
+            state.order = params.get('order') || 'desc';
+            state.page = params.get('page') || '1';
+            syncControls();
+            fetchData(false);
+        });
     });
-
-    legendContainer.replaceChildren(list);
-}
+})();

@@ -1,31 +1,35 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Usage History - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/stock-usage-tracking.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Usage History · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="tracking-container">
-    <header class="tracking-header">
-        <div>
-            <h1><i class="fas fa-history" aria-hidden="true"></i> Stock Usage History</h1>
-            <p class="dashboard-subtitle">Review and manage stock usage requests in this workspace.</p>
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Usage history</h1>
+            <p class="dashboard-subtitle">Every request logged against stock in this workspace, with its decision and deduction state.</p>
         </div>
-        <a href="{% url 'stock_usage_tracking' %}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Log Usage</a>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'stock_usage_tracking' %}" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Log usage</a>
+        </div>
     </header>
 
-    <nav class="dashboard-controls status-filters" aria-label="Filter usage history by status">
-        <a href="{% url 'stock_usage_history' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}"{% if not status_filter %} aria-current="page"{% endif %}>All</a>
-        <a href="{% url 'stock_usage_history' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'pending' %} aria-current="page"{% endif %}>Pending</a>
-        <a href="{% url 'stock_usage_history' %}?status=approved" class="btn btn-sm {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'approved' %} aria-current="page"{% endif %}>Approved</a>
-        <a href="{% url 'stock_usage_history' %}?status=completed" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'completed' %} aria-current="page"{% endif %}>Completed</a>
-        <a href="{% url 'stock_usage_history' %}?status=rejected" class="btn btn-sm {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'rejected' %} aria-current="page"{% endif %}>Rejected</a>
+    <nav class="status-filters" aria-label="Filter usage history by status">
+        <a href="{% url 'stock_usage_history' %}"{% if not status_filter %} class="active" aria-current="page"{% endif %}>All</a>
+        <a href="{% url 'stock_usage_history' %}?status=pending"{% if status_filter == 'pending' %} class="active" aria-current="page"{% endif %}>Pending</a>
+        <a href="{% url 'stock_usage_history' %}?status=approved"{% if status_filter == 'approved' %} class="active" aria-current="page"{% endif %}>Approved</a>
+        <a href="{% url 'stock_usage_history' %}?status=completed"{% if status_filter == 'completed' %} class="active" aria-current="page"{% endif %}>Completed</a>
+        <a href="{% url 'stock_usage_history' %}?status=rejected"{% if status_filter == 'rejected' %} class="active" aria-current="page"{% endif %}>Rejected</a>
     </nav>
 
+    <section class="panel table-panel">
+    <div class="panel-head">
+        <div>
+            <h2>Usage records</h2>
+            <p>{{ usages|length }} record{{ usages|length|pluralize }} shown.</p>
+        </div>
+    </div>
     <div class="table-scroll-region" role="region" tabindex="0" aria-label="Stock usage records">
         <table class="data-table">
             <thead>
@@ -44,14 +48,14 @@
             <tbody>
                 {% for usage in usages %}
                 <tr>
-                    <td>{{ usage.usage_date|date:"M j, Y H:i" }}</td>
+                    <td class="cell-date">{{ usage.usage_date|date:"j M Y" }}<span class="cell-sub">{{ usage.usage_date|date:"H:i" }}</span></td>
                     <td>{{ usage.user.username }}</td>
                     <td>{{ usage.clock_number }}</td>
                     <td>{{ usage.kit_type_name }}</td>
                     <td class="cell-quantity">{{ usage.quantity_used }}</td>
                     <td>{{ usage.purpose|default:"—" }}</td>
                     <td><span class="status-badge status-{{ usage.status }}">{{ usage.get_status_display }}</span></td>
-                    <td>{% if usage.stock_deleted %}<span class="visually-hidden">Yes</span><i class="fas fa-check text-success" aria-hidden="true"></i>{% else %}<span class="visually-hidden">No</span><i class="fas fa-minus" aria-hidden="true"></i>{% endif %}</td>
+                    <td>{% if usage.stock_deleted %}<span class="visually-hidden">Yes</span><svg class="icon text-success" aria-hidden="true"><use href="#i-check"></use></svg>{% else %}<span class="visually-hidden">No</span><svg class="icon" aria-hidden="true"><use href="#i-minus"></use></svg>{% endif %}</td>
                     {% if can_manage_workspace %}
                     <td>
                         {% if usage.status == 'pending' %}
@@ -65,7 +69,7 @@
                         <form method="post" action="{% url 'delete_stock_usage' usage.id %}" class="inline-form"
                               onsubmit="return confirm('Delete this usage record?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Delete usage record for {{ usage.kit_type_name }}" title="Delete usage record"><i class="fas fa-trash" aria-hidden="true"></i></button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Delete usage record for {{ usage.kit_type_name }}" title="Delete usage record"><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg></button>
                         </form>
                     </td>
                     {% endif %}
@@ -76,5 +80,6 @@
             </tbody>
         </table>
     </div>
+    </section>
 </div>
 {% endblock %}

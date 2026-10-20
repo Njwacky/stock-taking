@@ -1,27 +1,23 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Manage Feedback - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Manage Feedback · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="comments-container">
     <header class="dashboard-header">
         <div class="dashboard-heading">
-            <h1><i class="fas fa-comments" aria-hidden="true"></i> Manage Feedback</h1>
+            <h1>Manage Feedback</h1>
             <p class="dashboard-subtitle">Review, respond to and resolve submitted feedback.</p>
         </div>
     </header>
 
-    <nav class="dashboard-controls status-filters" aria-label="Filter feedback by status">
-        <a href="{% url 'manage_comments' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}"{% if not status_filter %} aria-current="page"{% endif %}>All</a>
-        <a href="{% url 'manage_comments' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'pending' %} aria-current="page"{% endif %}>Pending</a>
-        <a href="{% url 'manage_comments' %}?status=reviewed" class="btn btn-sm {% if status_filter == 'reviewed' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'reviewed' %} aria-current="page"{% endif %}>Reviewed</a>
-        <a href="{% url 'manage_comments' %}?status=resolved" class="btn btn-sm {% if status_filter == 'resolved' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'resolved' %} aria-current="page"{% endif %}>Resolved</a>
-        <a href="{% url 'manage_comments' %}?status=dismissed" class="btn btn-sm {% if status_filter == 'dismissed' %}btn-primary{% else %}btn-secondary{% endif %}"{% if status_filter == 'dismissed' %} aria-current="page"{% endif %}>Dismissed</a>
+    <nav class="status-filters" aria-label="Filter feedback by status">
+        <a href="{% url 'manage_comments' %}"{% if not status_filter %} class="active" aria-current="page"{% endif %}>All</a>
+        <a href="{% url 'manage_comments' %}?status=pending"{% if status_filter == 'pending' %} class="active" aria-current="page"{% endif %}>Pending</a>
+        <a href="{% url 'manage_comments' %}?status=reviewed"{% if status_filter == 'reviewed' %} class="active" aria-current="page"{% endif %}>Reviewed</a>
+        <a href="{% url 'manage_comments' %}?status=resolved"{% if status_filter == 'resolved' %} class="active" aria-current="page"{% endif %}>Resolved</a>
+        <a href="{% url 'manage_comments' %}?status=dismissed"{% if status_filter == 'dismissed' %} class="active" aria-current="page"{% endif %}>Dismissed</a>
     </nav>
 
     {% for comment in comments %}

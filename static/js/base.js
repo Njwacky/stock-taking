@@ -12,14 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 'aria-label',
                 isDark ? 'Switch to light mode' : 'Switch to dark mode'
             );
-            const icon = themeToggle.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('fa-moon', !isDark);
-                icon.classList.toggle('fa-sun', isDark);
-            }
         }
         if (themeColor) {
-            themeColor.setAttribute('content', isDark ? '#1d1918' : '#2E6347');
+            themeColor.setAttribute('content', isDark ? '#0f1512' : '#f5f6f4');
         }
         if (persist) {
             try {
@@ -41,9 +36,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // -----------------------------------------------------------------
-    // Account menu (blaqVibe pattern): toggle on the avatar button, close
-    // on any outside click. Escape dismisses and hands focus back —
-    // click-outside only covers pointer users.
+    // Responsive navigation: the sidebar becomes an off-canvas drawer on
+    // narrow screens. The scrim and Escape both dismiss it.
+    // -----------------------------------------------------------------
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const scrim = document.querySelector('.sidebar-scrim');
+
+    function setSidebar(open) {
+        if (!sidebar) return;
+        sidebar.classList.toggle('is-open', open);
+        if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (scrim) scrim.hidden = !open;
+        document.body.style.overflow = open ? 'hidden' : '';
+    }
+
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            setSidebar(!sidebar.classList.contains('is-open'));
+        });
+        document.querySelectorAll('[data-sidebar-close]').forEach(el => {
+            el.addEventListener('click', () => setSidebar(false));
+        });
+        sidebar.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => setSidebar(false));
+        });
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 920) setSidebar(false);
+        });
+    }
+
+    // -----------------------------------------------------------------
+    // Account menu: toggle on the avatar button, close on any outside
+    // click. Escape dismisses and hands focus back — click-outside only
+    // covers pointer users.
     // -----------------------------------------------------------------
     const navUser = document.getElementById('navUser');
     const navUserBtn = document.getElementById('navUserBtn');
@@ -72,7 +98,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeNavMenu(true);
+            if (e.key === 'Escape') {
+                closeNavMenu(true);
+                if (sidebar && sidebar.classList.contains('is-open')) setSidebar(false);
+            }
         });
 
         // Close after choosing a destination (mobile especially)

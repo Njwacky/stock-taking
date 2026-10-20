@@ -85,6 +85,7 @@ urlpatterns = [
     path('analytics/notifications/', views.analytics_notifications, name='analytics_notifications'),
     path('analytics/devices/', views.analytics_devices, name='analytics_devices'),
     path('analytics/report/', views.generate_daily_report, name='generate_daily_report'),
+    path('analytics/export.csv', views.analytics_export_csv, name='analytics_export_csv'),
     path('devices/', views.analytics_devices, name='devices'),
 
     # PWA

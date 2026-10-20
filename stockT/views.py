@@ -4,7 +4,9 @@ Views for the stockT application.
 Reconstructed from the project's documentation, test scripts and client-side
 JavaScript contracts (static/js/*.js).
 """
+import csv
 import json
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout as auth_logout
@@ -14,8 +16,9 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, F, Q, Sum
-from django.http import JsonResponse
+from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import TruncDate
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -37,11 +40,14 @@ from .forms import (
 )
 from .models import (
     ContactInfo,
+    DailyStats,
     DeviceTracker,
     Kit,
     KitType,
     NotificationLog,
+    PageView,
     PasswordResetRequest,
+    SessionTracker,
     StockUsage,
     User,
     UserComment,
@@ -90,7 +96,7 @@ def _kit_stats(workspace=None):
     kits = Kit.objects.filter(is_active=True)
     if workspace is not None:
         kits = _ws_rows(kits, workspace)
-    return list(
+    rows = list(
         kits
         .values('kit_type_fk__name')
         .annotate(
@@ -100,6 +106,11 @@ def _kit_stats(workspace=None):
         )
         .order_by('-total_quantity')
     )
+    peak = max((row['total_quantity'] or 0) for row in rows) if rows else 0
+    for row in rows:
+        row['kit_type'] = row['kit_type'] or 'Unassigned'
+        row['bar_width'] = round((row['total_quantity'] or 0) / peak * 100) if peak else 0
+    return rows
 
 
 def _kits_queryset(request):
@@ -213,12 +224,22 @@ def dashboard(request):
     paginator = Paginator(kits, 15)
     page_obj = paginator.get_page(page_number)
 
+    summary_scope = _kits_queryset(request)
+    summary = summary_scope.aggregate(
+        total_quantity=Sum('quantity'),
+        items=Count('id'),
+        locations=Count('location', distinct=True),
+    )
+    summary['total_quantity'] = summary['total_quantity'] or 0
+    summary['kit_types'] = summary_scope.values('kit_type_fk').distinct().count()
+
     context = {
         'public_view': False,
         'kits': page_obj.object_list,
         'page_obj': page_obj,
         'paginator': paginator,
         'kit_stats': _kit_stats(workspace),
+        'summary': summary,
         'users': workspace_member_users(workspace) if is_workspace_manager(request.user, workspace) else [],
         'filters': filters,
     }
@@ -1371,20 +1392,289 @@ def _analytics_allowed(user):
     return user.is_authenticated and user.is_manager
 
 
+PAGE_LABELS = {
+    '/': 'Dashboard',
+    '/add-items/': 'Add stock',
+    '/tracking/': 'Track usage',
+    '/tracking/history/': 'Usage history',
+    '/stock-distribution/': 'Distribution',
+    '/most-received-kits/': 'Stock ranking',
+    '/calculator/': 'Calculators',
+    '/analytics/': 'Analytics',
+    '/analytics/devices/': 'Tracked devices',
+    '/analytics/notifications/': 'Milestones',
+    '/manage-users/': 'Team',
+    '/kit-types/': 'Kit types',
+    '/profile/': 'Profile',
+    '/notifications/': 'Notifications',
+    '/comments/my/': 'My feedback',
+    '/comments/manage/': 'Feedback inbox',
+    '/workspace/settings/': 'Workspace settings',
+}
+
+
+def _page_label(path):
+    """Turn a tracked URL into a readable page name."""
+    if not path:
+        return 'Unknown'
+    label = PAGE_LABELS.get(path.rstrip('/') + '/' if path != '/' else '/')
+    if label:
+        return label
+    cleaned = path.strip('/').replace('-', ' ').replace('_', ' ').replace('/', ' / ')
+    return cleaned.title() if cleaned else 'Home'
+
+
+def _sparkline(values, width=96, height=30):
+    """Build SVG polyline coordinates for a compact trend line."""
+    if not values:
+        return ''
+    values = [float(v or 0) for v in values]
+    peak = max(values)
+    count = len(values)
+    points = []
+    for index, value in enumerate(values):
+        x = round((index / (count - 1) * width) if count > 1 else width / 2, 1)
+        if peak <= 0:
+            y = height - 4
+        else:
+            y = round(height - 4 - (value / peak) * (height - 8), 1)
+        points.append(f'{x},{y}')
+    return ' '.join(points)
+
+
+def _analytics_series(days):
+    """Aggregate sessions, page views, devices and users for each day."""
+    end = timezone.localdate()
+    start = end - timedelta(days=days - 1)
+
+    def daily_map(queryset, date_field, value_field=None):
+        rows = (
+            queryset
+            .filter(**{f'{date_field}__date__gte': start, f'{date_field}__date__lte': end})
+            .annotate(day=TruncDate(date_field))
+            .values('day')
+        )
+        if value_field:
+            rows = rows.annotate(total=Count(value_field, distinct=True))
+        else:
+            rows = rows.annotate(total=Count('id'))
+        return {row['day']: row['total'] for row in rows}
+
+    sessions = daily_map(SessionTracker.objects.all(), 'started_at')
+    page_views = daily_map(PageView.objects.all(), 'viewed_at')
+    devices = daily_map(SessionTracker.objects.all(), 'started_at', 'device')
+    users = daily_map(SessionTracker.objects.filter(user__isnull=False), 'started_at', 'user')
+
+    series = []
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        series.append({
+            'date': day,
+            'label': day.strftime('%d %b'),
+            'sessions': sessions.get(day, 0),
+            'page_views': page_views.get(day, 0),
+            'devices': devices.get(day, 0),
+            'users': users.get(day, 0),
+        })
+    return series
+
+
+def _period_totals(start, end):
+    sessions = SessionTracker.objects.filter(started_at__date__gte=start, started_at__date__lte=end)
+    views = PageView.objects.filter(viewed_at__date__gte=start, viewed_at__date__lte=end)
+    return {
+        'sessions': sessions.count(),
+        'page_views': views.count(),
+        'users': sessions.filter(user__isnull=False).values('user').distinct().count(),
+        'devices': sessions.values('device').distinct().count(),
+    }
+
+
+def _delta(current, previous):
+    if not previous:
+        return None
+    return round((current - previous) / previous * 100, 1)
+
+
 @login_required
 def analytics_dashboard(request):
     if not _analytics_allowed(request.user):
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
-    stats = AnalyticsService.get_live_stats()
-    chart_data = AnalyticsService.get_chart_data()
-    from .models import DailyStats
-    daily = DailyStats.objects.all()[:14]
+
+    try:
+        days = int(request.GET.get('range', 14))
+    except (TypeError, ValueError):
+        days = 14
+    if days not in (7, 14, 30):
+        days = 14
+
+    series = _analytics_series(days)
+    end = timezone.localdate()
+    start = end - timedelta(days=days - 1)
+    previous_end = start - timedelta(days=1)
+    previous_start = previous_end - timedelta(days=days - 1)
+
+    current = _period_totals(start, end)
+    previous = _period_totals(previous_start, previous_end)
+
+    now = timezone.now()
+    online = SessionTracker.objects.filter(last_activity__gte=now - timedelta(minutes=5)).count()
+
+    kpis = [
+        {
+            'key': 'sessions',
+            'label': 'Sessions',
+            'value': current['sessions'],
+            'delta': _delta(current['sessions'], previous['sessions']),
+            'spark': _sparkline([row['sessions'] for row in series]),
+            'icon': 'i-trend',
+        },
+        {
+            'key': 'page_views',
+            'label': 'Page views',
+            'value': current['page_views'],
+            'delta': _delta(current['page_views'], previous['page_views']),
+            'spark': _sparkline([row['page_views'] for row in series]),
+            'icon': 'i-chart',
+        },
+        {
+            'key': 'users',
+            'label': 'Active users',
+            'value': current['users'],
+            'delta': _delta(current['users'], previous['users']),
+            'spark': _sparkline([row['users'] for row in series]),
+            'icon': 'i-users',
+        },
+        {
+            'key': 'devices',
+            'label': 'Devices',
+            'value': current['devices'],
+            'delta': _delta(current['devices'], previous['devices']),
+            'spark': _sparkline([row['devices'] for row in series]),
+            'icon': 'i-device',
+        },
+    ]
+
+    top_pages = []
+    top_page_rows = (
+        PageView.objects
+        .filter(viewed_at__date__gte=start, viewed_at__date__lte=end)
+        .values('page_url')
+        .annotate(views=Count('id'), sessions=Count('session', distinct=True))
+        .order_by('-views')[:6]
+    )
+    peak_views = top_page_rows[0]['views'] if top_page_rows else 0
+    for row in top_page_rows:
+        top_pages.append({
+            'label': _page_label(row['page_url']),
+            'path': row['page_url'],
+            'views': row['views'],
+            'sessions': row['sessions'],
+            'share': round(row['views'] / peak_views * 100) if peak_views else 0,
+        })
+
+    device_mix = []
+    device_rows = (
+        DeviceTracker.objects
+        .filter(last_seen__date__gte=start, last_seen__date__lte=end)
+        .values('device_type')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    device_total = sum(row['total'] for row in device_rows)
+    for row in device_rows:
+        device_mix.append({
+            'label': (row['device_type'] or 'Unknown'),
+            'total': row['total'],
+            'share': round(row['total'] / device_total * 100) if device_total else 0,
+        })
+
+    active_staff = []
+    staff_rows = (
+        SessionTracker.objects
+        .filter(started_at__date__gte=start, started_at__date__lte=end, user__isnull=False)
+        .values('user__username', 'user__first_name', 'user__last_name')
+        .annotate(sessions=Count('id'), views=Sum('pages_visited'))
+        .order_by('-sessions')[:5]
+    )
+    for row in staff_rows:
+        full_name = f"{row['user__first_name']} {row['user__last_name']}".strip()
+        active_staff.append({
+            'name': full_name or row['user__username'],
+            'username': row['user__username'],
+            'sessions': row['sessions'],
+            'views': row['views'] or 0,
+        })
+
+    daily = []
+    for row in reversed(series):
+        daily.append({
+            'date': row['date'],
+            'sessions': row['sessions'],
+            'page_views': row['page_views'],
+            'active_users': row['users'],
+            'unique_devices': row['devices'],
+            'views_per_session': round(row['page_views'] / row['sessions'], 1) if row['sessions'] else 0,
+        })
+
+    chart_series = [
+        {
+            'date': row['label'],
+            'sessions': row['sessions'],
+            'page_views': row['page_views'],
+            'devices': row['devices'],
+        }
+        for row in series
+    ]
+
+    period_delta_sessions = _delta(current['sessions'], previous['sessions'])
+
     return render(request, 'analytics.html', {
-        'stats': stats,
-        'chart_data': chart_data,
+        'stats': AnalyticsService.get_live_stats(),
+        'chart_data': chart_series,
+        'kpis': kpis,
+        'top_pages': top_pages,
+        'device_mix': device_mix,
+        'active_staff': active_staff,
         'daily': daily,
+        'range_days': days,
+        'range_options': (7, 14, 30),
+        'online_now': online,
+        'total_periods': current,
+        'previous_periods': previous,
+        'period_delta_sessions': period_delta_sessions,
+        'range_start': start,
+        'range_end': end,
     })
+
+
+@login_required
+def analytics_export_csv(request):
+    """Download the analytics daily breakdown as CSV."""
+    if not _analytics_allowed(request.user):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    try:
+        days = int(request.GET.get('range', 14))
+    except (TypeError, ValueError):
+        days = 14
+    if days not in (7, 14, 30):
+        days = 14
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="analytics-{days}-days.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Sessions', 'Page views', 'Active users', 'Devices', 'Views per session'])
+    for row in reversed(_analytics_series(days)):
+        writer.writerow([
+            row['date'].isoformat(),
+            row['sessions'],
+            row['page_views'],
+            row['users'],
+            row['devices'],
+            round(row['page_views'] / row['sessions'], 1) if row['sessions'] else 0,
+        ])
+    return response
 
 
 @login_required
@@ -1409,7 +1699,11 @@ def analytics_notifications(request):
         return redirect('dashboard')
     from .models import UsageMilestone
     milestones = UsageMilestone.objects.all()[:50]
-    return render(request, 'analytics_notifications.html', {'milestones': milestones})
+    return render(request, 'analytics_notifications.html', {
+        'milestones': milestones,
+        'milestone_count': UsageMilestone.objects.count(),
+        'latest_milestone': milestones[0] if milestones else None,
+    })
 
 
 @login_required
@@ -1417,8 +1711,35 @@ def analytics_devices(request):
     if not _analytics_allowed(request.user):
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
-    devices = DeviceTracker.objects.all().select_related('user')[:200]
-    return render(request, 'analytics_devices.html', {'devices': devices})
+
+    device_type = request.GET.get('type', '').strip()
+    devices = DeviceTracker.objects.all().select_related('user').order_by('-last_seen')
+    if device_type:
+        devices = devices.filter(device_type__iexact=device_type)
+
+    type_rows = (
+        DeviceTracker.objects.values('device_type')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    device_types = [
+        {'label': row['device_type'] or 'Unknown', 'total': row['total']}
+        for row in type_rows
+    ]
+    week_ago = timezone.now() - timedelta(days=7)
+    summary = {
+        'total': DeviceTracker.objects.count(),
+        'active': DeviceTracker.objects.filter(is_active=True).count(),
+        'week': DeviceTracker.objects.filter(last_seen__gte=week_ago).count(),
+        'sessions': SessionTracker.objects.count(),
+    }
+
+    return render(request, 'analytics_devices.html', {
+        'devices': devices[:200],
+        'device_types': device_types,
+        'selected_type': device_type,
+        'summary': summary,
+    })
 
 
 @login_required

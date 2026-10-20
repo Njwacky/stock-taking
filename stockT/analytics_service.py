@@ -85,7 +85,7 @@ class AnalyticsService:
                 )
                 notification = NotificationLog.objects.create(
                     notification_type='milestone',
-                    title='Usage milestone reached 🎉',
+                    title='Usage milestone reached',
                     message=message,
                 )
                 notification.sent_to.set(User.objects.filter(is_active=True))

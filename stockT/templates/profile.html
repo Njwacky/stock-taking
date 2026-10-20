@@ -1,46 +1,81 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Profile - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/profile.css' %}">
-{% endblock %}
+{% block title %}Profile · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    <section class="profile-card" aria-labelledby="profile-title">
-        <header class="profile-header">
-            <div class="profile-avatar" aria-hidden="true"><i class="fas fa-user" aria-hidden="true"></i></div>
-            <div class="profile-heading-copy">
-                <h1 id="profile-title">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
-                <p class="text-muted">@{{ profile_user.username }} · <span class="role-badge role-{{ profile_user.role }}">{{ profile_user.role_display }}</span></p>
-            </div>
-        </header>
-
-        <dl class="profile-details">
-            <div><dt><i class="fas fa-id-card" aria-hidden="true"></i> Clock number</dt><dd>{{ profile_user.clock_number|default:"—" }}</dd></div>
-            <div><dt><i class="fas fa-building" aria-hidden="true"></i> Department</dt><dd>{{ profile_user.department|default:"—" }}</dd></div>
-            <div><dt><i class="fas fa-envelope" aria-hidden="true"></i> Email</dt><dd>{{ profile_user.email|default:"—" }}</dd></div>
-            <div><dt><i class="fas fa-phone" aria-hidden="true"></i> Phone</dt><dd>{{ profile_user.phone_number|default:"—" }}</dd></div>
-            <div><dt><i class="fas fa-calendar" aria-hidden="true"></i> Joined</dt><dd>{{ profile_user.date_joined|date:"M j, Y" }}</dd></div>
-        </dl>
-
-        <div class="profile-actions">
-            <button type="button" onclick="window.print()" class="btn btn-secondary"><i class="fas fa-print" aria-hidden="true"></i> Print</button>
+<div class="manage-users-container">
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>{% if own_profile %}Your profile{% else %}Profile{% endif %}</h1>
+            <p class="dashboard-subtitle">Account details held by {{ current_workspace.name|default:"the workspace" }}.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <button type="button" onclick="window.print()" class="btn btn-secondary">
+                <svg class="icon" aria-hidden="true"><use href="#i-print"></use></svg>
+                Print
+            </button>
             {% if own_profile %}
-            <a href="{% url 'change_password' %}" class="btn btn-warning"><i class="fas fa-lock" aria-hidden="true"></i> Change Password</a>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary"><i class="fas fa-chart-line" aria-hidden="true"></i> My Dashboard</a>
+            <a href="{% url 'change_password' %}" class="btn btn-secondary">
+                <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+                Change password
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg>
+                Inventory
+            </a>
             {% endif %}
         </div>
-    </section>
+    </header>
 
-    {% if qr_data_uri %}
-    <section class="profile-qr" aria-labelledby="profile-qr-title">
-        <h2 id="profile-qr-title">Profile QR code</h2>
-        <img src="{{ qr_data_uri }}" alt="QR code linking to {{ profile_user.username }}’s profile" class="qr-image">
-        <p class="text-muted">Scan to open this profile.</p>
-    </section>
-    {% endif %}
+    <div class="profile-container">
+        <section class="profile-card" aria-labelledby="profile-title">
+            <header class="profile-header">
+                <div class="profile-avatar" aria-hidden="true">{{ profile_user.username|first|upper }}</div>
+                <div class="profile-heading-copy">
+                    <h2 id="profile-title">{{ profile_user.get_full_name|default:profile_user.username }}</h2>
+                    <p class="text-muted">
+                        @{{ profile_user.username }}
+                        <span class="role-badge role-{{ profile_user.role }}">{{ profile_user.role_display }}</span>
+                    </p>
+                </div>
+            </header>
+
+            <dl class="profile-details">
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-contact"></use></svg> Clock number</dt>
+                    <dd>{{ profile_user.clock_number|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-building"></use></svg> Department</dt>
+                    <dd>{{ profile_user.department|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-mail"></use></svg> Email</dt>
+                    <dd>{{ profile_user.email|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg> Phone</dt>
+                    <dd>{{ profile_user.phone_number|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg> Joined</dt>
+                    <dd>{{ profile_user.date_joined|date:"j M Y" }}</dd>
+                </div>
+                <div>
+                    <dt><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg> Last login</dt>
+                    <dd>{{ profile_user.last_login|date:"j M Y, H:i"|default:"—" }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        {% if qr_data_uri %}
+        <aside class="profile-qr" aria-labelledby="profile-qr-title">
+            <h2 id="profile-qr-title">Profile QR code</h2>
+            <img src="{{ qr_data_uri }}" alt="QR code linking to {{ profile_user.username }}’s profile" class="qr-image">
+            <p class="text-muted">Scan to open this profile on a phone.</p>
+        </aside>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
