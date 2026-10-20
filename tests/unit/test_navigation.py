@@ -8,10 +8,13 @@ pytestmark = pytest.mark.django_db
 
 
 class TestNavMarkup:
-    def test_no_hamburger_anywhere(self, as_member):
+    def test_mobile_sidebar_has_working_open_and_close_controls(self, as_member):
         content = as_member.get('/').content.decode()
-        assert 'mobileMenuBtn' not in content
-        assert 'hamburger' not in content
+        assert 'id="sidebarToggle"' in content
+        assert 'aria-label="Open navigation"' in content
+        assert 'aria-controls="sidebar"' in content
+        assert 'data-sidebar-close' in content
+        assert 'id="sidebar"' in content
 
     def test_account_menu_present_for_authenticated(self, as_member):
         content = as_member.get('/').content.decode()
