@@ -60,25 +60,25 @@ class TestApprovalReducesStock:
         as_manager.post(f'/tracking/review/{usage.id}/', {'action': 'approve'})
         assert not Kit.objects.filter(id=kit.id).exists()
 
-    def test_usage_spans_multiple_kits(self, as_manager, member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=20)
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=20)
+    def test_usage_spans_multiple_kits(self, as_manager, member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=20, workspace=workspace)
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=20, workspace=workspace)
         usage = StockUsage.objects.create(
             user=member, clock_number=member.clock_number,
             kit_type=kit_type, kit_type_name=kit_type.name,
-            quantity_used=30, status='pending',
+            quantity_used=30, status='pending', workspace=workspace,
         )
         as_manager.post(f'/tracking/review/{usage.id}/', {'action': 'approve'})
         remaining = sum(Kit.objects.filter(user=member, kit_type_fk=kit_type).values_list('quantity', flat=True))
         assert remaining == 10
 
-    def test_explicit_kit_link_is_honoured(self, as_manager, member, kit_type):
-        k1 = Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=50)
-        k2 = Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=50)
+    def test_explicit_kit_link_is_honoured(self, as_manager, member, kit_type, workspace):
+        k1 = Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=50, workspace=workspace)
+        k2 = Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=50, workspace=workspace)
         usage = StockUsage.objects.create(
             user=member, clock_number=member.clock_number,
             kit_type=kit_type, kit_type_name=kit_type.name,
-            quantity_used=10, status='pending', kit=k2,
+            quantity_used=10, status='pending', kit=k2, workspace=workspace,
         )
         as_manager.post(f'/tracking/review/{usage.id}/', {'action': 'approve'})
         k1.refresh_from_db()
@@ -170,11 +170,11 @@ class TestApprovalReducesStock:
 
 
 class TestRejection:
-    def test_reject_keeps_stock_untouched(self, as_manager, member, kit_type, kit):
+    def test_reject_keeps_stock_untouched(self, as_manager, member, kit_type, kit, workspace):
         usage = StockUsage.objects.create(
             user=member, clock_number=member.clock_number,
             kit_type=kit_type, kit_type_name=kit_type.name,
-            quantity_used=30, status='pending',
+            quantity_used=30, status='pending', workspace=workspace,
         )
         as_manager.post(f'/tracking/review/{usage.id}/', {'action': 'reject'})
         kit.refresh_from_db()
@@ -184,21 +184,21 @@ class TestRejection:
 
 
 class TestPermissions:
-    def test_plain_member_cannot_review(self, as_member, member, kit_type):
+    def test_plain_member_cannot_review(self, as_member, member, kit_type, workspace):
         usage = StockUsage.objects.create(
             user=member, clock_number=member.clock_number,
             kit_type=kit_type, kit_type_name=kit_type.name,
-            quantity_used=1, status='pending',
+            quantity_used=1, status='pending', workspace=workspace,
         )
         response = as_member.post(f'/tracking/review/{usage.id}/', {'action': 'approve'})
         assert response.status_code == 302
         usage.refresh_from_db()
         assert usage.status == 'pending'
 
-    def test_history_scoping(self, as_member, member, other_member, kit_type):
+    def test_history_scoping(self, as_member, member, other_member, kit_type, workspace):
         StockUsage.objects.create(
             user=other_member, clock_number='1', kit_type=kit_type,
-            kit_type_name=kit_type.name, quantity_used=1,
+            kit_type_name=kit_type.name, quantity_used=1, workspace=workspace,
         )
         response = as_member.get('/tracking/history/')
         assert other_member.username not in response.content.decode()

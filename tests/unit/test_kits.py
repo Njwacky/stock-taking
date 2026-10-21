@@ -29,6 +29,25 @@ class TestAddItems:
         assert response.status_code == 302
         assert not Kit.objects.filter(user=other_member).exists()
 
+    def test_invalid_quantity_and_condition_are_rejected(self, as_member, member, kit_type):
+        response = as_member.post('/add-items/', {
+            'user': member.id,
+            f'quantity_{kit_type.id}': '3',
+            f'condition_{kit_type.id}': 'not-a-condition',
+        }, follow=True)
+        assert response.status_code == 200
+        assert not Kit.objects.filter(user=member).exists()
+        assert 'valid condition' in response.content.decode()
+
+        response = as_member.post('/add-items/', {
+            'user': member.id,
+            f'quantity_{kit_type.id}': '-2',
+            f'condition_{kit_type.id}': 'new',
+        }, follow=True)
+        assert response.status_code == 200
+        assert not Kit.objects.filter(user=member).exists()
+        assert 'cannot be negative' in response.content.decode()
+
     def test_manager_adds_stock_for_others(self, as_manager, other_member, kit_type):
         as_manager.post('/add-items/', {
             'user': other_member.id, f'quantity_{kit_type.id}': '7',

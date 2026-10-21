@@ -1,6 +1,8 @@
 """Workspace feature: creation, switching, members and data isolation."""
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from tests.conftest import make_admin, make_user
 
@@ -109,6 +111,59 @@ class TestDataIsolation:
         as_member.post('/workspace/switch/', {'workspace_id': side.id})
         content = as_member.get('/tracking/history/').content.decode()
         assert 'Iso Usage' not in content
+
+    def test_orphaned_rows_are_not_treated_as_shared_across_workspaces(
+        self, as_owner, owner, workspace,
+    ):
+        from stockT.models import Kit, KitType, StockUsage
+
+        orphaned_type = KitType.objects.create(
+            name='Unscoped legacy type', code='UNSCOPED', workspace=None,
+        )
+        orphaned_kit = Kit.objects.create(
+            user=owner, kit_type_fk=orphaned_type, kit_type_string='Unscoped legacy type',
+            quantity=17, workspace=None,
+        )
+        orphaned_usage = StockUsage.objects.create(
+            user=owner, clock_number=owner.clock_number,
+            kit_type=orphaned_type, kit_type_name='Unscoped legacy usage',
+            quantity_used=2, workspace=None,
+        )
+
+        assert 'Unscoped legacy type' not in as_owner.get('/add-items/').content.decode()
+        assert 'Unscoped legacy type' not in as_owner.get('/').content.decode()
+        assert 'Unscoped legacy usage' not in as_owner.get('/tracking/history/').content.decode()
+        response = as_owner.get(f'/get_user_kits/{owner.id}/')
+        assert all(item['id'] != orphaned_kit.id for item in response.json()['kits'])
+        assert Kit.objects.filter(pk=orphaned_kit.pk).exists()
+        assert StockUsage.objects.filter(pk=orphaned_usage.pk).exists()
+        with pytest.raises(CommandError, match='no workspace'):
+            call_command('check_workspace_orphans')
+
+    def test_manager_cannot_read_or_modify_another_workspaces_stock(
+        self, as_owner, owner, workspace,
+    ):
+        from stockT.models import Kit, KitType
+        from stockT.workspace import create_workspace
+
+        foreign_workspace = create_workspace('Foreign Store', owner)
+        foreign_type = KitType.objects.create(
+            workspace=foreign_workspace, name='Foreign-only type', code='FOREIGN',
+        )
+        foreign_kit = Kit.objects.create(
+            user=owner, kit_type_fk=foreign_type, kit_type_string=foreign_type.name,
+            quantity=23, workspace=foreign_workspace,
+        )
+
+        response = as_owner.get(f'/get_user_kits/{owner.id}/')
+        assert all(item['id'] != foreign_kit.id for item in response.json()['kits'])
+        assert 'Foreign-only type' not in as_owner.get('/add-items/').content.decode()
+        assert as_owner.post(
+            f'/update_kit/{foreign_kit.id}/', {'quantity': '1'},
+        ).status_code == 404
+        assert as_owner.post(f'/delete_kit/{foreign_kit.id}/').status_code == 404
+        foreign_kit.refresh_from_db()
+        assert foreign_kit.quantity == 23
 
     def test_same_name_kit_type_allowed_in_two_workspaces(self, as_member, member, workspace):
         """Per-workspace uniqueness: 'Feets' can exist in every workspace."""

@@ -11,8 +11,9 @@
 <div class="add-items-container">
     <header class="page-header add-stock-header">
         <div class="dashboard-heading">
+            <span class="add-stock-eyebrow">INVENTORY · NEW ENTRY</span>
             <h1>Add stock</h1>
-            <p class="dashboard-subtitle">Record new equipment against a person. Pick the kit types below, then enter quantities and condition.</p>
+            <p class="dashboard-subtitle">Choose who receives the stock, select kit types, then enter quantities and details.</p>
         </div>
         <div class="dashboard-header-actions">
             <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
@@ -24,7 +25,10 @@
 
         <section class="form-section" aria-labelledby="assign-title">
             <div class="form-section-head">
-                <h2 id="assign-title">Recipient</h2>
+                <div>
+                    <span class="section-step">STEP 1</span>
+                    <h2 id="assign-title">Choose recipient</h2>
+                </div>
                 <p>Stock is issued to one person at a time.</p>
             </div>
             <div class="form-group">
@@ -48,9 +52,22 @@
 
         <section class="form-section" aria-labelledby="kit-types-title">
             <div class="form-section-head">
-                <h2 id="kit-types-title">Kit types</h2>
-                <p>Select one or more types. Fields appear as each type is chosen.</p>
+                <div>
+                    <span class="section-step">STEP 2</span>
+                    <h2 id="kit-types-title">Choose kit types</h2>
+                </div>
+                <p>Select each type you are adding. Quantity and item details appear when selected.</p>
             </div>
+
+            <div class="catalog-toolbar">
+                <label class="catalog-search" for="kitTypeSearch">
+                    <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                    <input type="search" id="kitTypeSearch" placeholder="Search kit types or codes" autocomplete="off">
+                    <kbd>/</kbd>
+                </label>
+                <span class="catalog-count" id="catalogCount" aria-live="polite"></span>
+            </div>
+            <p class="catalog-no-results" id="catalogNoResults" hidden>No kit types match that search.</p>
 
             <div class="kit-type-grid" role="group" aria-labelledby="kit-types-title">
                 {% for kit_type in kit_types %}
@@ -107,7 +124,10 @@
         </section>
 
         <div class="form-actions">
-            <p class="form-actions-note">Quantities are added to existing records for the same type.</p>
+            <div class="form-actions-copy">
+                <span class="selection-summary" id="selectionSummary" aria-live="polite">No kit types selected</span>
+                <p class="form-actions-note">New quantities are recorded as stock entries for the selected recipient.</p>
+            </div>
             <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
                 <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
                 <span>Select kit types to continue</span>

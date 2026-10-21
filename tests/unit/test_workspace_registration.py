@@ -19,8 +19,8 @@ def _post_register(client, username='newbie', clock_number='77000'):
         'clock_number': clock_number,
         'department': 'Ops',
         'phone_number': '0710000000',
-        'password1': 'Str0ng!pass',
-        'password2': 'Str0ng!pass',
+        'password1': 'Str0ng!pass2026',
+        'password2': 'Str0ng!pass2026',
     })
 
 
@@ -60,6 +60,23 @@ def test_workspace_is_seeded_with_kit_types(client):
     from stockT.models import KitType
     codes = set(KitType.objects.filter(workspace__memberships__user=user).values_list('code', flat=True))
     assert {'FEET', 'VHB18', 'RIV8'} <= codes
+
+
+def test_registration_rejects_passwords_shorter_than_twelve_characters(client):
+    response = client.post('/register/', {
+        'username': 'short-password-user',
+        'first_name': 'Short',
+        'last_name': 'Password',
+        'email': 'short@example.com',
+        'clock_number': '77099',
+        'department': 'Ops',
+        'phone_number': '0710000000',
+        'password1': 'Good!pass9',
+        'password2': 'Good!pass9',
+    })
+    assert response.status_code == 200
+    assert not User.objects.filter(username='short-password-user').exists()
+    assert 'at least 12 characters' in response.content.decode()
 
 
 def test_first_registrant_on_empty_install_is_ordinary_user(client):

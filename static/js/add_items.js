@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const quantityInputs = document.querySelectorAll('.quantity-input');
     const detailInputs = document.querySelectorAll('.detail-input, .detail-select, .detail-textarea');
     const submitBtn = document.getElementById('submitBtn');
+    const kitTypeSearch = document.getElementById('kitTypeSearch');
+    const catalogCount = document.getElementById('catalogCount');
+    const catalogNoResults = document.getElementById('catalogNoResults');
+    const kitTypeCards = Array.from(document.querySelectorAll('.kit-type-card'));
+    const selectionSummary = document.getElementById('selectionSummary');
     
     // CRUD functionality elements
     const existingKitsSection = document.getElementById('existingKitsSection');
@@ -43,17 +48,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return String(value ?? '').replace(/[&<>"']/g, character => htmlEscapes[character]);
     }
 
-    kitsListContainer.addEventListener('click', function(event) {
-        const button = event.target.closest('[data-kit-action]');
-        if (!button || !kitsListContainer.contains(button)) return;
+    if (kitsListContainer) {
+        kitsListContainer.addEventListener('click', function(event) {
+            const button = event.target.closest('[data-kit-action]');
+            if (!button || !kitsListContainer.contains(button)) return;
 
-        const kitId = Number(button.dataset.kitId);
-        if (!Number.isSafeInteger(kitId) || kitId <= 0) return;
+            const kitId = Number(button.dataset.kitId);
+            if (!Number.isSafeInteger(kitId) || kitId <= 0) return;
 
-        if (button.dataset.kitAction === 'view') viewKit(kitId);
-        if (button.dataset.kitAction === 'edit') editKit(kitId);
-        if (button.dataset.kitAction === 'delete') deleteKit(kitId);
-    });
+            if (button.dataset.kitAction === 'view') viewKit(kitId);
+            if (button.dataset.kitAction === 'edit') editKit(kitId);
+            if (button.dataset.kitAction === 'delete') deleteKit(kitId);
+        });
+    }
 
     // Tape calculation function
     function calculateTapeLength(quantity, tapeWidth) {
@@ -108,21 +115,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateFormState() {
         const userSelected = userSelect.value !== '';
-        const itemsSelected = Array.from(checkboxes).some(cb => cb.checked);
+        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const itemsSelected = selectedCheckboxes.length > 0;
         const quantitiesValid = Array.from(quantityInputs).every(input => {
             if (input.disabled) return true;
-            const value = parseInt(input.value) || 0;
-            return value >= 0;
+            return input.value === '' || Number(input.value) >= 0;
         });
+        const selectedQuantities = selectedCheckboxes.map(checkbox => {
+            const input = checkbox.closest('.item-card').querySelector('.quantity-input');
+            return Math.max(0, Number(input.value) || 0);
+        });
+        const totalQuantity = selectedQuantities.reduce((total, quantity) => total + quantity, 0);
+        const quantitiesComplete = selectedQuantities.length > 0 && selectedQuantities.every(quantity => quantity > 0);
+        const canSubmit = userSelected && itemsSelected && quantitiesComplete && quantitiesValid;
 
-        submitBtn.disabled = !(userSelected && itemsSelected && quantitiesValid);
-
-        if (submitBtn.disabled) {
-            const prompt = userSelected ? 'Select at least one item' : 'Select a user and at least one item';
-            submitBtn.innerHTML = `${icon('i-plus')}<span>${prompt}</span>`;
+        submitBtn.disabled = !canSubmit;
+        if (!userSelected) {
+            submitBtn.innerHTML = `${icon('i-plus')}<span>${itemsSelected ? 'Choose a recipient' : 'Choose a recipient to continue'}</span>`;
+        } else if (!itemsSelected) {
+            submitBtn.innerHTML = `${icon('i-plus')}<span>Select kit types to continue</span>`;
+        } else if (!quantitiesComplete) {
+            submitBtn.innerHTML = `${icon('i-plus')}<span>Enter a quantity for each type</span>`;
         } else {
-            const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            submitBtn.innerHTML = `${icon('i-plus')}<span>Add ${selectedCount} kit${selectedCount === 1 ? '' : 's'}</span>`;
+            submitBtn.innerHTML = `${icon('i-plus')}<span>Add ${selectedCheckboxes.length} type${selectedCheckboxes.length === 1 ? '' : 's'}</span>`;
+        }
+
+        if (selectionSummary) {
+            const typeLabel = `${selectedCheckboxes.length} type${selectedCheckboxes.length === 1 ? '' : 's'} selected`;
+            selectionSummary.textContent = selectedCheckboxes.length
+                ? `${typeLabel} · ${totalQuantity} total ${totalQuantity === 1 ? 'unit' : 'units'}`
+                : 'No kit types selected';
         }
     }
 
@@ -187,6 +209,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle user selection
     userSelect.addEventListener('change', updateFormState);
+
+    // Filter the kit catalog without losing any selections already made.
+    function filterKitTypes() {
+        if (!kitTypeSearch) return;
+        const query = kitTypeSearch.value.trim().toLocaleLowerCase();
+        let visibleCount = 0;
+
+        kitTypeCards.forEach(card => {
+            const checkbox = card.querySelector('.modern-checkbox');
+            const searchable = `${card.querySelector('.item-name')?.textContent || ''} ${card.querySelector('.kit-type-code')?.textContent || ''}`.toLocaleLowerCase();
+            const matches = !query || searchable.includes(query) || checkbox.checked;
+            card.hidden = !matches;
+            if (matches) visibleCount += 1;
+        });
+
+        if (catalogCount) {
+            catalogCount.textContent = query
+                ? `${visibleCount} type${visibleCount === 1 ? '' : 's'} shown`
+                : `${kitTypeCards.length} type${kitTypeCards.length === 1 ? '' : 's'} available`;
+        }
+        if (catalogNoResults) catalogNoResults.hidden = visibleCount !== 0 || kitTypeCards.length === 0;
+    }
+
+    if (kitTypeSearch) {
+        kitTypeSearch.addEventListener('input', filterKitTypes);
+        document.addEventListener('keydown', function(event) {
+            const target = event.target;
+            const isTyping = target && (target.matches('input, textarea, select') || target.isContentEditable);
+            if (event.key === '/' && !isTyping && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                event.preventDefault();
+                kitTypeSearch.focus();
+            } else if (event.key === 'Escape' && target === kitTypeSearch) {
+                kitTypeSearch.value = '';
+                filterKitTypes();
+            }
+        });
+    }
+    filterKitTypes();
 
     // Initialize form state
     updateFormState();

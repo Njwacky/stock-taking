@@ -52,14 +52,14 @@ class TestProcessing:
     def test_approve_sets_new_password(self, as_manager, member):
         request = self._pending(member)
         response = as_manager.post(f'/password-reset/process/{request.id}/', {
-            'action': 'approve', 'new_password': 'T3mp!pass9', 'confirm_password': 'T3mp!pass9',
+            'action': 'approve', 'new_password': 'T3mp!pass9XY', 'confirm_password': 'T3mp!pass9XY',
         })
         assert response.status_code == 302
         request.refresh_from_db()
         member.refresh_from_db()
         assert request.status == 'approved'
         assert request.processed_by is not None
-        assert member.check_password('T3mp!pass9')
+        assert member.check_password('T3mp!pass9XY')
 
     def test_reject_keeps_password(self, as_manager, member):
         request = self._pending(member)
@@ -67,12 +67,12 @@ class TestProcessing:
         request.refresh_from_db()
         member.refresh_from_db()
         assert request.status == 'rejected'
-        assert not member.check_password('T3mp!pass9')
+        assert not member.check_password('T3mp!pass9XY')
 
     def test_mismatched_password_stays_pending(self, as_manager, member):
         request = self._pending(member)
         as_manager.post(f'/password-reset/process/{request.id}/', {
-            'action': 'approve', 'new_password': 'T3mp!pass9', 'confirm_password': 'nope',
+            'action': 'approve', 'new_password': 'T3mp!pass9XY', 'confirm_password': 'nope',
         })
         request.refresh_from_db()
         assert request.status == 'pending'
@@ -80,20 +80,20 @@ class TestProcessing:
     def test_double_process_ignored(self, as_manager, member):
         request = self._pending(member)
         as_manager.post(f'/password-reset/process/{request.id}/', {
-            'action': 'approve', 'new_password': 'T3mp!pass9', 'confirm_password': 'T3mp!pass9',
+            'action': 'approve', 'new_password': 'T3mp!pass9XY', 'confirm_password': 'T3mp!pass9XY',
         })
         response = as_manager.post(f'/password-reset/process/{request.id}/', {
-            'action': 'approve', 'new_password': 'Other!pass1', 'confirm_password': 'Other!pass1',
+            'action': 'approve', 'new_password': 'Other!pass1XY', 'confirm_password': 'Other!pass1XY',
         })
         assert response.status_code == 302
         member.refresh_from_db()
-        assert member.check_password('T3mp!pass9')
+        assert member.check_password('T3mp!pass9XY')
 
     def test_plain_member_cannot_process(self, as_member, member):
         request = self._pending(member)
         response = as_member.post(f'/password-reset/process/{request.id}/', {
-            'action': 'approve', 'new_password': 'T3mp!pass9', 'confirm_password': 'T3mp!pass9',
+            'action': 'approve', 'new_password': 'T3mp!pass9XY', 'confirm_password': 'T3mp!pass9XY',
         })
         assert response.status_code == 302
         member.refresh_from_db()
-        assert not member.check_password('T3mp!pass9')
+        assert not member.check_password('T3mp!pass9XY')
