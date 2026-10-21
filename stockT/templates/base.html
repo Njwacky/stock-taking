@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
     {% block extra_css %}{% endblock %}
-    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261020c">
+    <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261021a">
 </head>
 <body{% if user.is_authenticated %} class="has-mobile-tabbar"{% else %} class="app-body app-body--guest"{% endif %}>
     <a href="#main" class="skip-link">Skip to content</a>
@@ -371,7 +371,7 @@
     </div>
     {% endif %}
 
-    <script src="{% static 'js/base.js' %}?v=20261020c"></script>
+    <script src="{% static 'js/base.js' %}?v=20261021a"></script>
     {% if user.is_authenticated %}<script src="{% static 'js/floating-comment.js' %}"></script>{% endif %}
     <script>
         if ('serviceWorker' in navigator) {

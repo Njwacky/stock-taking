@@ -315,6 +315,15 @@ img, svg, canvas { max-width: 100%; }
     border-right: 1px solid var(--border);
 }
 
+/* The scrim only exists for the off-canvas drawer below 920px. Hiding it
+   here means a stray `hidden` toggle can never cover a desktop layout. */
+.sidebar-scrim { display: none; }
+
+/* Applied while the off-canvas drawer is open so the page behind the scrim
+   cannot scroll. Kept on <body> so the inline overflow of other widgets is
+   left untouched. */
+body.drawer-open { overflow: hidden; }
+
 .sidebar-head {
     display: flex;
     align-items: center;
@@ -440,6 +449,8 @@ img, svg, canvas { max-width: 100%; }
     padding: 2px 12px 18px;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
+    /* Keep a rail scroll from chaining to the page behind it. */
+    overscroll-behavior: contain;
 }
 
 .nav-group { margin-bottom: 18px; }
@@ -3523,16 +3534,26 @@ body:has(.auth-layout) .public-footer { display: none; }
 
 @media (max-width: 920px) {
     .sidebar {
+        /* visibility keeps the off-canvas drawer out of the tab order (and
+           the a11y tree) even before base.js runs or if it fails to load.
+           The delay lets the slide-out animation finish. */
+        visibility: hidden;
         transform: translateX(-100%);
-        transition: transform 0.2s var(--ease);
+        transition: transform 0.2s var(--ease), visibility 0s linear 0.2s;
         box-shadow: var(--shadow-lg);
         width: 270px;
     }
 
-    .sidebar.is-open { transform: translateX(0); }
+    .sidebar.is-open {
+        visibility: visible;
+        transform: translateX(0);
+        transition: transform 0.2s var(--ease);
+    }
+
     .sidebar-close { display: inline-flex; }
 
     .sidebar-scrim {
+        display: block;
         position: fixed;
         inset: 0;
         z-index: 55;
