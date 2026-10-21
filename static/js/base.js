@@ -37,37 +37,77 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // -----------------------------------------------------------------
     // Responsive navigation: the sidebar becomes an off-canvas drawer on
-    // narrow screens. The scrim and Escape both dismiss it.
+    // narrow screens. While it is open it behaves like a modal sheet: the
+    // scrim, Escape and the close button dismiss it, the page behind it is
+    // inert, and Tab is trapped inside the drawer.
     // -----------------------------------------------------------------
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const scrim = document.querySelector('.sidebar-scrim');
     const sidebarCloseButtons = document.querySelectorAll('[data-sidebar-close]');
-    let sidebarReturnFocus = null;
+    const appMain = document.querySelector('.app-main');
+    const drawerQuery = window.matchMedia('(max-width: 920px)');
+
+    function drawerIsActive() {
+        return !!sidebar && sidebar.classList.contains('is-open');
+    }
+
+    function drawerFocusables() {
+        if (!sidebar) return [];
+        return Array.from(sidebar.querySelectorAll(
+            'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter(element => !element.closest('[hidden]'));
+    }
 
     function setSidebar(open) {
         if (!sidebar) return;
-        sidebar.classList.toggle('is-open', open);
-        const isMobile = window.matchMedia('(max-width: 920px)').matches;
-        const isClosedOnMobile = isMobile && !open;
-        sidebar.inert = isClosedOnMobile;
-        sidebar.setAttribute('aria-hidden', isClosedOnMobile ? 'true' : 'false');
+        // Only treat "open" as true on narrow screens: a stale class on a
+        // desktop viewport would otherwise show the scrim over the page.
+        const shouldOpen = !!open && drawerQuery.matches;
+        // Captured before anything turns inert: browsers blur a focused
+        // element the moment it becomes inert, which would otherwise drop
+        // the caret on <body> and lose the keyboard position.
+        const focusWasInside = sidebar.contains(document.activeElement);
+
+        sidebar.classList.toggle('is-open', shouldOpen);
+
+        // Off-canvas on mobile: keep the hidden drawer out of the tab order
+        // and the accessibility tree. On desktop the rail is always visible.
+        const hideFromA11yTree = drawerQuery.matches && !shouldOpen;
+        if (hideFromA11yTree) sidebar.setAttribute('inert', '');
+        else sidebar.removeAttribute('inert');
+        sidebar.setAttribute('aria-hidden', hideFromA11yTree ? 'true' : 'false');
+
         if (sidebarToggle) {
-            sidebarToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            sidebarToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+            sidebarToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            sidebarToggle.setAttribute('aria-label', shouldOpen ? 'Close navigation' : 'Open navigation');
             const icon = sidebarToggle.querySelector('use');
-            if (icon) icon.setAttribute('href', open ? '#i-close' : '#i-menu');
-            if (open) {
-                sidebarReturnFocus = document.activeElement;
-                const firstLink = sidebar.querySelector('.sidebar-nav a');
-                if (firstLink) firstLink.focus();
-            } else if (sidebarReturnFocus && sidebar.contains(document.activeElement)) {
-                sidebarToggle.focus();
-                sidebarReturnFocus = null;
-            }
+            if (icon) icon.setAttribute('href', shouldOpen ? '#i-close' : '#i-menu');
         }
-        if (scrim) scrim.hidden = !open;
-        document.body.style.overflow = open ? 'hidden' : '';
+        if (scrim) scrim.hidden = !shouldOpen;
+
+        // While the drawer covers the page, the page must not be reachable
+        // by Tab, pointer or screen reader.
+        if (appMain) {
+            if (shouldOpen) appMain.setAttribute('inert', '');
+            else appMain.removeAttribute('inert');
+        }
+
+        document.body.classList.toggle('drawer-open', shouldOpen);
+
+        if (shouldOpen) {
+            // Start keyboard users on the page they are already on, falling
+            // back to the first link, then the first focusable control.
+            const firstTarget = sidebar.querySelector('.sidebar-nav [aria-current="page"]')
+                || sidebar.querySelector('.sidebar-nav a')
+                || drawerFocusables()[0];
+            if (firstTarget) firstTarget.focus();
+        } else if (focusWasInside && sidebarToggle && drawerQuery.matches) {
+            // Hand focus back to the control that opened the drawer. Runs
+            // after the inert attributes are cleared, or the focus call
+            // would be ignored.
+            sidebarToggle.focus();
+        }
     }
 
     if (sidebar) {
@@ -84,15 +124,49 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebar.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => setSidebar(false));
         });
+        // The feedback panel is layered above the drawer, so dismiss the
+        // drawer first instead of leaving the page scroll-locked behind it.
+        const sidebarFeedback = document.getElementById('floatingCommentBtn');
+        if (sidebarFeedback) {
+            sidebarFeedback.addEventListener('click', () => setSidebar(false));
+        }
         document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
+            if (!drawerIsActive()) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
                 setSidebar(false);
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusables = drawerFocusables();
+            if (!focusables.length) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement;
+            const outsideDrawer = !sidebar.contains(active);
+            if (event.shiftKey && (outsideDrawer || active === first)) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (outsideDrawer || active === last)) {
+                event.preventDefault();
+                first.focus();
             }
         });
-        window.addEventListener('resize', () => {
-            setSidebar(sidebar.classList.contains('is-open') && window.innerWidth <= 920);
+        // Close only when the drawer breakpoint is actually crossed. A plain
+        // resize (mobile browser chrome, on-screen keyboard) must not re-run
+        // the open state, which used to yank focus to the first link.
+        let drawerWasAvailable = drawerQuery.matches;
+        window.addEventListener('resize', function() {
+            if (drawerQuery.matches === drawerWasAvailable) return;
+            drawerWasAvailable = drawerQuery.matches;
+            setSidebar(false);
         });
-        setSidebar(sidebar.classList.contains('is-open'));
+        // A bfcache restore keeps the DOM as it was left, including the open
+        // drawer and its scroll lock.
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) setSidebar(false);
+        });
+        setSidebar(false);
     }
 
     // -----------------------------------------------------------------
