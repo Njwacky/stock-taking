@@ -19,8 +19,8 @@ def add_user_payload(**overrides):
         'department': 'Prod',
         'phone_number': '072',
         'role': 'user',
-        'password1': 'N3wbie!pass',
-        'password2': 'N3wbie!pass',
+        'password1': 'N3wbie!pass2026',
+        'password2': 'N3wbie!pass2026',
     }
     payload.update(overrides)
     return payload
@@ -33,7 +33,7 @@ class TestAddUser:
         user = User.objects.get(username='newbie')
         assert user.role == 'user'
         assert user.is_superuser is False
-        assert user.check_password('N3wbie!pass')
+        assert user.check_password('N3wbie!pass2026')
         membership = user.workspace_memberships.get(workspace=workspace)
         assert membership.role == 'member'
         assert user.workspace_memberships.count() == 1

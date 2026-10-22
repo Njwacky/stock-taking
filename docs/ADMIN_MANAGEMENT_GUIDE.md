@@ -179,7 +179,7 @@ Password: (your secure password)
    - Fill form:
      - Username: it_admin
      - Clock: 100
-     - Password: ITPass123!
+     - Password: ITPass123!Safe
      - Role: Admin
      - ✓ Make Superadmin
    - Click "Create Admin"
@@ -189,7 +189,7 @@ Password: (your secure password)
    - Fill form:
      - Username: hr_manager
      - Clock: 200
-     - Password: HRPass123!
+     - Password: HRPass123!Safe
      - Role: Manager
      - ☐ Make Superadmin (unchecked)
    - Click "Create Admin"
@@ -259,7 +259,7 @@ Password: (your secure password)
 - **Regular User**: Everyone else
 
 ### 3. Security
-- Use strong passwords (8+ characters, mix of letters/numbers)
+- Use strong passwords (12+ characters; unique for each account)
 - Don't share admin accounts
 - Remove access when employees leave
 - Review admin list regularly

@@ -39,6 +39,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install system dependencies needed for runtime
 RUN apt-get update && apt-get install -y \
     libpq5 \
+    postgresql-client \
     libffi-dev \
     libssl-dev \
     zlib1g \

@@ -25,37 +25,37 @@ class TestAccess:
 
 
 class TestScope:
-    def test_member_exports_only_own_kits(self, as_member, member, other_member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5)
-        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9)
+    def test_member_exports_only_own_kits(self, as_member, member, other_member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, workspace=workspace)
+        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9, workspace=workspace)
         data = rows(as_member.get('/export/kits.csv'))
         usernames = {row[5] for row in data[1:]}
         assert usernames == {member.username}
 
-    def test_manager_exports_all_kits(self, as_manager, member, other_member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5)
-        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9)
+    def test_manager_exports_all_kits(self, as_manager, member, other_member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, workspace=workspace)
+        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9, workspace=workspace)
         data = rows(as_manager.get('/export/kits.csv'))
         usernames = {row[5] for row in data[1:]}
         assert member.username in usernames
         assert other_member.username in usernames
 
-    def test_inactive_kits_excluded(self, as_member, member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, is_active=False)
+    def test_inactive_kits_excluded(self, as_member, member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, is_active=False, workspace=workspace)
         data = rows(as_member.get('/export/kits.csv'))
         assert len(data) == 1  # header only
 
 
 class TestFilters:
-    def test_user_filter_applied(self, as_manager, member, other_member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5)
-        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9)
+    def test_user_filter_applied(self, as_manager, member, other_member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, workspace=workspace)
+        Kit.objects.create(user=other_member, kit_type_fk=kit_type, kit_type_string='x', quantity=9, workspace=workspace)
         data = rows(as_manager.get(f'/export/kits.csv?user={other_member.username}'))
         assert {row[5] for row in data[1:]} == {other_member.username}
 
-    def test_search_filter_applied(self, as_manager, member, kit_type):
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, location='Aisle 3')
-        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, location='Bay 9')
+    def test_search_filter_applied(self, as_manager, member, kit_type, workspace):
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, location='Aisle 3', workspace=workspace)
+        Kit.objects.create(user=member, kit_type_fk=kit_type, kit_type_string='x', quantity=5, location='Bay 9', workspace=workspace)
         data = rows(as_manager.get('/export/kits.csv?search=Aisle'))
         assert len(data) == 2
         assert data[1][6] == 'Aisle 3'
@@ -79,10 +79,10 @@ class TestFormat:
         assert row[3] == '100'
         assert row[5] == member.username
 
-    def test_condition_translated(self, as_member, member, kit_type):
+    def test_condition_translated(self, as_member, member, kit_type, workspace):
         Kit.objects.create(
             user=member, kit_type_fk=kit_type, kit_type_string='x',
-            quantity=1, condition='damaged',
+            quantity=1, condition='damaged', workspace=workspace,
         )
         data = rows(as_member.get('/export/kits.csv'))
         assert data[1][4] == 'Damaged'

@@ -6,6 +6,7 @@ Project documentation is grouped by its purpose:
 
 - [User guide](USER_GUIDE.md)
 - [Docker local setup](DOCKER_LOCAL_SETUP.md)
+- [Production operations, backups, and recovery](PRODUCTION_OPERATIONS.md)
 - [Requirements and deployment notes](REQUIREMENTS.md)
 - [AI/developer guide](AI_GUIDE.md)
 - [Admin management](ADMIN_MANAGEMENT_GUIDE.md)

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlparse
 
@@ -116,6 +117,7 @@ INSTALLED_APPS = [
     'stockT',
     # Third-party apps
     'rest_framework',
+    'axes',
 ]
 
 MIDDLEWARE = [
@@ -127,6 +129,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'stockT.middleware.analytics_middleware.AnalyticsMiddleware',  # Analytics tracking
+    'axes.middleware.AxesMiddleware',
 ]
 
 if DEBUG:
@@ -254,7 +257,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {'min_length': 4},
+        'OPTIONS': {'min_length': 12},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -413,13 +416,22 @@ CACHES = {
     }
 }
 
-# Authentication settings (single canonical definition)
-# Keep ModelBackend first to allow normal Django auth; CaseInsensitiveModelBackend
-# provides case-insensitive username handling.
+# Authentication settings (single canonical definition).
+# Axes runs first to reject locked-out requests; the app backend handles
+# case-insensitive username authentication and Django permission checks.
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    'stockT.auth_backends.RequestOptionalAxesBackend',
     'stockT.auth_backends.CaseInsensitiveModelBackend',
 ]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
+AXES_RESET_ON_SUCCESS = True
+# Do not let repeated attempts during a lockout extend the lockout window.
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
+AXES_LOCKOUT_TEMPLATE = 'login_locked.html'
+# In production, nginx overwrites X-Real-IP. In direct/local mode use REMOTE_ADDR.
+AXES_CLIENT_IP_CALLABLE = 'stockT.auth_backends.axes_client_ip'
 
 # Login/Logout redirects
 LOGIN_REDIRECT_URL = '/'

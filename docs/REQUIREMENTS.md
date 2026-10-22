@@ -12,11 +12,13 @@
 #### Core Dependencies
 - **Python**: 3.10 or higher (the Docker image uses Python 3.12)
 - **Django**: 5.2.x (Web Framework)
+- **django-axes**: Login throttling and temporary lockouts
 - **Database**: SQLite (development), PostgreSQL (production recommended)
 
 #### Python Packages (requirements.txt)
 ```
 Django>=5.2,<6.0
+django-axes>=8.3,<9.0
 qrcode[pil]>=7.0
 djangorestframework>=3.14.0
 django-cors-headers>=4.0.0

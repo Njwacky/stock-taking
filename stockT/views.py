@@ -24,6 +24,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from .analytics_service import AnalyticsService
@@ -84,13 +85,22 @@ def _ws(request):
 
 
 def _ws_kit_types(workspace):
-    """Kit types visible inside a workspace (legacy unassigned rows included)."""
-    return KitType.objects.filter(Q(workspace=workspace) | Q(workspace__isnull=True))
+    """Return only kit types explicitly assigned to this workspace.
+
+    Legacy rows are moved into a workspace by migration 0004. Treating any
+    remaining NULL workspace as globally shared would expose those records to
+    every tenant, so orphaned rows are intentionally excluded.
+    """
+    if workspace is None:
+        return KitType.objects.none()
+    return KitType.objects.filter(workspace=workspace)
 
 
 def _ws_rows(qs, workspace):
-    """Scope any workspace-owned queryset (kits, usages) to the workspace."""
-    return qs.filter(Q(workspace=workspace) | Q(workspace__isnull=True))
+    """Scope workspace-owned rows strictly; NULL is not a shared tenant."""
+    if workspace is None:
+        return qs.none()
+    return qs.filter(workspace=workspace)
 
 
 def _kit_stats(workspace=None):
@@ -308,7 +318,7 @@ def register(request):
             workspace = ensure_user_workspace(user)
         set_current_workspace(request, workspace)
         # Multiple auth backends are configured, so the backend must be explicit.
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
         messages.success(
             request,
             f'Welcome, {user.username}! Your workspace “{workspace.name}” is ready — '
@@ -569,7 +579,7 @@ def change_password(request):
         if form.is_valid():
             user = form.save()
             # Keep the session alive across the password change.
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
             messages.success(request, 'Your password has been changed.')
             return redirect('profile')
         messages.error(request, 'Please correct the errors below.')
@@ -715,28 +725,60 @@ def add_items(request):
             messages.error(request, f'{target.username} is not a member of this workspace.')
             return redirect('add_items')
 
-        created = 0
+        entries = []
+        valid_conditions = {value for value, _label in Kit.CONDITION_CHOICES}
         for kit_type in kit_types:
             qty_raw = request.POST.get(f'quantity_{kit_type.id}', '0')
             try:
                 qty = int(qty_raw)
             except (TypeError, ValueError):
-                qty = 0
-            if qty <= 0:
+                messages.error(request, f'Enter a whole-number quantity for {kit_type.name}.')
+                return redirect('add_items')
+            if qty < 0:
+                messages.error(request, f'Quantity for {kit_type.name} cannot be negative.')
+                return redirect('add_items')
+            if qty == 0:
                 continue
-            Kit.objects.create(
-                user=target,
-                kit_type_fk=kit_type,
-                kit_type_string=kit_type.name[:20],
-                quantity=qty,
-                condition=request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW),
-                location=request.POST.get(f'location_{kit_type.id}', '') or None,
-                notes=request.POST.get(f'notes_{kit_type.id}', '') or None,
-                expiration_date=request.POST.get(f'expiration_{kit_type.id}') or None,
-                created_by=request.user,
-                workspace=workspace,
-            )
-            created += 1
+
+            condition = request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW)
+            if condition not in valid_conditions:
+                messages.error(request, f'Choose a valid condition for {kit_type.name}.')
+                return redirect('add_items')
+            location = (request.POST.get(f'location_{kit_type.id}', '') or '').strip()
+            if len(location) > 100:
+                messages.error(request, f'Location for {kit_type.name} must be 100 characters or fewer.')
+                return redirect('add_items')
+            expiration_raw = request.POST.get(f'expiration_{kit_type.id}', '').strip()
+            expiration_date = parse_date(expiration_raw) if expiration_raw else None
+            if expiration_raw and expiration_date is None:
+                messages.error(request, f'Enter a valid expiry date for {kit_type.name}.')
+                return redirect('add_items')
+
+            entries.append({
+                'kit_type': kit_type,
+                'quantity': qty,
+                'condition': condition,
+                'location': location or None,
+                'notes': (request.POST.get(f'notes_{kit_type.id}', '') or '').strip() or None,
+                'expiration_date': expiration_date,
+            })
+
+        with transaction.atomic():
+            for entry in entries:
+                kit_type = entry['kit_type']
+                Kit.objects.create(
+                    user=target,
+                    kit_type_fk=kit_type,
+                    kit_type_string=kit_type.name[:20],
+                    quantity=entry['quantity'],
+                    condition=entry['condition'],
+                    location=entry['location'],
+                    notes=entry['notes'],
+                    expiration_date=entry['expiration_date'],
+                    created_by=request.user,
+                    workspace=workspace,
+                )
+        created = len(entries)
         if created:
             messages.success(request, f'{created} kit type(s) added for {target.username}.')
         else:

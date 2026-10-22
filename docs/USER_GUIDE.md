@@ -32,7 +32,7 @@
 2. Fill in the required information:
    - **Username**: Choose a unique username (3-150 characters)
    - **Clock Number**: Enter your employee clock number (1-9999)
-   - **Password**: Create a secure password (minimum 4 characters)
+   - **Password**: Create a secure password (minimum 12 characters)
    - **Confirm Password**: Re-enter your password
 3. Click "Register" to create your account
 
