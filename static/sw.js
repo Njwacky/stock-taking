@@ -1,5 +1,5 @@
 // Service Worker for Stock Tracker PWA
-const CACHE_NAME = 'stock-tracker-v1.1';
+const CACHE_NAME = 'stock-tracker-v1.2';
 const OFFLINE_URL = '/offline/';
 const urlsToCache = [
   '/',
@@ -15,9 +15,9 @@ const urlsToCache = [
   '/static/js/base.js',
   '/static/js/calculator.js',
   '/static/js/floating-comment.js',
-  '/static/images/light_blue.png',
-  '/static/images/red.png',
-  '/static/images/green.png'
+  '/static/images/favicon.svg',
+  '/static/images/icon-192x192.png',
+  '/static/images/icon-512x512.png'
 ];
 
 // Install event - cache the application shell
