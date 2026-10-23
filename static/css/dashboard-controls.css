@@ -398,23 +398,24 @@
     transform: translateY(-2px);
 }
 
-/* Responsive design */
+/* Responsive design
+   --------------------------------------------------------------------------
+   The dashboard filter/action bar sits inside .content, below the app topbar.
+   The old layout was a fixed navbar with a hamburger pinned to the left, so
+   this block used to offset itself by `left: 60px` and react to a
+   `body.navbar-hidden` class. Both belong to the removed hamburger design:
+   the topbar owns the menu button now (ui.css), so the bar only needs the
+   content padding. */
 @media (max-width: 768px) {
     .dashboard-controls-container {
-        top: 15px; /* Align with hamburger button */
-        left: 60px; /* Make room for hamburger button */
-        right: 15px;
-        transition: top 0.3s ease, left 0.3s ease;
+        top: 0;
+        left: 0;
+        right: 0;
+        transition: top 0.3s ease;
         height: 40px; /* Fixed height for single line */
         padding: 6px 0;
         display: flex;
         align-items: center;
-    }
-
-    /* Adjust controls position when navbar is hidden */
-    body.navbar-hidden .dashboard-controls-container {
-        top: 15px;
-        left: 15px; /* No hamburger button when navbar hidden */
     }
 
     .sticky-bulk-actions-bar {

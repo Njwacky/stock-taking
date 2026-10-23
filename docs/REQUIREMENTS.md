@@ -322,17 +322,17 @@ For Docker deployment, configure:
 
 ## Recent Bug Fixes & Known Issues
 
-### Hamburger Menu (Mobile Navigation) Attempted Fix (September 2025)
-- **Issue**: Hamburger menu (mobile navigation) was not working on mobile devices.
-- **Attempted Solution**:
-  - Updated the JavaScript (`static/js/base.js`) to:
-    - Add ARIA attributes for accessibility.
-    - Add touch event support for mobile.
-    - Ensure overlay is appended as last child of `<body>`.
-    - Add focus trap for keyboard navigation.
-    - Improve menu close/open logic on window resize.
-  - Verified HTML and CSS structure per requirements.
-- **Result**: The hamburger menu still did not work on mobile after these changes. Further investigation is needed (potential CSS/JS conflicts, z-index, or device/browser-specific issues).
+### Mobile navigation (resolved)
+- **History**: an older top-navbar hamburger (`#mobileMenuBtn` + `#navLinks`) was
+  fixed several times without success. The cause was that a second, newer
+  navigation (the `.sidebar` off-canvas drawer in `ui.css`) shipped alongside it,
+  so both implementations were live and overwrote each other's positioning and
+  `z-index`.
+- **Resolution**: the legacy hamburger layer was removed. Navigation is now a
+  single implementation: `.sidebar` + `.sidebar-scrim` in `static/css/ui.css`,
+  the `#sidebarToggle` button in the `.topbar`, and `setSidebar()` in
+  `static/js/base.js`.
+- **See**: `docs/MOBILE_NAVIGATION.md`.
 
 ## Future Enhancements
 

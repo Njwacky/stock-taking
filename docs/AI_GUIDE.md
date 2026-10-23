@@ -502,19 +502,17 @@ docker compose up -d --force-recreate web
 - **Carousel Configuration**: 3 slides showing 2 cards each (6 total cards), 220px card width including gaps, wrap-around navigation
 - **Integration**: Seamlessly integrated with existing dashboard functionality without conflicts
 
-### Hamburger Menu (Mobile Navigation) Attempted Fix (September 2025)
-- **Issue**: Hamburger menu (mobile navigation) was not working on mobile devices.
-- **Root Cause**: Unknown; initial implementation appeared correct, but menu did not open/close as expected on mobile.
-- **Solution Attempted**:
-  - Enhanced `static/js/base.js` to improve mobile menu robustness and accessibility:
-    - Added ARIA attributes for accessibility.
-    - Ensured overlay is appended as the last child of `<body>`.
-    - Added touch event support for mobile devices.
-    - Added focus trap for keyboard accessibility.
-    - Improved menu close/open logic on window resize.
-    - Added comments for clarity.
-  - Verified that the HTML structure and CSS for the menu/button matched requirements and AI guide.
-- **Result**: The hamburger menu still did not work on mobile devices after these changes. Further investigation is required (possible CSS/JS conflicts, z-index issues, or device/browser-specific bugs).
+### Mobile navigation (resolved)
+- **History**: an older top-navbar hamburger (`#mobileMenuBtn` + `#navLinks`) was
+  fixed several times without success. The cause was that a second, newer
+  navigation (the `.sidebar` off-canvas drawer in `ui.css`) shipped alongside it,
+  so both implementations were live and overwrote each other's positioning and
+  `z-index`.
+- **Resolution**: the legacy hamburger layer was removed. Navigation is now a
+  single implementation: `.sidebar` + `.sidebar-scrim` in `static/css/ui.css`,
+  the `#sidebarToggle` button in the `.topbar`, and `setSidebar()` in
+  `static/js/base.js`.
+- **See**: `docs/MOBILE_NAVIGATION.md`.
 
 ## AI assistant rules
 
