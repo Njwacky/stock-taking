@@ -77,10 +77,9 @@ coverage>=6.0.0
 
 ### Kit Management
 - **Kit Types**:
-  - Feets
-  - VHB Boss Tape (18mm, 12mm, 7mm)
-  - PI Strips
-  - Rivnuts (8mm, 6mm, 5mm, 4mm)
+  - Configurable per workspace by workspace owners/managers
+  - Each type has a name, code, unit, optional description and reorder level
+  - New workspaces start without preset product types
 - **Kit Tracking**:
   - Quantity management
   - Condition tracking (New, Good, Fair, Poor, Damaged)

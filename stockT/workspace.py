@@ -17,24 +17,8 @@ Workspace/WorkspaceMember directly.
 """
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.utils.text import slugify
 
 from .models import Workspace, WorkspaceMember
-
-# Standard kit types seeded into every NEW workspace so the stock dropdowns
-# are never empty (same list as migration 0002_seed_kit_types).
-DEFAULT_KIT_TYPES = [
-    # (name, code, description, unit)
-    ('Feets', 'FEET', 'Feets', 'pieces'),
-    ('VHB Boss Tape 18mm', 'VHB18', 'VHB Boss Tape 18mm', 'rolls'),
-    ('VHB Boss Tape 12mm', 'VHB12', 'VHB Boss Tape 12mm', 'rolls'),
-    ('VHB Boss Tape 7mm', 'VHB7', 'VHB Boss Tape 7mm', 'rolls'),
-    ('PI Strips', 'PISTRIP', 'PI Strips', 'pieces'),
-    ('Rivnuts 8mm', 'RIV8', 'Rivnuts 8mm', 'pieces'),
-    ('Rivnuts 6mm', 'RIV6', 'Rivnuts 6mm', 'pieces'),
-    ('Rivnuts 5mm', 'RIV5', 'Rivnuts 5mm', 'pieces'),
-    ('Rivnuts 4mm', 'RIV4', 'Rivnuts 4mm', 'pieces'),
-]
 
 
 def registration_open():
@@ -43,40 +27,14 @@ def registration_open():
     return True
 
 
-def default_kit_type_codes():
-    return [code for _, code, _, _ in DEFAULT_KIT_TYPES]
-
-
-def seed_kit_types(workspace, created_by=None):
-    """Give a workspace the standard kit types so stock can be added at once.
-
-    Idempotent: never overwrites edits an admin has made.
-    """
-    from .models import KitType
-
-    for name, code, description, unit in DEFAULT_KIT_TYPES:
-        KitType.objects.get_or_create(
-            workspace=workspace, code=code,
-            defaults={
-                'name': name,
-                'description': description,
-                'unit_of_measure': unit,
-                'is_active': True,
-                'created_by': created_by,
-            },
-        )
-
-
 @transaction.atomic
-def create_workspace(name, owner, role=WorkspaceMember.ROLE_OWNER, seed=True):
-    """Create a workspace, add its owner, and seed starter kit types."""
+def create_workspace(name, owner, role=WorkspaceMember.ROLE_OWNER):
+    """Create an empty workspace and add its owner."""
     workspace = Workspace.objects.create(name=name, created_by=owner)
     WorkspaceMember.objects.create(
         workspace=workspace, user=owner,
         role=WorkspaceMember.ROLE_OWNER if role == WorkspaceMember.ROLE_OWNER else role,
     )
-    if seed:
-        seed_kit_types(workspace, created_by=owner)
     return workspace
 
 

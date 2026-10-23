@@ -43,6 +43,7 @@ def test_registrant_gets_own_workspace_and_is_owner(client):
     response = _post_register(client)
     assert response.status_code == 302
     assert response.url == '/'
+    client.get('/')
 
     user = User.objects.get(username='newbie')
     from stockT.models import Workspace, WorkspaceMember
@@ -53,13 +54,13 @@ def test_registrant_gets_own_workspace_and_is_owner(client):
     assert workspace.created_by == user
 
 
-def test_workspace_is_seeded_with_kit_types(client):
-    """New workspaces can add stock immediately (the flush-fresh-install fix)."""
+def test_new_registration_workspace_starts_without_preset_kit_types(client):
+    """People configure their workspace for the products they actually stock."""
     _post_register(client)
     user = User.objects.get(username='newbie')
     from stockT.models import KitType
     codes = set(KitType.objects.filter(workspace__memberships__user=user).values_list('code', flat=True))
-    assert {'FEET', 'VHB18', 'RIV8'} <= codes
+    assert codes == set()
 
 
 def test_registration_rejects_passwords_shorter_than_twelve_characters(client):
@@ -99,8 +100,10 @@ def test_later_registrants_are_ordinary_users(client):
 
 def test_each_registrant_gets_a_separate_workspace(client):
     _post_register(client, username='alice', clock_number='77003')
+    client.get('/')
     client.logout()
     _post_register(client, username='bob', clock_number='77004')
+    client.get('/')
 
     alice = User.objects.get(username='alice')
     bob = User.objects.get(username='bob')
@@ -145,5 +148,5 @@ def test_cli_superuser_never_hits_dead_end(client):
 
     response = c.get('/add-items/')
     assert response.status_code == 200
-    # starter kit types are present in the auto-provisioned workspace
-    assert 'VHB Boss Tape 18mm' in response.content.decode()
+    assert 'No product types are configured' in response.content.decode()
+    assert 'Add your first product type' in response.content.decode()

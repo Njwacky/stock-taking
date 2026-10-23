@@ -90,18 +90,19 @@ The dashboard provides an overview of your stock management activities:
 
 ### Adding New Items
 1. Navigate to "Add Stock" from the dashboard
-2. Select the user (if you have permissions)
-3. Enter quantities for each kit type:
-   - **Feets**: Measurement units
-   - **VHB Boss Tape**: Available in 18mm, 12mm, and 7mm widths
-   - **PI Strips**: Polyimide strips
-   - **Rivnuts**: Available in 8mm, 6mm, 5mm, and 4mm sizes
-4. Set additional information:
+2. If this workspace has no product types yet, use "Add your first product type" to configure one.
+3. Select the user (if you have permissions) and choose the product types to add.
+4. Enter a quantity and set any additional information:
    - **Condition**: New, Good, Fair, Poor, or Damaged
    - **Location**: Physical storage location
    - **Notes**: Additional information
    - **Expiration Date**: For items with shelf life
 5. Click "Add Items" to save
+
+### Creating a Workspace and Product Types
+- Create a workspace from **New workspace** in the navigation menu. New workspaces start empty and keep their stock and product types separate.
+- Workspace owners and managers can open **Kit Types** to create product names, codes, units and optional reorder levels that match their own inventory.
+- Existing workspaces keep their current product types; creating a workspace does not delete or alter another workspace's data.
 
 ### Viewing Your Stock
 - Go to your dashboard to see all assigned kits

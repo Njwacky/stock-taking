@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const itemCard = this.closest('.item-card');
             if (!itemCard) return;
             const quantityInput = itemCard.querySelector('.quantity-input');
+            const quantityLabel = itemCard.querySelector('.quantity-label');
             const kitDetails = itemCard.querySelector('.kit-details');
             const detailFields = itemCard.querySelectorAll('.detail-input, .detail-select, .detail-textarea');
             const itemUnit = itemCard.querySelector('.item-unit');
@@ -171,10 +172,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         quantityInput.value = '1';
                     }
                 }
+                if (quantityLabel) quantityLabel.style.display = 'block';
                 if (kitDetails) kitDetails.classList.add('show');
                 detailFields.forEach(field => field.disabled = false);
                 if (itemUnit) itemUnit.style.display = 'block';
-                if (quantityInput) quantityInput.focus();
                 
                 // Update tape calculation if quantity has value
                 const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
@@ -186,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     quantityInput.style.display = 'none';
                     quantityInput.value = '0';
                 }
+                if (quantityLabel) quantityLabel.style.display = 'none';
                 if (kitDetails) kitDetails.classList.remove('show');
                 detailFields.forEach(field => {
                     field.disabled = true;

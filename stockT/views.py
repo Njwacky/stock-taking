@@ -313,9 +313,14 @@ def register(request):
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
-        # Specify backend because multiple backends are configured
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        messages.success(request, 'Welcome! Your account has been created.')
+        workspace = ensure_user_workspace(user)
+        set_current_workspace(request, workspace)
+        # Store a backend path that is configured for subsequent requests.
+        login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
+        messages.success(
+            request,
+            'Welcome! Your empty workspace is ready. Add the product types your team needs.',
+        )
         return redirect('dashboard')
     return render(request, 'register.html', {'form': form})
 
@@ -335,7 +340,7 @@ def workspace_create(request):
             messages.success(
                 request,
                 f'Workspace “{workspace.name}” created and selected. '
-                'It already has the standard kit types ready to use.',
+                'Add the product types that fit your inventory in Kit Types.',
             )
             return redirect('dashboard')
     else:

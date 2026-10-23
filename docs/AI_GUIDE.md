@@ -17,7 +17,7 @@
 ## Project Overview
 
 ### System Description
-This is a Django-based Stock Management System designed to track and manage various types of kits (Feets, VHB Boss Tape, PI Strips, Rivnuts, etc.) across an organization. The system features role-based access control, comprehensive audit logging, and a responsive web interface.
+This is a Django-based inventory management system. Each workspace defines its own product types, units and stock records, so it can be configured for different organizations and inventory needs. The system features role-based access control, workspace isolation, audit logging, and a responsive web interface.
 
 ### Key Features
 - **User Management**: Role-based access (Admin, Manager, Supervisor, User)

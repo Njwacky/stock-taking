@@ -12,6 +12,17 @@ pytestmark = pytest.mark.django_db
 
 
 class TestAddItems:
+    def test_add_stock_page_has_searchable_kit_catalog(self, as_member, kit_type):
+        content = as_member.get('/add-items/').content.decode()
+
+        assert 'id="kitTypeSearch"' in content
+        assert 'id="catalogCount"' in content
+        assert 'id="catalogNoResults"' in content
+        assert 'id="selectionSummary"' in content
+        assert f'id="quantity_{kit_type.id}"' in content
+        assert f'for="quantity_{kit_type.id}"' in content
+        assert 'Add stock' in content
+
     def test_user_adds_stock_for_self(self, as_member, member, kit_type):
         response = as_member.post('/add-items/', {
             'user': member.id, f'quantity_{kit_type.id}': '5',

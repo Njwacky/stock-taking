@@ -9,15 +9,15 @@ User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 
-class TestSeedData:
-    def test_standard_kit_types_seeded(self):
-        """Regression: fresh installs used to have zero kit types (empty dropdowns)."""
-        codes = set(KitType.objects.values_list('code', flat=True))
-        assert {'FEET', 'VHB18', 'VHB12', 'VHB7', 'PISTRIP', 'RIV8', 'RIV6', 'RIV5', 'RIV4'} <= codes
+class TestWorkspaceDefaults:
+    def test_no_vhb_defaults_are_added_to_a_new_workspace(self, as_member, workspace):
+        assert not KitType.objects.filter(workspace=workspace).exists()
 
-    def test_add_items_shows_seeded_types(self, as_member):
+    def test_add_items_explains_how_to_configure_an_empty_workspace(self, as_member):
         response = as_member.get('/add-items/')
-        assert 'VHB Boss Tape 18mm' in response.content.decode()
+        content = response.content.decode()
+        assert 'No product types are configured' in content
+        assert 'Ask a workspace owner or admin to add product types' in content
 
 
 class TestManagement:

@@ -29,13 +29,17 @@ class TestWorkspaceCreate:
         )
         assert ('Side Project', 'owner') in roles
 
-    def test_new_workspace_gets_starter_kit_types(self, as_member, member):
+    def test_new_workspace_starts_empty_and_can_be_configured(self, as_member, member):
         as_member.post('/workspace/create/', {'name': 'Side Project'})
         from stockT.models import KitType
-        codes = set(
-            KitType.objects.filter(workspace__name='Side Project').values_list('code', flat=True)
-        )
-        assert {'FEET', 'VHB12'} <= codes
+        workspace = member.workspace_memberships.get(workspace__name='Side Project').workspace
+        assert not KitType.objects.filter(workspace=workspace).exists()
+
+        response = as_member.post('/kit-types/', {
+            'action': 'add', 'name': 'Coffee beans', 'code': 'COFFEE', 'unit_of_measure': 'bags',
+        })
+        assert response.status_code == 302
+        assert KitType.objects.filter(workspace=workspace, name='Coffee beans').exists()
 
     def test_name_required(self, as_member, member):
         as_member.post('/workspace/create/', {'name': '   '})
@@ -275,6 +279,9 @@ class TestWorkspaceOwnerControls:
         as_member.post('/workspace/members/add/', {
             'username': other_member.username,
             'role': 'member',
+        })
+        as_member.post('/kit-types/', {
+            'action': 'add', 'name': 'Cable ties 200mm', 'code': 'CT200',
         })
         kit_type = workspace.kit_types.filter(is_active=True).first()
         Kit.objects.create(
