@@ -18,19 +18,26 @@ class RegisterForm(UserCreationForm):
             'clock_number', 'department', 'phone_number',
         )
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. jsmith', 'autofocus': True}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@company.com'}),
-            'clock_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digits only'}),
-            'department': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Choose a username'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com'}),
+            'clock_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digits only, e.g. 12345'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Department'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password1'].widget.attrs.setdefault('class', 'form-control')
-        self.fields['password2'].widget.attrs.setdefault('class', 'form-control')
+        # Ensure password fields get the same styling as other inputs
+        self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'At least 8 characters'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirm password'})
+        # Help texts for UX
+        self.fields['username'].help_text = 'Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'
+        self.fields['password1'].help_text = 'Must be at least 8 characters and not entirely numeric.'
+        # Make first_name/last_name optional visually but keep model blank
+        for fname in ('first_name', 'last_name', 'email', 'department', 'phone_number'):
+            self.fields[fname].required = False
 
     def clean_clock_number(self):
         return _validate_clock_number(self.cleaned_data.get('clock_number'))

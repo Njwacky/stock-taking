@@ -149,44 +149,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle checkbox changes
+    // Handle checkbox changes - defensive for missing elements
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const itemCard = this.closest('.item-card');
+            if (!itemCard) return;
             const quantityInput = itemCard.querySelector('.quantity-input');
             const kitDetails = itemCard.querySelector('.kit-details');
             const detailFields = itemCard.querySelectorAll('.detail-input, .detail-select, .detail-textarea');
             const itemUnit = itemCard.querySelector('.item-unit');
-            const itemName = itemCard.querySelector('.item-name').textContent;
+            const itemNameEl = itemCard.querySelector('.item-name') || itemCard.querySelector('.kit-type-name');
+            const itemName = itemNameEl ? itemNameEl.textContent.trim() : '';
 
             if (this.checked) {
                 itemCard.classList.add('selected');
-                quantityInput.disabled = false;
-                quantityInput.style.display = 'block'; // Show quantity input when selected
-                kitDetails.classList.add('show'); // Use smooth transition
+                if (quantityInput) {
+                    quantityInput.disabled = false;
+                    quantityInput.style.display = 'block';
+                    // Auto-enable sensible default if still 0
+                    if (!quantityInput.value || parseInt(quantityInput.value) === 0) {
+                        quantityInput.value = '1';
+                    }
+                }
+                if (kitDetails) kitDetails.classList.add('show');
                 detailFields.forEach(field => field.disabled = false);
-                itemUnit.hidden = false;
-                itemUnit.style.display = 'block'; // Show unit when item is selected
-                quantityInput.focus();
+                if (itemUnit) itemUnit.style.display = 'block';
+                if (quantityInput) quantityInput.focus();
                 
                 // Update tape calculation if quantity has value
-                const quantity = parseInt(quantityInput.value) || 0;
-                updateTapeCalculation(itemCard, quantity, itemName);
+                const quantity = quantityInput ? (parseInt(quantityInput.value) || 0) : 0;
+                if (itemName) updateTapeCalculation(itemCard, quantity, itemName);
             } else {
                 itemCard.classList.remove('selected');
-                quantityInput.disabled = true;
-                quantityInput.style.display = 'none'; // Hide quantity input when not selected
-                kitDetails.classList.remove('show'); // Use smooth transition
-                // Keep any values if the checkbox is toggled off and back on;
-                // disabled fields are not submitted until the item is selected again.
+                if (quantityInput) {
+                    quantityInput.disabled = true;
+                    quantityInput.style.display = 'none';
+                    quantityInput.value = '0';
+                }
+                if (kitDetails) kitDetails.classList.remove('show');
                 detailFields.forEach(field => {
                     field.disabled = true;
                     if (field.tagName === 'SELECT') field.selectedIndex = 0;
                     else field.value = '';
                 });
-                quantityInput.value = '';
-                itemUnit.hidden = true;
-                itemUnit.style.display = 'none'; // Hide unit when item is not selected
+                if (itemUnit) itemUnit.style.display = 'none';
                 
                 // Hide tape calculation
                 const calcDisplay = itemCard.querySelector('.tape-calculation');
@@ -203,18 +209,42 @@ document.addEventListener('DOMContentLoaded', function() {
     quantityInputs.forEach(input => {
         input.addEventListener('input', function() {
             const itemCard = this.closest('.item-card');
-            const itemName = itemCard.querySelector('.item-name').textContent;
+            const itemNameEl = itemCard.querySelector('.item-name') || itemCard.querySelector('.kit-type-name');
+            const itemName = itemNameEl ? itemNameEl.textContent.trim() : '';
             const quantity = parseInt(this.value) || 0;
             
             // Update tape calculation for tape items
-            updateTapeCalculation(itemCard, quantity, itemName);
+            if (itemName) updateTapeCalculation(itemCard, quantity, itemName);
             
             updateFormState();
         });
     });
 
+    // Prevent submitting with all quantities 0
+    const addForm = document.getElementById('addItemsForm');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                // Scroll to top of form to show hint
+                addForm.scrollIntoView({behavior:'smooth'});
+                return false;
+            }
+            // Additional guard: at least one quantity >0
+            let hasQty = false;
+            quantityInputs.forEach(inp => {
+                if (!inp.disabled && parseInt(inp.value || '0') > 0) hasQty = true;
+            });
+            if (!hasQty) {
+                e.preventDefault();
+                alert('Please enter a quantity greater than 0 for at least one selected kit.');
+                return false;
+            }
+        });
+    }
+
     // Handle user selection
-    userSelect.addEventListener('change', updateFormState);
+    if (userSelect) userSelect.addEventListener('change', updateFormState);
 
     // Filter the kit catalog without losing any selections already made.
     function filterKitTypes() {
@@ -256,6 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize form state
     updateFormState();
+    // Also re-run after small delay to account for browser autofill
+    setTimeout(updateFormState, 300);
 
     // Hide kit details, unit fields, and quantity inputs initially
     document.querySelectorAll('.kit-details').forEach(details => {
@@ -287,23 +319,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== CRUD FUNCTIONALITY FOR EXISTING KITS ==========
 
+    // Modal helpers (vanilla, with jQuery fallback)
+    function showModal(el) {
+        if (!el) return;
+        if (window.$ && typeof $(el).modal === 'function') {
+            $(el).modal('show');
+        } else {
+            el.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    function hideModal(el) {
+        if (!el) return;
+        if (window.$ && typeof $(el).modal === 'function') {
+            $(el).modal('hide');
+        } else {
+            el.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+    // Close modals on clicking .modal-close or backdrop
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideModal(kitEditModal);
+            hideModal(kitDeleteModal);
+        });
+    });
+    [kitEditModal, kitDeleteModal].forEach(mod => {
+        if (mod) mod.addEventListener('click', (e) => {
+            if (e.target === mod) hideModal(mod);
+        });
+    });
+
     // Load user's existing kits when user is selected
-    userSelect.addEventListener('change', function() {
-        if (!existingKitsSection) return;
+    if (userSelect) userSelect.addEventListener('change', function() {
         const userId = this.value;
         if (userId) {
             loadUserKits(userId);
             const selectedOption = this.options[this.selectedIndex];
-            const userName = selectedOption.text.split(' (')[0]; // Extract username without clock number
-            selectedUserName.textContent = userName;
-            existingKitsSection.style.display = 'block';
+            const userName = selectedOption.text.split(' (')[0];
+            if (selectedUserName) selectedUserName.textContent = ` — ${userName}`;
+            if (existingKitsSection) existingKitsSection.style.display = 'block';
         } else {
-            existingKitsSection.style.display = 'none';
+            if (existingKitsSection) existingKitsSection.style.display = 'none';
         }
     });
 
     // Refresh kits button
-    refreshKitsBtn?.addEventListener('click', function() {
+    if (refreshKitsBtn) refreshKitsBtn.addEventListener('click', function() {
         const userId = userSelect.value;
         if (userId) {
             loadUserKits(userId);
@@ -311,8 +374,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Search and filter functionality
-    kitSearchInput?.addEventListener('input', filterKits);
-    kitFilterSelect?.addEventListener('change', filterKits);
+    if (kitSearchInput) kitSearchInput.addEventListener('input', filterKits);
+    if (kitFilterSelect) kitFilterSelect.addEventListener('change', filterKits);
 
     // Load user's kits from API
     async function loadUserKits(userId) {
@@ -454,10 +517,8 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             kitEditModalBody.innerHTML = kitDetails;
-            document.getElementById('kit-edit-title').textContent = 'Stock item details';
-            saveKitChangesBtn.style.display = 'none';
-            kitEditModal.hidden = false;
-            kitEditModal.style.display = 'flex';
+            if (saveKitChangesBtn) saveKitChangesBtn.style.display = 'none';
+            showModal(kitEditModal);
         }
     }
 
@@ -515,10 +576,8 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             kitEditModalBody.innerHTML = editForm;
-            document.getElementById('kit-edit-title').textContent = 'Edit stock item';
-            saveKitChangesBtn.style.display = 'inline-block';
-            kitEditModal.hidden = false;
-            kitEditModal.style.display = 'flex';
+            if (saveKitChangesBtn) saveKitChangesBtn.style.display = 'inline-block';
+            showModal(kitEditModal);
             
             // Load kit types for the dropdown
             loadKitTypesForEdit(kit.kit_type_code);
@@ -585,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Save kit changes
-    saveKitChangesBtn?.addEventListener('click', async function() {
+    if (saveKitChangesBtn) saveKitChangesBtn.addEventListener('click', async function() {
         if (!currentEditingKitId) return;
 
         const formData = new FormData(document.getElementById('kitEditForm'));
@@ -613,8 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderKitsList(currentUserKits);
                 
                 // Close modal
-                kitEditModal.style.display = 'none';
-                kitEditModal.hidden = true;
+                hideModal(kitEditModal);
                 
                 // Show success message
                 showSuccess('Kit updated successfully!');
@@ -636,17 +694,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const kit = currentUserKits.find(k => k.id === kitId);
         
         if (kit) {
-            document.getElementById('deleteKitName').textContent = kit.kit_type;
-            document.getElementById('deleteKitQuantity').textContent = kit.quantity;
-            document.getElementById('deleteKitOwner').textContent = selectedUserName.textContent;
+            const nameEl = document.getElementById('deleteKitName');
+            const qtyEl = document.getElementById('deleteKitQuantity');
+            const ownerEl = document.getElementById('deleteKitOwner');
+            if (nameEl) nameEl.textContent = kit.kit_type;
+            if (qtyEl) qtyEl.textContent = kit.quantity;
+            if (ownerEl) ownerEl.textContent = selectedUserName ? selectedUserName.textContent : '';
             
-            kitDeleteModal.hidden = false;
-            kitDeleteModal.style.display = 'flex';
+            showModal(kitDeleteModal);
         }
     }
 
     // Confirm kit deletion
-    confirmKitDeleteBtn?.addEventListener('click', async function() {
+    if (confirmKitDeleteBtn) confirmKitDeleteBtn.addEventListener('click', async function() {
         if (!currentDeletingKitId) return;
 
         try {
@@ -666,8 +726,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderKitsList(currentUserKits);
                 
                 // Close modal
-                kitDeleteModal.style.display = 'none';
-                kitDeleteModal.hidden = true;
+                hideModal(kitDeleteModal);
                 
                 // Show success message
                 showSuccess('Kit deleted successfully!');

@@ -9,136 +9,139 @@
 
 {% block content %}
 <div class="add-items-container">
-    <header class="add-items-header">
-        <div><h1>Add Stock</h1><p>Assign stock to a user, select your items and enter their quantities.</p></div>
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to dashboard</a>
-    </header>
-    <aside class="workspace-hint">Adding your own products? <a href="{% url 'workspace_list' %}">Open My Workspaces</a>. This page manages the existing kit inventory.</aside>
+    <div class="add-items-card">
+        <div class="add-items-header">
+            <h1 class="add-items-title"><i class="fas fa-plus"></i> Add Stock Items</h1>
+            <p class="add-items-subtitle">Select a user and add one or more kit types to their inventory</p>
+        </div>
 
-    <form method="post" id="addItemsForm" class="stock-form-panel">
-        {% csrf_token %}
+        <form method="post" id="addItemsForm" class="add-items-form">
+            {% csrf_token %}
 
-        <section class="form-section" aria-labelledby="assign-title">
-            <div class="form-section-head">
-                <div>
-                    <span class="section-step">STEP 1</span>
-                    <h2 id="assign-title">Choose recipient</h2>
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-user"></i>
+                    <span>Assign to user</span>
                 </div>
-                <p>Stock is issued to one person at a time.</p>
+                <div class="user-selector">
+                    {% if can_select_user %}
+                    <select name="user" id="user" class="form-control modern-select" required>
+                        <option value="">Select a user...</option>
+                        {% for u in target_users %}
+                        <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }}) — {{ u.clock_number|default:"no clock" }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="selector-hint"><i class="fas fa-info-circle"></i> As a manager you can add stock for any active user.</div>
+                    {% else %}
+                    <select id="user" class="form-control modern-select" disabled>
+                        <option value="{{ user.id }}" selected>{{ user.username }} ({{ user.clock_number|default:"" }})</option>
+                    </select>
+                    <input type="hidden" name="user" value="{{ user.id }}">
+                    <div class="selector-hint"><i class="fas fa-lock"></i> You can only add stock for yourself.</div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="form-group">
-                <label for="user">Assign to</label>
-                {% if can_select_user %}
-                <select name="user" id="user" class="form-control" required>
-                    <option value="" selected disabled>Select a person</option>
-                    {% for u in target_users %}
-                    <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
+
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-boxes-stacked"></i>
+                    <span>Select kits & quantities</span>
+                </div>
+
+                {% if kit_types %}
+                <div class="items-grid kit-type-grid">
+                    {% for kit_type in kit_types %}
+                    <div class="kit-type-card item-card">
+                        <div class="item-checkbox">
+                            <label class="kit-type-label checkbox-label">
+                                <input type="checkbox" class="modern-checkbox" data-kit-type="{{ kit_type.id }}" id="check_{{ kit_type.id }}">
+                                <div class="item-icon"><i class="fas fa-cube"></i></div>
+                                <div class="item-info">
+                                    <div class="kit-type-name item-name">{{ kit_type.name }}</div>
+                                    <div class="kit-type-code item-desc">{{ kit_type.code }} &middot; {{ kit_type.unit_of_measure }}</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="item-quantity">
+                            <label class="vhb-meter" style="display:none">Quantity</label>
+                            <input type="number" name="quantity_{{ kit_type.id }}" class="form-control quantity-input"
+                                   min="0" value="0" data-kit-name="{{ kit_type.name }}" disabled style="display:none">
+                            <span class="item-unit" style="display:none">{{ kit_type.unit_of_measure }}</span>
+                        </div>
+
+                        <div class="kit-type-fields kit-details">
+                            <div class="detail-row">
+                                <label>Condition</label>
+                                <select name="condition_{{ kit_type.id }}" class="form-control detail-select" disabled>
+                                    <option value="new">New</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="damaged">Damaged</option>
+                                </select>
+                            </div>
+                            <div class="detail-row">
+                                <label>Location</label>
+                                <input type="text" name="location_{{ kit_type.id }}" class="form-control detail-input" placeholder="e.g. Shelf A" disabled>
+                            </div>
+                            <div class="detail-row">
+                                <label>Notes</label>
+                                <textarea name="notes_{{ kit_type.id }}" class="form-control detail-textarea" rows="2" placeholder="Optional notes..." disabled></textarea>
+                            </div>
+                            <div class="detail-row">
+                                <label>Expiration</label>
+                                <input type="date" name="expiration_{{ kit_type.id }}" class="form-control detail-input" disabled>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </select>
+                </div>
                 {% else %}
-                <select id="user" class="form-control" disabled aria-describedby="assigned-user-help">
-                    <option value="{{ user.id }}">{{ user.username }}</option>
-                </select>
-                <input type="hidden" name="user" value="{{ user.id }}">
-                <small id="assigned-user-help" class="form-help">Stock will be added to your own account.</small>
+                <p class="empty-state">No kit types configured yet. Please ask an administrator to create kit types.</p>
                 {% endif %}
             </div>
-        </section>
 
-        <h2>Select stock items</h2>
-        <p class="section-help">Select a card to enter a positive quantity and optional details.</p>
-        <div class="kit-type-grid">
-            {% for kit_type in kit_types %}
-            <div class="kit-type-card item-card">
-                <label class="kit-type-label">
-                    <input type="checkbox" class="modern-checkbox" data-kit-type="{{ kit_type.id }}">
-                    <span class="kit-type-name item-name">{{ kit_type.name }}</span>
-                    <span class="kit-type-code">{{ kit_type.code }}</span>
-                </label>
-                <span class="item-unit" hidden>{{ kit_type.unit_of_measure }}</span>
-                <div class="kit-type-fields kit-details">
-                    <div class="form-group">
-                        <label for="quantity_{{ kit_type.id }}">Quantity ({{ kit_type.unit_of_measure }})</label>
-                        <input type="number" id="quantity_{{ kit_type.id }}" name="quantity_{{ kit_type.id }}" class="form-control quantity-input"
-                               min="1" step="1" value="" disabled required data-kit-name="{{ kit_type.name }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="condition_{{ kit_type.id }}">Condition</label>
-                        <select id="condition_{{ kit_type.id }}" name="condition_{{ kit_type.id }}" class="form-control detail-select">
-                            <option value="new">New</option>
-                            <option value="good">Good</option>
-                            <option value="fair">Fair</option>
-                            <option value="poor">Poor</option>
-                            <option value="damaged">Damaged</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_{{ kit_type.id }}">Location</label>
-                        <input type="text" id="location_{{ kit_type.id }}" name="location_{{ kit_type.id }}" class="form-control detail-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="notes_{{ kit_type.id }}">Notes</label>
-                        <textarea id="notes_{{ kit_type.id }}" name="notes_{{ kit_type.id }}" class="form-control detail-textarea" rows="2"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="expiration_{{ kit_type.id }}">Expiration</label>
-                        <input type="date" id="expiration_{{ kit_type.id }}" name="expiration_{{ kit_type.id }}" class="form-control detail-input">
-                    </div>
-                </article>
-                {% empty %}
-                <div class="empty-block">
-                    <p>No kit types yet</p>
-                    <span>An administrator needs to add kit types before stock can be recorded.</span>
-                </div>
-                {% endfor %}
+            <div class="submit-section">
+                <button type="submit" id="submitBtn" class="submit-btn submit-button" disabled>
+                    <i class="fas fa-plus"></i> <span>Select User & Items</span>
+                </button>
+                <div class="submit-hint"><i class="fas fa-lightbulb"></i> Check a kit and enter a quantity greater than 0 to enable submission.</div>
+            </div>
+        </form>
+
+        {% if can_select_user %}
+        <section id="existingKitsSection" class="existing-kits-section" style="display:none">
+            <div class="section-header">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Existing Kits <span id="selectedUserName"></span></span>
+            </div>
+            <div class="kits-toolbar">
+                <input type="text" id="kitSearchInput" class="form-control" placeholder="Search kits by name, location or notes...">
+                <select id="kitFilterSelect" class="form-control">
+                    <option value="">All types</option>
+                    {% for kit_type in kit_types %}
+                    <option value="{{ kit_type.code }}">{{ kit_type.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><i class="fas fa-rotate"></i> Refresh</button>
+            </div>
+            <div id="kitsListContainer" class="kits-list"></div>
+            <div id="kitsEmptyState" style="display:none" class="empty-state">
+                <i class="fas fa-inbox"></i> No existing kits for this user.
             </div>
         </section>
-
-        <div class="form-actions">
-            <div class="form-actions-copy">
-                <span class="selection-summary" id="selectionSummary" aria-live="polite">No kit types selected</span>
-                <p class="form-actions-note">New quantities are recorded as stock entries for the selected recipient.</p>
-            </div>
-            <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
-                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-                <span>Select kit types to continue</span>
-            </button>
-        </div>
-    </form>
-
-    {% if can_select_user %}
-    <section id="existingKitsSection" class="existing-kits-section panel" aria-labelledby="existing-kits-title" hidden>
-        <div class="panel-head">
-            <div>
-                <h2 id="existing-kits-title">Existing stock</h2>
-                <p>Review, edit or remove what this person already holds.</p>
-            </div>
-            <span class="panel-note" id="selectedUserName"></span>
-        </div>
-        <div class="kits-toolbar">
-            <label class="sr-only" for="kitSearchInput">Search existing kits</label>
-            <input type="text" id="kitSearchInput" class="form-control" placeholder="Search kits...">
-            <label class="sr-only" for="kitFilterSelect">Filter by kit type</label>
-            <select id="kitFilterSelect" class="form-control">
-                <option value="">All types</option>
-                {% for kit_type in kit_types %}
-                <option value="{{ kit_type.code }}">{{ kit_type.name }}</option>
-                {% endfor %}
-            </select>
-            <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh</button>
-        </div>
-        <div id="kitsListContainer" aria-live="polite" hidden></div>
-        <div id="kitsEmptyState" class="empty-block" hidden>
-            <p>No stock recorded</p>
-            <span>Anything added above will appear here.</span>
-        </div>
-    </section>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 
-<div id="kitEditModal" class="modal" hidden>
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="kit-edit-title">
-        <h2 id="kit-edit-title">Edit stock item</h2>
+<!-- Edit modal -->
+<div id="kitEditModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-pen"></i> Edit Kit</h3>
+            <button type="button" class="modal-close btn btn-secondary btn-sm">&times;</button>
+        </div>
         <div id="kitEditModalBody"></div>
         <div class="modal-actions">
             <button type="button" class="btn btn-secondary modal-close">Cancel</button>
@@ -147,11 +150,16 @@
     </div>
 </div>
 
-<div id="kitDeleteModal" class="modal" hidden>
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="kit-delete-title">
-        <h2 id="kit-delete-title">Delete stock item?</h2>
-        <p class="modal-lead">Delete <strong id="deleteKitName"></strong> (quantity <span id="deleteKitQuantity"></span>) held by <span id="deleteKitOwner"></span>? This cannot be undone.</p>
+<!-- Delete modal -->
+<div id="kitDeleteModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-triangle-exclamation"></i> Delete Kit</h3>
+            <button type="button" class="modal-close btn btn-secondary btn-sm">&times;</button>
+        </div>
+        <p>Are you sure you want to delete <strong id="deleteKitName"></strong> (Qty: <span id="deleteKitQuantity"></span>) for <span id="deleteKitOwner"></span>? This action cannot be undone.</p>
         <div class="modal-actions">
+            <button type="button" id="confirmKitDeleteBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
             <button type="button" class="btn btn-secondary modal-close">Cancel</button>
             <button type="button" id="confirmKitDeleteBtn" class="btn btn-danger">Delete item</button>
         </div>
