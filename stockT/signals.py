@@ -46,8 +46,33 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
         return
 
     kit = instance.kit
+    # LOGIC FIX: If kit is None (e.g. usage logged before fix), try to resolve via user+kit_type
+    if kit is None and instance.kit_type_id:
+        try:
+            # Find best candidate: user's kit of that type with most stock
+            kit = Kit.objects.filter(
+                user=instance.user,
+                kit_type_fk=instance.kit_type,
+                is_active=True
+            ).order_by('-quantity', '-timestamp').first()
+            if kit:
+                # Link it for audit trail (save without triggering signal again)
+                StockUsage.objects.filter(pk=instance.pk).update(kit=kit)
+                instance.kit = kit
+                logger.info('Stock usage #%s auto-linked to kit #%s (fallback resolution)', instance.id, kit.id)
+            else:
+                logger.warning('Stock usage #%s approved but no matching kit found for user %s and kit_type %s', instance.id, instance.user_id, instance.kit_type_id)
+        except Exception:
+            logger.exception('Failed to auto-link kit for usage #%s', instance.id)
+            kit = None
+
     try:
         if kit is not None:
+            # Refresh to get latest quantity (avoid stale data)
+            try:
+                kit.refresh_from_db()
+            except Exception:
+                pass
             if instance.quantity_used >= kit.quantity:
                 # Full depletion -> delete the kit entirely.
                 kit_id = kit.id
@@ -62,6 +87,8 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                     'Stock usage #%s reduced kit #%s to %s',
                     instance.id, kit.id, kit.quantity,
                 )
+        else:
+            logger.warning('Stock usage #%s has no kit to deduct from; marking as completed without stock change', instance.id)
     except Exception:
         logger.exception('Failed to process stock deletion for usage #%s', instance.id)
         return
