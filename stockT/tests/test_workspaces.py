@@ -1,13 +1,13 @@
 from django.test import TestCase
 from django.urls import reverse
-from stockT.models import User, Workspace, WorkspaceProduct
+from stockT.models import User, Inventory, InventoryProduct
 
 
 class WorkspaceTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(username='owner', password='test-pass')
         self.other = User.objects.create_user(username='other', password='test-pass', role='admin')
-        self.workspace = Workspace.objects.create(owner=self.owner, name='Shop')
+        self.workspace = Inventory.objects.create(owner=self.owner, name='Shop')
         self.client.force_login(self.owner)
 
     def product_data(self, **changes):
@@ -15,7 +15,7 @@ class WorkspaceTests(TestCase):
 
     def test_create_empty_workspace_and_product(self):
         response = self.client.post(reverse('workspace_list'), {'name': 'New shop', 'description': ''})
-        workspace = Workspace.objects.get(name='New shop')
+        workspace = Inventory.objects.get(name='New shop')
         self.assertRedirects(response, reverse('workspace_detail', args=[workspace.pk]))
         self.assertEqual(workspace.products.count(), 0)
         response = self.client.post(reverse('workspace_detail', args=[workspace.pk]), self.product_data())
@@ -31,10 +31,10 @@ class WorkspaceTests(TestCase):
         self.assertNotContains(self.client.get(reverse('workspace_list')), 'Shop')
 
     def test_sku_unique_only_within_workspace_and_edit_is_scoped(self):
-        product = WorkspaceProduct.objects.create(workspace=self.workspace, name='Coffee', sku='C01')
+        product = InventoryProduct.objects.create(inventory=self.workspace, name='Coffee', sku='C01')
         url = reverse('workspace_detail', args=[self.workspace.pk])
         self.assertContains(self.client.post(url, self.product_data()), 'already exists')
-        other_space = Workspace.objects.create(owner=self.owner, name='Other shop')
+        other_space = Inventory.objects.create(owner=self.owner, name='Other shop')
         other_url = reverse('workspace_detail', args=[other_space.pk])
         self.assertEqual(self.client.post(other_url, self.product_data()).status_code, 302)
         self.assertEqual(self.client.get(reverse('workspace_product_edit', args=[other_space.pk, product.pk])).status_code, 404)
@@ -53,7 +53,7 @@ class WorkspaceTests(TestCase):
         self.assertEqual(self.client.get(url).status_code, 302)
 
     def test_stale_edit_cannot_overwrite_newer_quantity(self):
-        product = WorkspaceProduct.objects.create(workspace=self.workspace, name='Coffee', sku='C01')
+        product = InventoryProduct.objects.create(inventory=self.workspace, name='Coffee', sku='C01')
         url = reverse('workspace_product_edit', args=[self.workspace.pk, product.pk])
         self.assertEqual(self.client.post(url, self.product_data()).status_code, 302)
         stale_data = self.product_data()
@@ -83,11 +83,11 @@ class WorkspaceTests(TestCase):
         self.assertEqual(secure.post(url, {'name': 'Forged'}).status_code, 403)
         self.assertEqual(self.client.delete(url).status_code, 405)
         self.client.post(url, {'name': 'Mine', 'owner': self.other.pk})
-        self.assertEqual(Workspace.objects.get(name='Mine').owner, self.owner)
+        self.assertEqual(Inventory.objects.get(name='Mine').owner, self.owner)
 
     def test_pagination_and_escaped_product_name(self):
-        WorkspaceProduct.objects.bulk_create([
-            WorkspaceProduct(workspace=self.workspace, name=f'Product {i:03}', sku=f'P{i}')
+        InventoryProduct.objects.bulk_create([
+            InventoryProduct(inventory=self.workspace, name=f'Product {i:03}', sku=f'P{i}')
             for i in range(51)
         ])
         url = reverse('workspace_detail', args=[self.workspace.pk])
@@ -96,7 +96,7 @@ class WorkspaceTests(TestCase):
         self.assertEqual(response.context['product_count'], 51)
         self.assertEqual(len(self.client.get(url, {'page': 2}).context['products']), 1)
         self.assertEqual(self.client.get(url, {'page': 'invalid'}).status_code, 200)
-        WorkspaceProduct.objects.create(workspace=self.workspace, name='<script>alert(1)</script>', sku='XSS')
+        InventoryProduct.objects.create(inventory=self.workspace, name='<script>alert(1)</script>', sku='XSS')
         response = self.client.get(url)
         self.assertContains(response, '&lt;script&gt;')
         self.assertNotContains(response, '<script>alert(1)</script>')
