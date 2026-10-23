@@ -25,7 +25,7 @@
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261021a">
 </head>
-<body{% if user.is_authenticated %} class="has-mobile-tabbar"{% else %} class="app-body app-body--guest"{% endif %}>
+<body class="app-body{% if not user.is_authenticated %} app-body--guest{% endif %}">
     <a href="#main" class="skip-link">Skip to content</a>
 
     <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true" focusable="false">

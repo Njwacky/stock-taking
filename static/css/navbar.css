@@ -1,1 +1,11 @@
-/* Navigation is defined in ui.css (application shell). */
+/* Navigation is defined in ui.css (application shell).
+   --------------------------------------------------------------------------
+   There is exactly ONE mobile navigation implementation:
+     .sidebar (off-canvas drawer below 920px) + #sidebarToggle in .topbar
+     + .sidebar-scrim, wired up in static/js/base.js.
+
+   Do not re-add the legacy `.navbar` / `.mobile-menu-btn` / `.nav-links`
+   hamburger here. Both designs were once shipped at the same time and fought
+   over z-index, position: fixed and body padding, which is what broke the
+   mobile menu. New navigation rules belong in ui.css.
+   -------------------------------------------------------------------------- */

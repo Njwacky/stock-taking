@@ -1,24 +1,32 @@
 // Service Worker for Stock Tracker PWA
-const CACHE_NAME = 'stock-tracker-v1.3';
+const CACHE_NAME = 'stock-tracker-v1.4';
 const OFFLINE_URL = '/offline/';
+
+// Application shell. Keep this list in sync with the assets the templates
+// actually load: every entry must exist, or install fails and the PWA stops
+// updating (that is exactly what the removed legacy stylesheets caused).
 const urlsToCache = [
   '/offline/',
-  '/static/css/style.css',
+  '/static/css/ui.css',
+  '/static/css/base.css',
   '/static/css/navbar.css',
   '/static/css/footer.css',
-  '/static/css/calculator.css',
+  '/static/css/floating-comment.css',
+  '/static/css/add-items.css',
   '/static/css/advanced-calculator.css',
-  '/static/css/table_data.css',
-  '/static/css/dashboard-controls.css',
-  '/static/css/most-received-kits.css',
-  '/static/css/base.css',
+  '/static/css/analytics.css',
+  '/static/css/login-lockout.css',
   '/static/js/base.js',
-  '/static/js/calculator.js',
-  '/static/js/advanced-calculator.js',
   '/static/js/floating-comment.js',
+  '/static/js/dashboard.js',
+  '/static/js/add_items.js',
+  '/static/js/advanced-calculator.js',
+  '/static/js/analytics.js',
+  '/static/js/manage_users.js',
   '/static/images/light_blue.png',
   '/static/images/red.png',
-  '/static/images/green.png'
+  '/static/images/green.png',
+  '/static/images/yellow.png'
 ];
 
 // Install event - cache the application shell
@@ -27,7 +35,9 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('[Service Worker] Caching app shell');
-        return cache.addAll(urlsToCache);
+        // Cache each asset independently: a single missing file must not
+        // abort the whole install and leave users on a stale service worker.
+        return Promise.allSettled(urlsToCache.map(url => cache.add(url)));
       })
   );
   // Activate the new service worker immediately
