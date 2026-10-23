@@ -10,22 +10,53 @@
 {% block content %}
 <div class="register-container">
     <div class="register-card">
-        <h1><i class="fas fa-user-plus"></i> Create Account</h1>
-        <form method="post" class="register-form">
+        <div class="register-header">
+            <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+            <p>Join Stock Tracker to manage and track inventory</p>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">
+            {% for error in form.non_field_errors %}
+            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="register-form" novalidate>
             {% csrf_token %}
+
             {% for field in form %}
             <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="required-badge">Required</span>{% endif %}
+                </label>
                 {{ field }}
+                {% if field.help_text %}
+                <small class="helptext">{{ field.help_text }}</small>
+                {% endif %}
                 {% if field.errors %}
-                <div class="field-errors">{{ field.errors }}</div>
+                <div class="field-errors">
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                        <li><i class="fas fa-exclamation-triangle"></i> {{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
+
+            <button type="submit" class="register-button">
+                <i class="fas fa-user-plus"></i> Register
+            </button>
         </form>
-        <div class="login-links">
+
+        <div class="register-links">
             Already have an account? <a href="{% url 'login' %}">Login</a>
+            <span class="divider">|</span>
+            <a href="{% url 'password_reset_request' %}">Forgot password?</a>
         </div>
     </div>
 </div>
