@@ -12,10 +12,19 @@ urlpatterns = [
 
     # Auth
     path('register/', views.register, name='register'),
+    path('workspace/create/', views.workspace_create, name='workspace_create'),
+    path('workspace/switch/', views.workspace_switch, name='workspace_switch'),
+    path('workspace/settings/', views.workspace_settings, name='workspace_settings'),
+    path('workspace/members/add/', views.workspace_member_add, name='workspace_member_add'),
+    path('workspace/members/remove/', views.workspace_member_remove, name='workspace_member_remove'),
     path('password-reset/request/', views.password_reset_request, name='password_reset_request'),
+    path('password-reset/manage/', views.manage_reset_requests, name='manage_reset_requests'),
+    path('password-reset/process/<int:reset_id>/', views.process_reset_request, name='process_reset_request'),
+    path('change-password/', views.change_password, name='change_password'),
 
     # Stock items
     path('add-items/', views.add_items, name='add_items'),
+    path('export/kits.csv', views.export_kits_csv, name='export_kits_csv'),
     path('get_user_kits/<int:user_id>/', views.get_user_kits, name='get_user_kits'),
     path('get_kit_types_for_edit/', views.get_kit_types_for_edit, name='get_kit_types_for_edit'),
     path('update_kit/<int:kit_id>/', views.update_kit, name='update_kit'),
@@ -23,8 +32,13 @@ urlpatterns = [
 
     # User management
     path('manage-users/', views.manage_users, name='manage_users'),
+    path('manage-users/add/', views.add_user, name='add_user'),
     path('edit-user/<int:user_id>/', views.edit_user, name='edit_user'),
+    path('edit-user/<int:user_id>/set-password/', views.set_user_password, name='set_user_password'),
     path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
+
+    # Kit types
+    path('kit-types/', views.manage_kit_types, name='manage_kit_types'),
 
     # Profiles
     path('profile/', views.profile, name='profile'),
@@ -74,6 +88,7 @@ urlpatterns = [
     path('analytics/notifications/', views.analytics_notifications, name='analytics_notifications'),
     path('analytics/devices/', views.analytics_devices, name='analytics_devices'),
     path('analytics/report/', views.generate_daily_report, name='generate_daily_report'),
+    path('analytics/export.csv', views.analytics_export_csv, name='analytics_export_csv'),
     path('devices/', views.analytics_devices, name='devices'),
 
     # PWA

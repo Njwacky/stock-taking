@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Add Stock - Stock Management System{% endblock %}
+{% block title %}Add stock · Stock Tracker{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/add-items.css' %}">
@@ -18,21 +18,32 @@
     <form method="post" id="addItemsForm" class="stock-form-panel">
         {% csrf_token %}
 
-        <div class="form-group">
-            <label for="user">Assign to user</label>
-            {% if can_select_user %}
-            <select name="user" id="user" class="form-control" required>
-                {% for u in target_users %}
-                <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
-                {% endfor %}
-            </select>
-            {% else %}
-            <select name="user" id="user" class="form-control" disabled>
-                <option value="{{ user.id }}">{{ user.username }}</option>
-            </select>
-            <input type="hidden" name="user" value="{{ user.id }}">
-            {% endif %}
-        </div>
+        <section class="form-section" aria-labelledby="assign-title">
+            <div class="form-section-head">
+                <div>
+                    <span class="section-step">STEP 1</span>
+                    <h2 id="assign-title">Choose recipient</h2>
+                </div>
+                <p>Stock is issued to one person at a time.</p>
+            </div>
+            <div class="form-group">
+                <label for="user">Assign to</label>
+                {% if can_select_user %}
+                <select name="user" id="user" class="form-control" required>
+                    <option value="" selected disabled>Select a person</option>
+                    {% for u in target_users %}
+                    <option value="{{ u.id }}">{{ u.username }} ({{ u.role_display }})</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select id="user" class="form-control" disabled aria-describedby="assigned-user-help">
+                    <option value="{{ user.id }}">{{ user.username }}</option>
+                </select>
+                <input type="hidden" name="user" value="{{ user.id }}">
+                <small id="assigned-user-help" class="form-help">Stock will be added to your own account.</small>
+                {% endif %}
+            </div>
+        </section>
 
         <h2>Select stock items</h2>
         <p class="section-help">Select a card to enter a positive quantity and optional details.</p>
@@ -73,23 +84,37 @@
                         <label for="expiration_{{ kit_type.id }}">Expiration</label>
                         <input type="date" id="expiration_{{ kit_type.id }}" name="expiration_{{ kit_type.id }}" class="form-control detail-input">
                     </div>
+                </article>
+                {% empty %}
+                <div class="empty-block">
+                    <p>No kit types yet</p>
+                    <span>An administrator needs to add kit types before stock can be recorded.</span>
                 </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <p class="empty-state">No kit types configured yet.</p>
-            {% endfor %}
-        </div>
+        </section>
 
-        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
-            <i class="fas fa-plus"></i> <span>Add Items</span>
-        </button>
+        <div class="form-actions">
+            <div class="form-actions-copy">
+                <span class="selection-summary" id="selectionSummary" aria-live="polite">No kit types selected</span>
+                <p class="form-actions-note">New quantities are recorded as stock entries for the selected recipient.</p>
+            </div>
+            <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                <span>Select kit types to continue</span>
+            </button>
+        </div>
     </form>
 
     {% if can_select_user %}
-    <section id="existingKitsSection" class="existing-kits-section">
-        <h2><i class="fas fa-boxes-stacked"></i> Existing Kits
-            <span id="selectedUserName"></span>
-        </h2>
+    <section id="existingKitsSection" class="existing-kits-section panel" aria-labelledby="existing-kits-title" hidden>
+        <div class="panel-head">
+            <div>
+                <h2 id="existing-kits-title">Existing stock</h2>
+                <p>Review, edit or remove what this person already holds.</p>
+            </div>
+            <span class="panel-note" id="selectedUserName"></span>
+        </div>
         <div class="kits-toolbar">
             <label class="sr-only" for="kitSearchInput">Search existing kits</label>
             <input type="text" id="kitSearchInput" class="form-control" placeholder="Search kits...">
@@ -102,34 +127,33 @@
             </select>
             <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><i class="fas fa-rotate"></i> Refresh</button>
         </div>
-        <div id="kitsListContainer"></div>
-        <div id="kitsEmptyState" style="display:none" class="empty-state">
-            No existing kits for this user.
+        <div id="kitsListContainer" aria-live="polite" hidden></div>
+        <div id="kitsEmptyState" class="empty-block" hidden>
+            <p>No stock recorded</p>
+            <span>Anything added above will appear here.</span>
         </div>
     </section>
     {% endif %}
 </div>
 
-<!-- Edit modal -->
-<div id="kitEditModal" class="modal" style="display:none">
-    <div class="modal-content">
-        <h3>Edit Kit</h3>
+<div id="kitEditModal" class="modal" hidden>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="kit-edit-title">
+        <h2 id="kit-edit-title">Edit stock item</h2>
         <div id="kitEditModalBody"></div>
         <div class="modal-actions">
-            <button type="button" id="saveKitChangesBtn" class="btn btn-primary">Save Changes</button>
             <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+            <button type="button" id="saveKitChangesBtn" class="btn btn-primary">Save changes</button>
         </div>
     </div>
 </div>
 
-<!-- Delete modal -->
-<div id="kitDeleteModal" class="modal" style="display:none">
-    <div class="modal-content">
-        <h3>Delete Kit</h3>
-        <p>Are you sure you want to delete this kit? This action cannot be undone.</p>
+<div id="kitDeleteModal" class="modal" hidden>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="kit-delete-title">
+        <h2 id="kit-delete-title">Delete stock item?</h2>
+        <p class="modal-lead">Delete <strong id="deleteKitName"></strong> (quantity <span id="deleteKitQuantity"></span>) held by <span id="deleteKitOwner"></span>? This cannot be undone.</p>
         <div class="modal-actions">
-            <button type="button" id="confirmKitDeleteBtn" class="btn btn-danger">Delete</button>
             <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+            <button type="button" id="confirmKitDeleteBtn" class="btn btn-danger">Delete item</button>
         </div>
     </div>
 </div>

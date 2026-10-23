@@ -279,10 +279,10 @@
       ]
     },
     "files_created": [
-      "STOCK_USAGE_TRACKING_GUIDE.md - Complete technical documentation",
-      "STOCK_USAGE_QUICK_GUIDE.md - User-friendly quick reference",
-      "test_stock_usage_system.py - Automated test script",
-      "STOCK_USAGE_IMPLEMENTATION_SUMMARY.md - Implementation overview"
+      "docs/STOCK_USAGE_TRACKING_GUIDE.md - Complete technical documentation",
+      "docs/STOCK_USAGE_QUICK_GUIDE.md - User-friendly quick reference",
+      "tests/manual/test_stock_usage_system.py - Automated test script",
+      "docs/STOCK_USAGE_IMPLEMENTATION_SUMMARY.md - Implementation overview"
     ],
     "files_modified": [
       "stockT/signals.py - Enhanced signal receivers with comprehensive logging",
@@ -400,7 +400,7 @@
       "usage_analytics": "Dashboard showing usage trends and patterns"
     },
     "testing": {
-      "automated_test": "test_stock_usage_system.py",
+      "automated_test": "tests/manual/test_stock_usage_system.py",
       "test_coverage": [
         "User usage logging with valid clock number",
         "Clock number validation",
@@ -414,10 +414,10 @@
       "system_check": "All Django checks passed (0 issues)"
     },
     "documentation": {
-      "technical_guide": "STOCK_USAGE_TRACKING_GUIDE.md",
-      "user_guide": "STOCK_USAGE_QUICK_GUIDE.md",
-      "implementation_summary": "STOCK_USAGE_IMPLEMENTATION_SUMMARY.md",
-      "test_script": "test_stock_usage_system.py"
+      "technical_guide": "docs/STOCK_USAGE_TRACKING_GUIDE.md",
+      "user_guide": "docs/STOCK_USAGE_QUICK_GUIDE.md",
+      "implementation_summary": "docs/STOCK_USAGE_IMPLEMENTATION_SUMMARY.md",
+      "test_script": "tests/manual/test_stock_usage_system.py"
     },
     "last_updated": "2025-10-10",
     "status": "Complete and ready for production"

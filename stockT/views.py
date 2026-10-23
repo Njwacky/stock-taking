@@ -4,42 +4,71 @@ Views for the stockT application.
 Reconstructed from the project's documentation, test scripts and client-side
 JavaScript contracts (static/js/*.js).
 """
+import csv
 import json
+import logging
+from datetime import timedelta
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.auth import authenticate, get_user_model, login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, F, Q, Sum
-from django.http import JsonResponse
+from django.db import transaction
+from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import TruncDate
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from .analytics_service import AnalyticsService
 from .forms import (
+    AddUserForm,
     ContactInfoForm,
     EditUserForm,
+    LimitedEditUserForm,
     ProfileForm,
     RegisterForm,
     StockUsageForm,
     UserCommentForm,
+    WorkspaceForm,
+    WorkspaceMemberAddForm,
 )
 from .models import (
     ContactInfo,
+    DailyStats,
     DeviceTracker,
     Kit,
     KitType,
     NotificationLog,
+    PageView,
     PasswordResetRequest,
+    SessionTracker,
     StockUsage,
     User,
     UserComment,
+    Workspace,
+    WorkspaceMember,
+)
+from .workspace import (
+    create_workspace,
+    current_workspace,
+    ensure_user_workspace,
+    get_membership,
+    is_workspace_manager,
+    registration_open,
+    set_current_workspace,
+    workspace_member_users,
 )
 
 User = get_user_model()
+logger = logging.getLogger('stockT')
 
 
 # ---------------------------------------------------------------------------
@@ -50,10 +79,37 @@ def _is_manager(user):
     return user.is_authenticated and user.is_manager
 
 
-def _kit_stats():
+def _ws(request):
+    """The workspace this request acts in (see workspace.current_workspace)."""
+    return current_workspace(request)
+
+
+def _ws_kit_types(workspace):
+    """Return only kit types explicitly assigned to this workspace.
+
+    Legacy rows are moved into a workspace by migration 0004. Treating any
+    remaining NULL workspace as globally shared would expose those records to
+    every tenant, so orphaned rows are intentionally excluded.
+    """
+    if workspace is None:
+        return KitType.objects.none()
+    return KitType.objects.filter(workspace=workspace)
+
+
+def _ws_rows(qs, workspace):
+    """Scope workspace-owned rows strictly; NULL is not a shared tenant."""
+    if workspace is None:
+        return qs.none()
+    return qs.filter(workspace=workspace)
+
+
+def _kit_stats(workspace=None):
     """Aggregated kit statistics used by the dashboard pie chart."""
-    return list(
-        Kit.objects.filter(is_active=True)
+    kits = Kit.objects.filter(is_active=True)
+    if workspace is not None:
+        kits = _ws_rows(kits, workspace)
+    rows = list(
+        kits
         .values('kit_type_fk__name')
         .annotate(
             kit_type=F('kit_type_fk__name'),
@@ -62,12 +118,19 @@ def _kit_stats():
         )
         .order_by('-total_quantity')
     )
+    peak = max((row['total_quantity'] or 0) for row in rows) if rows else 0
+    for row in rows:
+        row['kit_type'] = row['kit_type'] or 'Unassigned'
+        row['bar_width'] = round((row['total_quantity'] or 0) / peak * 100) if peak else 0
+    return rows
 
 
 def _kits_queryset(request):
-    if _is_manager(request.user):
-        return Kit.objects.filter(is_active=True).select_related('user', 'kit_type_fk', 'created_by')
-    return Kit.objects.filter(user=request.user, is_active=True).select_related('user', 'kit_type_fk', 'created_by')
+    workspace = _ws(request)
+    kits = _ws_rows(Kit.objects.filter(is_active=True), workspace)
+    if is_workspace_manager(request.user, workspace):
+        return kits.select_related('user', 'kit_type_fk', 'created_by')
+    return kits.filter(user=request.user).select_related('user', 'kit_type_fk', 'created_by')
 
 
 SORT_FIELDS = {
@@ -84,18 +147,18 @@ SORT_FIELDS = {
 # Dashboard
 # ---------------------------------------------------------------------------
 
-def dashboard(request):
-    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
-    if not request.user.is_authenticated:
-        return render(request, 'dashboard.html', {'public_view': True})
+def _filtered_kits(request):
+    """Apply the dashboard's user/search/sort/order filters.
 
+    Shared by the dashboard table and the CSV export so an export always
+    matches exactly what the table shows.
+    """
     kits = _kits_queryset(request)
 
     user_filter = request.GET.get('user', '')
     search = request.GET.get('search', '').strip()
     sort = SORT_FIELDS.get(request.GET.get('sort', 'timestamp'), 'timestamp')
     order = 'asc' if request.GET.get('order', 'desc') == 'asc' else 'desc'
-    page_number = request.GET.get('page', '1')
 
     if user_filter:
         if user_filter.isdigit():
@@ -112,24 +175,114 @@ def dashboard(request):
         )
 
     kits = kits.order_by(('-' if order == 'desc' else '') + sort)
+    filters = {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')}
+    return kits, filters
 
-    if request.method == 'POST' and request.POST.get('action') == 'bulk_delete' and _is_manager(request.user):
+
+@login_required
+def export_kits_csv(request):
+    """Download the kit table as CSV (same filters and scope as the dashboard)."""
+    import csv
+
+    from django.http import HttpResponse
+
+    kits, filters = _filtered_kits(request)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    filename = f'stock_export_{timezone.localtime().date().isoformat()}.csv'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # BOM so Excel opens UTF-8 correctly.
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'ID', 'Kit Type', 'Code', 'Quantity', 'Condition', 'User',
+        'Location', 'Expiration Date', 'Added By', 'Added At', 'Last Updated', 'Notes',
+    ])
+    for kit in kits.select_related('user', 'kit_type_fk', 'created_by'):
+        writer.writerow([
+            kit.id,
+            kit.kit_type_name,
+            kit.kit_type_fk.code if kit.kit_type_fk else '',
+            kit.quantity,
+            kit.get_condition_display(),
+            kit.user.username,
+            kit.location or '',
+            kit.expiration_date.isoformat() if kit.expiration_date else '',
+            kit.created_by.username if kit.created_by else '',
+            timezone.localtime(kit.timestamp).strftime('%Y-%m-%d %H:%M'),
+            timezone.localtime(kit.last_updated).strftime('%Y-%m-%d %H:%M'),
+            kit.notes or '',
+        ])
+    return response
+
+
+def dashboard(request):
+    """Main dashboard: kit table with filtering/sorting for staff, landing page otherwise."""
+    if not request.user.is_authenticated:
+        return render(request, 'dashboard.html', {'public_view': True})
+
+    kits, filters = _filtered_kits(request)
+    page_number = request.GET.get('page', '1')
+
+    workspace = _ws(request)
+    if request.method == 'POST' and request.POST.get('action') == 'bulk_delete' and is_workspace_manager(request.user, workspace):
         ids = request.POST.getlist('kit_ids')
-        Kit.objects.filter(id__in=ids, is_active=True).delete()
+        _ws_rows(Kit.objects.filter(id__in=ids, is_active=True), workspace).delete()
         messages.success(request, f'{len(ids)} kit(s) deleted.')
         return redirect('dashboard')
 
     paginator = Paginator(kits, 15)
     page_obj = paginator.get_page(page_number)
 
+    summary_scope = _kits_queryset(request)
+    summary = summary_scope.aggregate(
+        total_quantity=Sum('quantity'),
+        items=Count('id'),
+        locations=Count('location', distinct=True),
+    )
+    summary['total_quantity'] = summary['total_quantity'] or 0
+    summary['kit_types'] = summary_scope.values('kit_type_fk').distinct().count()
+
+    # "Needs attention" panel data (managers only): kit types at/below their
+    # reorder level, plus stock expiring within 30 days (or already expired).
+    attention_low_stock = []
+    attention_expiring = []
+    if is_workspace_manager(request.user, workspace):
+        today = timezone.localdate()
+        horizon = today + timedelta(days=30)
+        active_kits = _ws_rows(Kit.objects.filter(is_active=True), workspace)
+        totals = {
+            row['kit_type_fk_id']: row['total']
+            for row in active_kits.values('kit_type_fk_id').annotate(total=Sum('quantity'))
+        }
+        for kit_type in _ws_kit_types(workspace).filter(reorder_level__isnull=False, is_active=True):
+            total = totals.get(kit_type.id, 0)
+            if total <= kit_type.reorder_level:
+                attention_low_stock.append({
+                    'name': kit_type.name,
+                    'total': total,
+                    'reorder_level': kit_type.reorder_level,
+                })
+        attention_expiring = list(
+            active_kits.filter(expiration_date__isnull=False, expiration_date__lte=horizon)
+            .select_related('kit_type_fk', 'user')
+            .order_by('expiration_date')[:8]
+        )
+
     context = {
         'public_view': False,
         'kits': page_obj.object_list,
         'page_obj': page_obj,
         'paginator': paginator,
-        'kit_stats': _kit_stats(),
-        'users': User.objects.filter(is_active=True).order_by('username') if _is_manager(request.user) else [],
-        'filters': {'user': user_filter, 'search': search, 'sort': request.GET.get('sort', 'timestamp'), 'order': request.GET.get('order', 'desc')},
+        'kit_stats': _kit_stats(workspace),
+        'summary': summary,
+        'users': workspace_member_users(workspace) if is_workspace_manager(request.user, workspace) else [],
+        'filters': filters,
+        'attention_low_stock': attention_low_stock,
+        'attention_expiring': attention_expiring,
+        'today': timezone.localdate(),
     }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -137,7 +290,7 @@ def dashboard(request):
             'success': True,
             'table_html': render_to_string('partials/kit_table.html', context, request),
             'pagination_html': render_to_string('partials/pagination.html', context, request),
-            'kit_stats': _kit_stats(),
+            'kit_stats': _kit_stats(workspace),
         })
 
     return render(request, 'dashboard.html', context)
@@ -148,6 +301,13 @@ def dashboard(request):
 # ---------------------------------------------------------------------------
 
 def register(request):
+    """
+    Open registration — everyone can sign up.
+
+    Each new account is provisioned with its own personal workspace (the
+    user is its Owner) and can start using the app immediately. There is no
+    one-time setup and registration never closes.
+    """
     if request.user.is_authenticated:
         return redirect('workspace_list')
     form = RegisterForm(request.POST or None)
@@ -159,7 +319,145 @@ def register(request):
     return render(request, 'register.html', {'form': form})
 
 
+# ---------------------------------------------------------------------------
+# Workspaces
+# ---------------------------------------------------------------------------
+
+@login_required
+def workspace_create(request):
+    """Create an additional workspace; the creator becomes its Owner."""
+    if request.method == 'POST':
+        form = WorkspaceForm(request.POST)
+        if form.is_valid():
+            workspace = create_workspace(form.cleaned_data['name'], request.user)
+            set_current_workspace(request, workspace)
+            messages.success(
+                request,
+                f'Workspace “{workspace.name}” created and selected. '
+                'It already has the standard kit types ready to use.',
+            )
+            return redirect('dashboard')
+    else:
+        form = WorkspaceForm()
+    return render(request, 'workspace_create.html', {'form': form})
+
+
+@login_required
+@require_POST
+def workspace_switch(request):
+    """Switch the session's active workspace (must be a member)."""
+    workspace = Workspace.objects.filter(
+        id=request.POST.get('workspace_id'), is_active=True, memberships__user=request.user,
+    ).first()
+    if not workspace:
+        messages.error(request, 'You can only switch to a workspace you belong to.')
+    else:
+        set_current_workspace(request, workspace)
+        messages.success(request, f'Switched to “{workspace.name}”.')
+    return redirect(request.POST.get('next') or 'dashboard')
+
+
+@login_required
+def workspace_settings(request):
+    """Workspace settings: rename, members, leave."""
+    workspace = _ws(request)
+    membership = get_membership(request.user, workspace)
+    can_manage = is_workspace_manager(request.user, workspace)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'rename' and can_manage:
+            form = WorkspaceForm(request.POST, instance=workspace)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Workspace renamed.')
+                return redirect('workspace_settings')
+        else:
+            form = WorkspaceForm(instance=workspace)
+        return render(request, 'workspace_settings.html', {
+            'form': form,
+            'workspace': workspace,
+            'membership': membership,
+            'can_manage': can_manage,
+            'members': workspace.memberships.select_related('user').order_by('joined_at'),
+            'add_member_form': WorkspaceMemberAddForm(),
+        })
+
+    form = WorkspaceForm(instance=workspace)
+    return render(request, 'workspace_settings.html', {
+        'form': form,
+        'workspace': workspace,
+        'membership': membership,
+        'can_manage': can_manage,
+        'members': workspace.memberships.select_related('user').order_by('joined_at'),
+        'add_member_form': WorkspaceMemberAddForm(),
+    })
+
+
+@login_required
+@require_POST
+def workspace_member_add(request):
+    """Add an existing registered user to the current workspace."""
+    workspace = _ws(request)
+    if not is_workspace_manager(request.user, workspace):
+        messages.error(request, 'Only workspace owners and admins can add members.')
+        return redirect('workspace_settings')
+
+    form = WorkspaceMemberAddForm(request.POST)
+    if form.is_valid():
+        user = form.cleaned_data['user']
+        role = form.cleaned_data['role']
+        if get_membership(user, workspace):
+            messages.info(request, f'{user.username} is already a member of this workspace.')
+        else:
+            WorkspaceMember.objects.create(workspace=workspace, user=user, role=role)
+            messages.success(request, f'{user.username} added to “{workspace.name}” as {role}.')
+    else:
+        for field, errs in form.errors.items():
+            messages.error(request, f'{" ".join(errs)}')
+    return redirect('workspace_settings')
+
+
+@login_required
+@require_POST
+def workspace_member_remove(request):
+    """Remove a member (or leave the workspace yourself)."""
+    workspace = _ws(request)
+    target_id = request.POST.get('user_id')
+    membership = get_membership(request.user, workspace)
+    can_manage = is_workspace_manager(request.user, workspace)
+
+    target_membership = WorkspaceMember.objects.filter(
+        workspace=workspace, user_id=target_id,
+    ).first()
+    if not target_membership:
+        messages.error(request, 'That user is not a member of this workspace.')
+        return redirect('workspace_settings')
+
+    leaving_self = str(target_id) == str(request.user.id)
+    if not (can_manage or leaving_self):
+        messages.error(request, 'Only workspace owners and admins can remove members.')
+        return redirect('workspace_settings')
+    if target_membership.role == WorkspaceMember.ROLE_OWNER:
+        messages.error(request, 'The workspace owner cannot be removed.')
+        return redirect('workspace_settings')
+
+    username = target_membership.user.username
+    target_membership.delete()
+    if leaving_self:
+        messages.success(request, f'You left “{workspace.name}”.')
+        return redirect('dashboard')
+    messages.success(request, f'{username} removed from “{workspace.name}”.')
+    return redirect('workspace_settings')
+
+
 def logout_confirm(request):
+    """Confirm-and-logout: POST actually logs the user out (this was broken —
+    the view used to just re-render the page and never called auth.logout)."""
+    if request.method == 'POST':
+        auth_logout(request)
+        messages.success(request, 'You have been logged out.')
+        return redirect('login')
     return render(request, 'logout_confirm.html')
 
 
@@ -181,6 +479,187 @@ def password_reset_request(request):
     return render(request, 'password_reset_request.html')
 
 
+@login_required
+def manage_reset_requests(request):
+    """Managers process password reset requests here (approve sets a new
+    password; reject closes the request)."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    requests_qs = PasswordResetRequest.objects.select_related('user', 'processed_by')
+    return render(request, 'manage_reset_requests.html', {'requests': requests_qs})
+
+
+@login_required
+@require_POST
+def process_reset_request(request, reset_id):
+    """Approve (set new password) or reject a password reset request."""
+    if not _is_manager(request.user):
+        messages.error(request, 'You do not have permission to manage password resets.')
+        return redirect('dashboard')
+    reset = get_object_or_404(PasswordResetRequest, id=reset_id)
+    if reset.status != PasswordResetRequest.STATUS_PENDING:
+        messages.info(request, 'That request has already been processed.')
+        return redirect('manage_reset_requests')
+
+    action = request.POST.get('action')
+    if action == 'reject':
+        reset.status = PasswordResetRequest.STATUS_REJECTED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(request, f'Reset request for {reset.username} rejected.')
+        return redirect('manage_reset_requests')
+
+    if action == 'approve':
+        password = request.POST.get('new_password') or ''
+        confirm = request.POST.get('confirm_password') or ''
+        if not password or password != confirm:
+            messages.error(request, 'Passwords do not match (or are empty).')
+            return redirect('manage_reset_requests')
+        try:
+            validate_password(password, user=reset.user)
+        except ValidationError as exc:
+            messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+            return redirect('manage_reset_requests')
+        reset.user.set_password(password)
+        reset.user.save(update_fields=['password'])
+        reset.status = PasswordResetRequest.STATUS_APPROVED
+        reset.processed_at = timezone.now()
+        reset.processed_by = request.user
+        reset.save()
+        messages.success(
+            request,
+            f'Password updated for {reset.username}. Share it with them securely.',
+        )
+        return redirect('manage_reset_requests')
+
+    messages.error(request, 'Unknown action.')
+    return redirect('manage_reset_requests')
+
+
+@login_required
+@require_POST
+def set_user_password(request, user_id):
+    """Admins set a member's password directly (e.g. new starter on the phone)."""
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can set passwords.')
+        return redirect('manage_users')
+    target = get_object_or_404(User, id=user_id)
+    password = request.POST.get('new_password') or ''
+    confirm = request.POST.get('confirm_password') or ''
+    if not password or password != confirm:
+        messages.error(request, 'Passwords do not match (or are empty).')
+        return redirect('edit_user', user_id=target.id)
+    try:
+        validate_password(password, user=target)
+    except ValidationError as exc:
+        messages.error(request, 'Password not accepted: ' + ' '.join(exc.messages))
+        return redirect('edit_user', user_id=target.id)
+    target.set_password(password)
+    target.save(update_fields=['password'])
+    messages.success(request, f'Password updated for {target.username}.')
+    return redirect('edit_user', user_id=target.id)
+
+
+@login_required
+def change_password(request):
+    """Let any user change their own password."""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Keep the session alive across the password change.
+            login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
+            messages.success(request, 'Your password has been changed.')
+            return redirect('profile')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'change_password.html', {'form': form})
+
+
+# ---------------------------------------------------------------------------
+# Kit types
+# ---------------------------------------------------------------------------
+
+@login_required
+def manage_kit_types(request):
+    """Manage the current workspace's kit types (Add Stock / Track Usage / Distribute)."""
+    workspace = _ws(request)
+    if not is_workspace_manager(request.user, workspace):
+        messages.error(request, 'You do not have permission to manage kit types.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = (request.POST.get('name') or '').strip()
+            code = (request.POST.get('code') or '').strip()
+            description = (request.POST.get('description') or '').strip()
+            unit = (request.POST.get('unit_of_measure') or 'pieces').strip() or 'pieces'
+            reorder_level, reorder_error = _parse_reorder_level(
+                request.POST.get('reorder_level'),
+            )
+            existing = _ws_kit_types(workspace).filter(Q(name__iexact=name) | Q(code__iexact=code))
+            if not name or not code:
+                messages.error(request, 'Name and code are required.')
+            elif existing.exists():
+                messages.error(request, 'A kit type with that name or code already exists in this workspace.')
+            elif reorder_error:
+                messages.error(request, reorder_error)
+            else:
+                KitType.objects.create(
+                    name=name, code=code, description=description or None,
+                    unit_of_measure=unit, reorder_level=reorder_level,
+                    created_by=request.user, workspace=workspace,
+                )
+                messages.success(request, f'Kit type “{name}” added.')
+        elif action == 'set_reorder':
+            kit_type = get_object_or_404(_ws_kit_types(workspace), id=request.POST.get('kit_type_id'))
+            reorder_level, reorder_error = _parse_reorder_level(
+                request.POST.get('reorder_level'),
+            )
+            if reorder_error:
+                messages.error(request, reorder_error)
+            else:
+                kit_type.reorder_level = reorder_level
+                kit_type.save(update_fields=['reorder_level'])
+                if reorder_level is None:
+                    messages.success(request, f'Reorder alert cleared for “{kit_type.name}”.')
+                else:
+                    messages.success(
+                        request,
+                        f'Reorder alert set for “{kit_type.name}” at {reorder_level} {kit_type.unit_of_measure}.',
+                    )
+        elif action == 'toggle':
+            kit_type = get_object_or_404(_ws_kit_types(workspace), id=request.POST.get('kit_type_id'))
+            kit_type.is_active = not kit_type.is_active
+            kit_type.save(update_fields=['is_active'])
+            messages.success(request, f'Kit type “{kit_type.name}” {"activated" if kit_type.is_active else "deactivated"}.')
+        return redirect('manage_kit_types')
+
+    kit_types = _ws_kit_types(workspace).order_by('name')
+    return render(request, 'manage_kit_types.html', {'kit_types': kit_types})
+
+
+def _parse_reorder_level(raw):
+    """Parse an optional reorder level from a form field.
+
+    Returns ``(value, error_message)``; empty input means "no alert" (None).
+    """
+    raw = (raw or '').strip()
+    if not raw:
+        return None, None
+    try:
+        level = int(raw)
+    except (TypeError, ValueError):
+        return None, 'Reorder level must be a whole number (or left empty).'
+    if level < 0:
+        return None, 'Reorder level cannot be negative.'
+    return level, None
+
+
 def custom_404(request, exception=None):
     return render(request, '404.html', status=404)
 
@@ -194,20 +673,24 @@ def offline(request):
 
 
 def service_worker(request):
-    from django.http import FileResponse
+    from django.http import FileResponse, Http404
     from django.conf import settings
     import os
     path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
+    if not os.path.exists(path):
+        raise Http404('Service worker not found')
     response = FileResponse(open(path, 'rb'), content_type='application/javascript')
     response['Service-Worker-Allowed'] = '/'
     return response
 
 
 def manifest(request):
-    from django.http import FileResponse
+    from django.http import FileResponse, Http404
     from django.conf import settings
     import os
     path = os.path.join(settings.BASE_DIR, 'static', 'manifest.json')
+    if not os.path.exists(path):
+        raise Http404('Manifest not found')
     return FileResponse(open(path, 'rb'), content_type='application/manifest+json')
 
 
@@ -217,10 +700,11 @@ def manifest(request):
 
 @login_required
 def add_items(request):
-    """Add stock items for yourself (or another user when permitted)."""
-    kit_types = KitType.objects.filter(is_active=True).order_by('name')
-    can_select_user = _is_manager(request.user)
-    target_users = User.objects.filter(is_active=True).order_by('username') if can_select_user else [request.user]
+    """Add stock items for yourself (or another workspace member when permitted)."""
+    workspace = _ws(request)
+    kit_types = _ws_kit_types(workspace).filter(is_active=True).order_by('name')
+    can_select_user = is_workspace_manager(request.user, workspace)
+    target_users = workspace_member_users(workspace) if can_select_user else [request.user]
 
     if request.method == 'POST':
         target_id = request.POST.get('user', str(request.user.id))
@@ -228,28 +712,64 @@ def add_items(request):
         if not can_select_user and target.id != request.user.id:
             messages.error(request, 'You can only add stock for yourself.')
             return redirect('add_items')
+        if can_select_user and not workspace_member_users(workspace).filter(id=target.id).exists():
+            messages.error(request, f'{target.username} is not a member of this workspace.')
+            return redirect('add_items')
 
-        created = 0
+        entries = []
+        valid_conditions = {value for value, _label in Kit.CONDITION_CHOICES}
         for kit_type in kit_types:
             qty_raw = request.POST.get(f'quantity_{kit_type.id}', '0')
             try:
                 qty = int(qty_raw)
             except (TypeError, ValueError):
-                qty = 0
-            if qty <= 0:
+                messages.error(request, f'Enter a whole-number quantity for {kit_type.name}.')
+                return redirect('add_items')
+            if qty < 0:
+                messages.error(request, f'Quantity for {kit_type.name} cannot be negative.')
+                return redirect('add_items')
+            if qty == 0:
                 continue
-            Kit.objects.create(
-                user=target,
-                kit_type_fk=kit_type,
-                kit_type_string=kit_type.name[:20],
-                quantity=qty,
-                condition=request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW),
-                location=request.POST.get(f'location_{kit_type.id}', '') or None,
-                notes=request.POST.get(f'notes_{kit_type.id}', '') or None,
-                expiration_date=request.POST.get(f'expiration_{kit_type.id}') or None,
-                created_by=request.user,
-            )
-            created += 1
+
+            condition = request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW)
+            if condition not in valid_conditions:
+                messages.error(request, f'Choose a valid condition for {kit_type.name}.')
+                return redirect('add_items')
+            location = (request.POST.get(f'location_{kit_type.id}', '') or '').strip()
+            if len(location) > 100:
+                messages.error(request, f'Location for {kit_type.name} must be 100 characters or fewer.')
+                return redirect('add_items')
+            expiration_raw = request.POST.get(f'expiration_{kit_type.id}', '').strip()
+            expiration_date = parse_date(expiration_raw) if expiration_raw else None
+            if expiration_raw and expiration_date is None:
+                messages.error(request, f'Enter a valid expiry date for {kit_type.name}.')
+                return redirect('add_items')
+
+            entries.append({
+                'kit_type': kit_type,
+                'quantity': qty,
+                'condition': condition,
+                'location': location or None,
+                'notes': (request.POST.get(f'notes_{kit_type.id}', '') or '').strip() or None,
+                'expiration_date': expiration_date,
+            })
+
+        with transaction.atomic():
+            for entry in entries:
+                kit_type = entry['kit_type']
+                Kit.objects.create(
+                    user=target,
+                    kit_type_fk=kit_type,
+                    kit_type_string=kit_type.name[:20],
+                    quantity=entry['quantity'],
+                    condition=entry['condition'],
+                    location=entry['location'],
+                    notes=entry['notes'],
+                    expiration_date=entry['expiration_date'],
+                    created_by=request.user,
+                    workspace=workspace,
+                )
+        created = len(entries)
         if created:
             messages.success(request, f'{created} kit type(s) added for {target.username}.')
         else:
@@ -281,16 +801,17 @@ def _kit_to_dict(kit):
 
 @login_required
 def get_user_kits(request, user_id):
-    if not _is_manager(request.user) and request.user.id != user_id:
+    workspace = _ws(request)
+    if not is_workspace_manager(request.user, workspace) and request.user.id != user_id:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     user = get_object_or_404(User, id=user_id)
-    kits = Kit.objects.filter(user=user, is_active=True).select_related('kit_type_fk')
+    kits = _ws_rows(Kit.objects.filter(user=user, is_active=True), workspace).select_related('kit_type_fk')
     return JsonResponse({'success': True, 'kits': [_kit_to_dict(k) for k in kits]})
 
 
 @login_required
 def get_kit_types_for_edit(request):
-    types = KitType.objects.filter(is_active=True).order_by('name')
+    types = _ws_kit_types(_ws(request)).filter(is_active=True).order_by('name')
     return JsonResponse({
         'success': True,
         'kit_types': [{'id': t.id, 'name': t.name, 'code': t.code} for t in types],
@@ -300,8 +821,9 @@ def get_kit_types_for_edit(request):
 @login_required
 @require_POST
 def update_kit(request, kit_id):
-    kit = get_object_or_404(Kit, id=kit_id, is_active=True)
-    if not _is_manager(request.user) and kit.user_id != request.user.id:
+    workspace = _ws(request)
+    kit = get_object_or_404(_ws_rows(Kit.objects.filter(is_active=True), workspace), id=kit_id)
+    if not is_workspace_manager(request.user, workspace) and kit.user_id != request.user.id:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
 
     errors = {}
@@ -316,16 +838,25 @@ def update_kit(request, kit_id):
             errors['quantity'] = 'Enter a valid quantity.'
 
     if 'kit_type' in request.POST:
-        kit_type = KitType.objects.filter(id=request.POST.get('kit_type')).first()
+        kit_type = _ws_kit_types(workspace).filter(id=request.POST.get('kit_type')).first()
         if kit_type:
             kit.kit_type_fk = kit_type
             kit.kit_type_string = kit_type.name[:20]
         else:
             errors['kit_type'] = 'Unknown kit type.'
 
-    for field in ('condition', 'location', 'notes'):
+    for field in ('location', 'notes'):
         if field in request.POST:
             setattr(kit, field, request.POST.get(field) or None)
+    if 'condition' in request.POST:
+        condition = request.POST.get('condition')
+        valid_conditions = [c[0] for c in Kit.CONDITION_CHOICES]
+        if condition in valid_conditions:
+            kit.condition = condition
+        else:
+            errors['condition'] = 'Invalid condition value.'
+    if 'is_active' in request.POST:
+        kit.is_active = request.POST.get('is_active') in ('on', 'true', 'True', '1')
     if 'expiration_date' in request.POST:
         value = request.POST.get('expiration_date') or None
         kit.expiration_date = value
@@ -340,8 +871,9 @@ def update_kit(request, kit_id):
 @login_required
 @require_POST
 def delete_kit(request, kit_id):
-    kit = get_object_or_404(Kit, id=kit_id, is_active=True)
-    if not _is_manager(request.user) and kit.user_id != request.user.id:
+    workspace = _ws(request)
+    kit = get_object_or_404(_ws_rows(Kit.objects.filter(is_active=True), workspace), id=kit_id)
+    if not is_workspace_manager(request.user, workspace) and kit.user_id != request.user.id:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     kit.delete()
     return JsonResponse({'success': True})
@@ -383,15 +915,49 @@ def manage_users(request):
 
 
 @login_required
+def add_user(request):
+    """
+    Add a person to the workspace.
+
+    Only the workspace Superadmin and administrators can add people —
+    there is no public self-registration after the workspace is set up.
+    """
+    if not request.user.is_admin:
+        messages.error(request, 'Only administrators can add people to the workspace.')
+        return redirect('manage_users')
+    form = AddUserForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        workspace = _ws(request)
+        with transaction.atomic():
+            user = form.save(commit=False)
+            user.save()
+            # Account roles are system-wide; membership role is scoped to this
+            # workspace. A newly added person starts as a workspace member.
+            WorkspaceMember.objects.create(
+                workspace=workspace,
+                user=user,
+                role=WorkspaceMember.ROLE_MEMBER,
+            )
+        messages.success(
+            request,
+            f'{user.username} has been added to “{workspace.name}” as a '
+            f'workspace member (account role: {user.get_role_display()}).',
+        )
+        return redirect('manage_users')
+    return render(request, 'add_user.html', {'form': form})
+
+
+@login_required
 def edit_user(request, user_id):
     if not _is_manager(request.user):
         messages.error(request, 'You do not have permission to edit users.')
         return redirect('dashboard')
     target = get_object_or_404(User, id=user_id)
 
-    # Only admins can change roles or staff status.
+    # Only admins can change roles or staff status. Managers use a restricted
+    # form WITHOUT role/is_staff fields so they cannot escalate privileges.
     if not request.user.is_admin:
-        restricted = EditUserForm(request.POST or None, instance=target)
+        restricted = LimitedEditUserForm(request.POST or None, instance=target)
         if request.method == 'POST':
             if restricted.is_valid():
                 restricted.save()
@@ -476,9 +1042,30 @@ def user_profile(request, user_id):
 @login_required
 def stock_usage_tracking(request):
     """Log stock usage at /tracking/."""
-    kit_types = KitType.objects.filter(is_active=True).order_by('name')
-    recent = StockUsage.objects.filter(user=request.user)[:8]
-    form = StockUsageForm(request.POST or None)
+    workspace = _ws(request)
+    kit_types = _ws_kit_types(workspace).filter(is_active=True).order_by('name')
+    recent = _ws_rows(
+        StockUsage.objects.filter(user=request.user, deleted_at__isnull=True), workspace,
+    )[:8]
+
+    # Pre-select a type for the one-click "Track" action on the dashboard
+    # (`?kit_type=<id>`), and keep the documented legacy `?kit_id=` link
+    # working by mapping that kit to its type.
+    initial = {}
+    preselect_type = request.GET.get('kit_type', '')
+    preselect_kit = request.GET.get('kit_id', '')
+    if preselect_kit.isdigit():
+        source_kit = _ws_rows(Kit.objects.filter(is_active=True), workspace).filter(
+            id=int(preselect_kit),
+        ).first()
+        if source_kit and source_kit.kit_type_fk_id:
+            initial['kit_type'] = source_kit.kit_type_fk_id
+    elif preselect_type.isdigit():
+        if kit_types.filter(id=int(preselect_type)).exists():
+            initial['kit_type'] = int(preselect_type)
+
+    form = StockUsageForm(request.POST or None, initial=initial)
+    form.fields['kit_type'].queryset = kit_types
 
     if request.method == 'POST':
         if form.is_valid():
@@ -487,6 +1074,7 @@ def stock_usage_tracking(request):
             usage.clock_number = request.user.clock_number or ''
             usage.kit_type_name = usage.kit_type.name if usage.kit_type else ''
             usage.status = StockUsage.STATUS_PENDING
+            usage.workspace = workspace
             usage.save()
             messages.success(request, 'Usage submitted for review.')
             return redirect('stock_usage_tracking')
@@ -500,11 +1088,16 @@ def stock_usage_tracking(request):
 
 @login_required
 def stock_usage_history(request):
+    workspace = _ws(request)
+    valid_statuses = dict(StockUsage.STATUS_CHOICES)
     status_filter = request.GET.get('status', '')
-    if _is_manager(request.user):
-        usages = StockUsage.objects.all().select_related('user', 'kit_type', 'reviewed_by')
+    if status_filter not in valid_statuses:
+        status_filter = ''
+    base = _ws_rows(StockUsage.objects.filter(deleted_at__isnull=True), workspace)
+    if is_workspace_manager(request.user, workspace):
+        usages = base.select_related('user', 'kit_type', 'reviewed_by')
     else:
-        usages = StockUsage.objects.filter(user=request.user).select_related('user', 'kit_type', 'reviewed_by')
+        usages = base.filter(user=request.user).select_related('user', 'kit_type', 'reviewed_by')
     if status_filter:
         usages = usages.filter(status=status_filter)
     return render(request, 'stock_usage_history.html', {
@@ -516,36 +1109,107 @@ def stock_usage_history(request):
 @login_required
 @require_POST
 def review_stock_usage(request, usage_id):
-    if not _is_manager(request.user):
+    workspace = _ws(request)
+    if not is_workspace_manager(request.user, workspace):
         messages.error(request, 'You do not have permission to review usage requests.')
         return redirect('stock_usage_history')
-    usage = get_object_or_404(StockUsage, id=usage_id)
+
     action = request.POST.get('action')
-    usage.admin_notes = request.POST.get('admin_notes', '') or None
-    usage.reviewed_by = request.user
-    usage.reviewed_at = timezone.now()
-    if action == 'approve':
-        usage.status = StockUsage.STATUS_APPROVED
-        usage.save()
-        messages.success(request, 'Usage approved and stock updated.')
-    elif action == 'reject':
-        usage.status = StockUsage.STATUS_REJECTED
-        usage.save()
-        messages.success(request, 'Usage request rejected.')
-    else:
+    if action not in ('approve', 'reject'):
         messages.error(request, 'Unknown action.')
+        return redirect(request.POST.get('next') or 'stock_usage_history')
+
+    already_processed = False
+    usage = None
+    try:
+        # Lock the request so two managers cannot approve the same request at
+        # once. The signal's stock deduction runs inside this transaction too.
+        with transaction.atomic():
+            usage = get_object_or_404(
+                _ws_rows(
+                    StockUsage.objects.select_for_update(),
+                    workspace,
+                ).filter(deleted_at__isnull=True),
+                id=usage_id,
+            )
+            if usage.status != StockUsage.STATUS_PENDING:
+                already_processed = True
+            else:
+                usage.admin_notes = request.POST.get('admin_notes', '') or None
+                usage.reviewed_by = request.user
+                usage.reviewed_at = timezone.now()
+                if action == 'approve':
+                    usage.status = StockUsage.STATUS_APPROVED
+                else:
+                    usage.status = StockUsage.STATUS_REJECTED
+                usage.save()
+    except ValidationError as exc:
+        messages.error(
+            request,
+            'Usage was not approved: ' + ' '.join(exc.messages),
+        )
+        return redirect(request.POST.get('next') or 'stock_usage_history')
+
+    if already_processed:
+        messages.info(request, 'This usage request has already been reviewed or is no longer pending.')
+    else:
+        _notify_requester_of_decision(usage, action)
+        if action == 'approve':
+            messages.success(request, 'Usage approved and stock updated.')
+        else:
+            messages.success(request, 'Usage request rejected.')
     return redirect(request.POST.get('next') or 'stock_usage_history')
+
+
+def _notify_requester_of_decision(usage, action):
+    """Tell the requesting member how their usage request turned out.
+
+    Managers were already notified when the request was submitted; without
+    this the requester had to keep re-checking the history page.
+    """
+    if usage is None or usage.user_id is None:
+        return
+    try:
+        if action == 'approve':
+            title = 'Stock usage approved'
+            message = (
+                f'Your request to use {usage.quantity_used} × {usage.kit_type_name} '
+                'was approved and stock has been updated.'
+            )
+        else:
+            title = 'Stock usage rejected'
+            message = (
+                f'Your request to use {usage.quantity_used} × {usage.kit_type_name} '
+                'was rejected.'
+            )
+            if usage.admin_notes:
+                message += f' Note: {usage.admin_notes}'
+        notification = NotificationLog.objects.create(
+            notification_type='stock_usage_decision',
+            title=title,
+            message=message,
+        )
+        notification.sent_to.set([usage.user])
+    except Exception:  # pragma: no cover - notifications must never break reviews
+        logger.exception('Failed to notify requester of usage decision')
 
 
 @login_required
 @require_POST
 def delete_stock_usage(request, usage_id):
-    if not _is_manager(request.user):
+    """Remove a usage record from the UI (soft delete — audit stays intact)."""
+    workspace = _ws(request)
+    if not is_workspace_manager(request.user, workspace):
         messages.error(request, 'You do not have permission to delete usage records.')
         return redirect('stock_usage_history')
-    usage = get_object_or_404(StockUsage, id=usage_id)
-    usage.delete()
-    messages.success(request, 'Usage record deleted.')
+    usage = get_object_or_404(
+        _ws_rows(StockUsage.objects.filter(deleted_at__isnull=True), workspace),
+        id=usage_id,
+    )
+    usage.deleted_at = timezone.now()
+    usage.deleted_by = request.user
+    usage.save(update_fields=['deleted_at', 'deleted_by'])
+    messages.success(request, 'Usage record removed. It is kept in the audit trail.')
     return redirect('stock_usage_history')
 
 
@@ -555,21 +1219,22 @@ def delete_stock_usage(request, usage_id):
 
 @login_required
 def stock_distribution(request):
-    """Distribute stock to users, verified with the distributor's password.
+    """Distribute stock to workspace members, verified with the distributor's password.
 
-    Access is limited to managers and supervisors (the "Manager & Supervisor
-    Stock Assignment Portal"); admins and regular users are redirected.
+    Access is limited to workspace managers/supervisors and administrators;
+    regular users are redirected.
     """
-    if request.user.role not in (User.ROLE_MANAGER, User.ROLE_SUPERVISOR):
+    workspace = _ws(request)
+    if not (request.user.is_supervisor or is_workspace_manager(request.user, workspace)):
         messages.error(request, 'Access denied. This portal is for managers and supervisors only.')
         return redirect('dashboard')
 
-    kit_types = KitType.objects.filter(is_active=True).order_by('name')
-    recipients = User.objects.filter(
-        is_active=True, is_superuser=False,
-    ).exclude(role=User.ROLE_ADMIN).order_by('username')
+    kit_types = _ws_kit_types(workspace).filter(is_active=True).order_by('name')
+    recipients = workspace_member_users(workspace).exclude(
+        Q(is_superuser=True) | Q(role=User.ROLE_ADMIN),
+    )
     recent_distributions = (
-        Kit.objects.filter(created_by__isnull=False)
+        _ws_rows(Kit.objects.filter(created_by__isnull=False), workspace)
         .select_related('user', 'created_by', 'kit_type_fk')
         .order_by('-timestamp')[:15]
     )
@@ -595,6 +1260,9 @@ def stock_distribution(request):
             })
 
         recipient = get_object_or_404(User, id=recipient_id)
+        if not workspace_member_users(workspace).filter(id=recipient.id).exists():
+            messages.error(request, f'{recipient.username} is not a member of this workspace.')
+            return redirect('stock_distribution')
         created = 0
         for kit_type in kit_types:
             try:
@@ -610,6 +1278,7 @@ def stock_distribution(request):
                 kit_type_string=kit_type.name[:20],
                 quantity=qty,
                 condition=request.POST.get(f'kit_type_{kit_type.id}_condition', Kit.CONDITION_NEW),
+                workspace=workspace,
             )
             created += 1
 
@@ -637,7 +1306,7 @@ def stock_distribution(request):
 
 @login_required
 def most_received_kits(request):
-    stats = _kit_stats()
+    stats = _kit_stats(_ws(request))
     return render(request, 'most_received_kits.html', {'kit_stats': stats})
 
 
@@ -790,9 +1459,13 @@ def demote_admin(request, user_id):
     if target.id == request.user.id:
         messages.error(request, 'You cannot demote yourself.')
         return redirect('manage_admins')
+    if not (target.is_superuser or target.role == User.ROLE_ADMIN):
+        messages.error(request, f'{target.username} is not an administrator.')
+        return redirect('manage_admins')
     target.role = User.ROLE_USER
     target.is_staff = False
-    target.save(update_fields=['role', 'is_staff'])
+    target.is_superuser = False
+    target.save(update_fields=['role', 'is_staff', 'is_superuser'])
     messages.success(request, f'{target.username} demoted to regular user.')
     return redirect('manage_admins')
 
@@ -887,63 +1560,414 @@ def mark_notification_read(request, notification_id):
 # Analytics
 # ---------------------------------------------------------------------------
 
-def _analytics_allowed(user):
-    return user.is_authenticated and user.is_manager
+def _analytics_workspace(request):
+    """Active workspace when the user may view its analytics, else None.
+
+    Analytics are tenant-scoped like the rest of the app: managers of a
+    workspace see only that workspace's sessions, page views and devices.
+    Global managers/admins qualify through ``is_workspace_manager`` too.
+    """
+    user = getattr(request, 'user', None)
+    if user is None or not user.is_authenticated:
+        return None
+    workspace = _ws(request)
+    if workspace is not None and is_workspace_manager(user, workspace):
+        return workspace
+    return None
+
+
+def _range_param(request, key='range', allowed=(7, 14, 30), default=14):
+    """Read an integer window parameter without ever raising (HTTP-safe)."""
+    try:
+        value = int(request.GET.get(key, default))
+    except (TypeError, ValueError):
+        return default
+    return value if value in allowed else default
+
+
+PAGE_LABELS = {
+    '/': 'Dashboard',
+    '/add-items/': 'Add stock',
+    '/tracking/': 'Track usage',
+    '/tracking/history/': 'Usage history',
+    '/stock-distribution/': 'Distribution',
+    '/most-received-kits/': 'Stock ranking',
+    '/calculator/': 'Calculators',
+    '/analytics/': 'Analytics',
+    '/analytics/devices/': 'Tracked devices',
+    '/analytics/notifications/': 'Milestones',
+    '/manage-users/': 'Team',
+    '/kit-types/': 'Kit types',
+    '/profile/': 'Profile',
+    '/notifications/': 'Notifications',
+    '/comments/my/': 'My feedback',
+    '/comments/manage/': 'Feedback inbox',
+    '/workspace/settings/': 'Workspace settings',
+}
+
+
+def _page_label(path):
+    """Turn a tracked URL into a readable page name."""
+    if not path:
+        return 'Unknown'
+    label = PAGE_LABELS.get(path.rstrip('/') + '/' if path != '/' else '/')
+    if label:
+        return label
+    cleaned = path.strip('/').replace('-', ' ').replace('_', ' ').replace('/', ' / ')
+    return cleaned.title() if cleaned else 'Home'
+
+
+def _sparkline(values, width=96, height=30):
+    """Build SVG polyline coordinates for a compact trend line."""
+    if not values:
+        return ''
+    values = [float(v or 0) for v in values]
+    peak = max(values)
+    count = len(values)
+    points = []
+    for index, value in enumerate(values):
+        x = round((index / (count - 1) * width) if count > 1 else width / 2, 1)
+        if peak <= 0:
+            y = height - 4
+        else:
+            y = round(height - 4 - (value / peak) * (height - 8), 1)
+        points.append(f'{x},{y}')
+    return ' '.join(points)
+
+
+def _analytics_series(days, workspace=None):
+    """Aggregate sessions, page views, devices and users for each day.
+
+    When ``workspace`` is given, only that tenant's tracked sessions (and the
+    page views belonging to them) are counted.
+    """
+    end = timezone.localdate()
+    start = end - timedelta(days=days - 1)
+
+    def daily_map(queryset, date_field, value_field=None):
+        rows = (
+            queryset
+            .filter(**{f'{date_field}__date__gte': start, f'{date_field}__date__lte': end})
+            .annotate(day=TruncDate(date_field))
+            .values('day')
+        )
+        if value_field:
+            rows = rows.annotate(total=Count(value_field, distinct=True))
+        else:
+            rows = rows.annotate(total=Count('id'))
+        return {row['day']: row['total'] for row in rows}
+
+    sessions = SessionTracker.objects.all()
+    page_views = PageView.objects.all()
+    if workspace is not None:
+        sessions = sessions.filter(workspace=workspace)
+        page_views = page_views.filter(session__workspace=workspace)
+
+    sessions_map = daily_map(sessions, 'started_at')
+    page_views_map = daily_map(page_views, 'viewed_at')
+    devices_map = daily_map(sessions, 'started_at', 'device')
+    users_map = daily_map(sessions.filter(user__isnull=False), 'started_at', 'user')
+
+    series = []
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        series.append({
+            'date': day,
+            'label': day.strftime('%d %b'),
+            'sessions': sessions_map.get(day, 0),
+            'page_views': page_views_map.get(day, 0),
+            'devices': devices_map.get(day, 0),
+            'users': users_map.get(day, 0),
+        })
+    return series
+
+
+def _period_totals(start, end, workspace=None):
+    sessions = SessionTracker.objects.filter(started_at__date__gte=start, started_at__date__lte=end)
+    views = PageView.objects.filter(viewed_at__date__gte=start, viewed_at__date__lte=end)
+    if workspace is not None:
+        sessions = sessions.filter(workspace=workspace)
+        views = views.filter(session__workspace=workspace)
+    return {
+        'sessions': sessions.count(),
+        'page_views': views.count(),
+        'users': sessions.filter(user__isnull=False).values('user').distinct().count(),
+        'devices': sessions.values('device').distinct().count(),
+    }
+
+
+def _delta(current, previous):
+    if not previous:
+        return None
+    return round((current - previous) / previous * 100, 1)
 
 
 @login_required
 def analytics_dashboard(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
-    stats = AnalyticsService.get_live_stats()
-    chart_data = AnalyticsService.get_chart_data()
-    from .models import DailyStats
-    daily = DailyStats.objects.all()[:14]
+
+    days = _range_param(request)
+    series = _analytics_series(days, workspace)
+    end = timezone.localdate()
+    start = end - timedelta(days=days - 1)
+    previous_end = start - timedelta(days=1)
+    previous_start = previous_end - timedelta(days=days - 1)
+
+    current = _period_totals(start, end, workspace)
+    previous = _period_totals(previous_start, previous_end, workspace)
+
+    now = timezone.now()
+    online = SessionTracker.objects.filter(
+        workspace=workspace, last_activity__gte=now - timedelta(minutes=5),
+    ).count()
+
+    kpis = [
+        {
+            'key': 'sessions',
+            'label': 'Sessions',
+            'value': current['sessions'],
+            'delta': _delta(current['sessions'], previous['sessions']),
+            'spark': _sparkline([row['sessions'] for row in series]),
+            'icon': 'i-trend',
+        },
+        {
+            'key': 'page_views',
+            'label': 'Page views',
+            'value': current['page_views'],
+            'delta': _delta(current['page_views'], previous['page_views']),
+            'spark': _sparkline([row['page_views'] for row in series]),
+            'icon': 'i-chart',
+        },
+        {
+            'key': 'users',
+            'label': 'Active users',
+            'value': current['users'],
+            'delta': _delta(current['users'], previous['users']),
+            'spark': _sparkline([row['users'] for row in series]),
+            'icon': 'i-users',
+        },
+        {
+            'key': 'devices',
+            'label': 'Devices',
+            'value': current['devices'],
+            'delta': _delta(current['devices'], previous['devices']),
+            'spark': _sparkline([row['devices'] for row in series]),
+            'icon': 'i-device',
+        },
+    ]
+
+    top_pages = []
+    top_page_rows = (
+        PageView.objects
+        .filter(
+            session__workspace=workspace,
+            viewed_at__date__gte=start, viewed_at__date__lte=end,
+        )
+        .values('page_url')
+        .annotate(views=Count('id'), sessions=Count('session', distinct=True))
+        .order_by('-views')[:6]
+    )
+    peak_views = top_page_rows[0]['views'] if top_page_rows else 0
+    for row in top_page_rows:
+        top_pages.append({
+            'label': _page_label(row['page_url']),
+            'path': row['page_url'],
+            'views': row['views'],
+            'sessions': row['sessions'],
+            'share': round(row['views'] / peak_views * 100) if peak_views else 0,
+        })
+
+    device_mix = []
+    device_rows = (
+        AnalyticsService.scoped_devices(workspace)
+        .filter(last_seen__date__gte=start, last_seen__date__lte=end)
+        .values('device_type')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    device_total = sum(row['total'] for row in device_rows)
+    for row in device_rows:
+        device_mix.append({
+            'label': (row['device_type'] or 'Unknown'),
+            'total': row['total'],
+            'share': round(row['total'] / device_total * 100) if device_total else 0,
+        })
+
+    active_staff = []
+    staff_rows = (
+        SessionTracker.objects
+        .filter(
+            workspace=workspace,
+            started_at__date__gte=start, started_at__date__lte=end, user__isnull=False,
+        )
+        .values('user__username', 'user__first_name', 'user__last_name')
+        .annotate(sessions=Count('id'), views=Sum('pages_visited'))
+        .order_by('-sessions')[:5]
+    )
+    for row in staff_rows:
+        full_name = f"{row['user__first_name']} {row['user__last_name']}".strip()
+        active_staff.append({
+            'name': full_name or row['user__username'],
+            'username': row['user__username'],
+            'sessions': row['sessions'],
+            'views': row['views'] or 0,
+        })
+
+    daily = []
+    for row in reversed(series):
+        daily.append({
+            'date': row['date'],
+            'sessions': row['sessions'],
+            'page_views': row['page_views'],
+            'active_users': row['users'],
+            'unique_devices': row['devices'],
+            'views_per_session': round(row['page_views'] / row['sessions'], 1) if row['sessions'] else 0,
+        })
+
+    chart_series = [
+        {
+            'date': row['label'],
+            'sessions': row['sessions'],
+            'page_views': row['page_views'],
+            'devices': row['devices'],
+        }
+        for row in series
+    ]
+
+    period_delta_sessions = _delta(current['sessions'], previous['sessions'])
+
     return render(request, 'analytics.html', {
-        'stats': stats,
-        'chart_data': chart_data,
+        'stats': AnalyticsService.get_live_stats(workspace=workspace),
+        'chart_data': chart_series,
+        'kpis': kpis,
+        'top_pages': top_pages,
+        'device_mix': device_mix,
+        'active_staff': active_staff,
         'daily': daily,
+        'range_days': days,
+        'range_options': (7, 14, 30),
+        'online_now': online,
+        'total_periods': current,
+        'previous_periods': previous,
+        'period_delta_sessions': period_delta_sessions,
+        'range_start': start,
+        'range_end': end,
     })
 
 
 @login_required
-def analytics_live_stats(request):
-    if not _analytics_allowed(request.user):
+def analytics_export_csv(request):
+    """Download the analytics daily breakdown as CSV."""
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-    return JsonResponse({'success': True, 'stats': AnalyticsService.get_live_stats()})
+    days = _range_param(request)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="analytics-{days}-days.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Sessions', 'Page views', 'Active users', 'Devices', 'Views per session'])
+    for row in reversed(_analytics_series(days, workspace)):
+        writer.writerow([
+            row['date'].isoformat(),
+            row['sessions'],
+            row['page_views'],
+            row['users'],
+            row['devices'],
+            round(row['page_views'] / row['sessions'], 1) if row['sessions'] else 0,
+        ])
+    return response
+
+
+@login_required
+def analytics_live_stats(request):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    return JsonResponse({
+        'success': True,
+        'stats': AnalyticsService.get_live_stats(workspace=workspace),
+    })
 
 
 @login_required
 def analytics_chart_data(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-    days = int(request.GET.get('days', 14) or 14)
-    return JsonResponse({'success': True, 'data': AnalyticsService.get_chart_data(days=days)})
+    days = _range_param(request, key='days', allowed=(7, 14, 30, 90))
+    return JsonResponse({
+        'success': True,
+        'data': AnalyticsService.get_chart_data(days=days, workspace=workspace),
+    })
 
 
 @login_required
 def analytics_notifications(request):
-    if not _analytics_allowed(request.user):
+    if _analytics_workspace(request) is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
     from .models import UsageMilestone
     milestones = UsageMilestone.objects.all()[:50]
-    return render(request, 'analytics_notifications.html', {'milestones': milestones})
+    return render(request, 'analytics_notifications.html', {
+        'milestones': milestones,
+        'milestone_count': UsageMilestone.objects.count(),
+        'latest_milestone': milestones[0] if milestones else None,
+    })
 
 
 @login_required
 def analytics_devices(request):
-    if not _analytics_allowed(request.user):
+    workspace = _analytics_workspace(request)
+    if workspace is None:
         messages.error(request, 'You do not have permission to view analytics.')
         return redirect('dashboard')
-    devices = DeviceTracker.objects.all().select_related('user')[:200]
-    return render(request, 'analytics_devices.html', {'devices': devices})
+
+    device_type = request.GET.get('type', '').strip()
+    devices = (
+        AnalyticsService.scoped_devices(workspace)
+        .select_related('user').order_by('-last_seen')
+    )
+    if device_type:
+        devices = devices.filter(device_type__iexact=device_type)
+
+    type_rows = (
+        AnalyticsService.scoped_devices(workspace).values('device_type')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    device_types = [
+        {'label': row['device_type'] or 'Unknown', 'total': row['total']}
+        for row in type_rows
+    ]
+    week_ago = timezone.now() - timedelta(days=7)
+    scoped_devices = AnalyticsService.scoped_devices(workspace)
+    summary = {
+        'total': scoped_devices.count(),
+        'active': scoped_devices.filter(is_active=True).count(),
+        'week': scoped_devices.filter(last_seen__gte=week_ago).count(),
+        'sessions': SessionTracker.objects.filter(workspace=workspace).count(),
+    }
+
+    return render(request, 'analytics_devices.html', {
+        'devices': devices[:200],
+        'device_types': device_types,
+        'selected_type': device_type,
+        'summary': summary,
+    })
 
 
 @login_required
 def generate_daily_report(request):
-    if not _analytics_allowed(request.user):
+    """Regenerate the app-wide DailyStats row (global managers only).
+
+    DailyStats is an app-level aggregate with a unique date key, so unlike
+    the dashboard it cannot be scoped per workspace.
+    """
+    if _analytics_workspace(request) is None or not request.user.is_manager:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     date = AnalyticsService.generate_daily_stats()
     return JsonResponse({

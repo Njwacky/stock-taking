@@ -1,25 +1,11 @@
 {% if paginator.num_pages > 1 %}
-<nav class="pagination">
+<nav class="pagination" aria-label="Stock item pages">
     {% if page_obj.has_previous %}
-    <a href="#" class="page-link" data-page="{{ page_obj.previous_page_number }}">&laquo; Previous</a>
+    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" class="page-link" data-page="{{ page_obj.previous_page_number }}" aria-label="Previous page">&laquo; Previous</a>
     {% endif %}
-    <span class="page-current">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+    <span class="page-current" aria-current="page">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="#" class="page-link" data-page="{{ page_obj.next_page_number }}">Next &raquo;</a>
+    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}" class="page-link" data-page="{{ page_obj.next_page_number }}" aria-label="Next page">Next &raquo;</a>
     {% endif %}
 </nav>
-<script>
-    document.querySelectorAll('.page-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof loadPage === 'function') {
-                loadPage(this.dataset.page);
-            } else {
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', this.dataset.page);
-                window.location.href = url.toString();
-            }
-        });
-    });
-</script>
 {% endif %}

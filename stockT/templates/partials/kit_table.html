@@ -1,28 +1,46 @@
-<table class="data-table">
+<table class="data-table" aria-label="Stock items in the current workspace">
     <thead>
         <tr>
-            <th><input type="checkbox" id="select-all"></th>
-            <th>Kit Type</th>
-            <th>Quantity</th>
-            <th>Condition</th>
-            {% if user.is_manager %}<th>User</th>{% endif %}
-            <th>Location</th>
-            <th>Date</th>
+            {% if can_manage_workspace %}
+            <th scope="col" class="select-column"><input type="checkbox" id="select-all" aria-label="Select all stock items on this page"></th>
+            {% endif %}
+            <th scope="col">Kit type</th>
+            <th scope="col" class="cell-quantity">Quantity</th>
+            <th scope="col">Condition</th>
+            {% if can_manage_workspace %}<th scope="col">User</th>{% endif %}
+            <th scope="col">Location</th>
+            <th scope="col">Date added</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
         </tr>
     </thead>
     <tbody>
         {% for kit in kits %}
         <tr>
-            <td><input type="checkbox" class="kit-checkbox" name="kit_ids" value="{{ kit.id }}"></td>
-            <td>{{ kit.kit_type_name }}</td>
-            <td>{{ kit.quantity }}</td>
+            {% if can_manage_workspace %}
+            <td class="select-column"><input type="checkbox" class="kit-checkbox" name="kit_ids" value="{{ kit.id }}" aria-label="Select {{ kit.kit_type_name }} stock item, quantity {{ kit.quantity }}"></td>
+            {% endif %}
+            <td><span class="kit-name">{{ kit.kit_type_name }}</span>{% if kit.notes %}<span class="kit-sub">{{ kit.notes|truncatechars:44 }}</span>{% endif %}</td>
+            <td class="cell-quantity">{{ kit.quantity }}</td>
             <td><span class="condition-badge condition-{{ kit.condition }}">{{ kit.get_condition_display }}</span></td>
-            {% if user.is_manager %}<td><a href="{% url 'user_profile' kit.user.id %}">{{ kit.user.username }}</a></td>{% endif %}
-            <td>{{ kit.location|default:"-" }}</td>
-            <td>{{ kit.timestamp|date:"Y-m-d" }}</td>
+            {% if can_manage_workspace %}<td><a href="{% url 'user_profile' kit.user.id %}">{{ kit.user.username }}</a></td>{% endif %}
+            <td>{{ kit.location|default:"—" }}</td>
+            <td>{{ kit.timestamp|date:"M j, Y" }}</td>
+            <td>
+                {% if kit.kit_type_fk_id %}
+                <a class="btn btn-ghost btn-sm" href="{% url 'stock_usage_tracking' %}?kit_type={{ kit.kit_type_fk_id }}" title="Log usage of {{ kit.kit_type_name }}">Track</a>
+                {% endif %}
+            </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="empty-state">No stock items found.</td></tr>
+        <tr>
+            <td colspan="{% if can_manage_workspace %}8{% else %}7{% endif %}" class="empty-state">
+                {% if filters.search or filters.user %}
+                No stock items match the current filters. Try changing your search or filter values.
+                {% else %}
+                No stock items yet. Use <strong>Add Stock</strong> to record the first item in this workspace.
+                {% endif %}
+            </td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>

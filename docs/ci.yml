@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests-and-postgres-restore:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: stock_taking
+          POSTGRES_USER: stock_taking
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stock_taking -d stock_taking"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DEBUG: "True"
+      SECRET_KEY: "ci-only-secret-key-not-used-outside-tests-2026-really"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      CSRF_TRUSTED_ORIGINS: "http://localhost,http://testserver"
+      DATABASE_URL: "postgresql://stock_taking:ci-only-password@127.0.0.1:5432/stock_taking"
+      PGPASSWORD: "ci-only-password"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install application and test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Run test suite on PostgreSQL
+        run: pytest --cov=stockT --cov-report=term-missing
+      - name: Verify production security configuration
+        env:
+          DEBUG: "False"
+          SECRET_KEY: "ci-only-secret-key-not-used-outside-tests-2026-really"
+        run: python manage.py check --deploy
+      - name: Verify PostgreSQL backup and restore
+        run: |
+          python manage.py migrate --noinput
+          python manage.py check_workspace_orphans
+          python manage.py shell -c "from stockT.models import User; User.objects.create_user('backup-smoke', 'backup-smoke@example.test', 'unused-password')"
+          python manage.py backup_database --output /tmp/stock-ci.dump
+          psql -h 127.0.0.1 -U stock_taking -d postgres -c 'CREATE DATABASE stock_restore'
+          DATABASE_URL="postgresql://stock_taking:ci-only-password@127.0.0.1:5432/stock_restore" \
+            python manage.py restore_database /tmp/stock-ci.dump --confirm
+          DATABASE_URL="postgresql://stock_taking:ci-only-password@127.0.0.1:5432/stock_restore" \
+            python manage.py shell -c "from stockT.models import User; assert User.objects.filter(username='backup-smoke').exists()"

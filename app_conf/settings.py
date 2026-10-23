@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
+from urllib.parse import parse_qsl, unquote, urlparse
+
+from django.core.exceptions import ImproperlyConfigured
 
 try:
     from decouple import config as _env_config
@@ -32,6 +36,34 @@ def _env(name, default=None):
     return default
 
 
+def _env_bool(name, default=False):
+    """Read a boolean environment value without treating typos as False."""
+    value = _env(name, default)
+    if value is None or (
+        isinstance(value, str) and not value.strip()
+    ):
+        value = default
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in ('1', 'true', 'yes', 'on'):
+        return True
+    if normalized in ('0', 'false', 'no', 'off'):
+        return False
+    raise ImproperlyConfigured(f'{name} must be a boolean value.')
+
+
+def _env_int(name, default):
+    """Read an integer environment value with a validated fallback."""
+    value = _env(name, default)
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ImproperlyConfigured(f'{name} must be an integer value.')
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,22 +71,38 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# Provided via environment/.env; the fallback is for local development only.
-SECRET_KEY = _env('SECRET_KEY', 'django-insecure-dev-only-key-change-me')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = str(_env('DEBUG', 'True')).lower() in ('1', 'true', 'yes', 'on')
+DEBUG = _env_bool('DEBUG', True)
 
-import os
+# A development-only fallback keeps a fresh checkout easy to run. Production
+# must provide a strong, unique key rather than silently using this value.
+_DEV_SECRET_KEY = 'django-insecure-dev-only-key-change-me'
+SECRET_KEY = _env('SECRET_KEY')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            'Set SECRET_KEY to a generated random value when DEBUG=False.'
+        )
+    SECRET_KEY = _DEV_SECRET_KEY
+elif not DEBUG and (
+    SECRET_KEY.startswith('django-insecure-')
+    or len(SECRET_KEY) < 50
+    or len(set(SECRET_KEY)) < 5
+):
+    raise ImproperlyConfigured(
+        'Production SECRET_KEY must be at least 50 characters and randomly generated.'
+    )
 
-# Get ALLOWED_HOSTS from environment variable or use default
-# For LOCAL USE ONLY - allows access from local network
-ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '*')
-if ALLOWED_HOSTS_ENV == '*':
-    ALLOWED_HOSTS = ['*']  # Allow all hosts for local network access
-else:
-    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
+# Wildcard hosts are permitted only in local debug mode. Production must list
+# the actual DNS names or IP addresses this application serves.
+ALLOWED_HOSTS_ENV = str(_env('ALLOWED_HOSTS', '*' if DEBUG else '') or '').strip()
+if not ALLOWED_HOSTS_ENV:
+    raise ImproperlyConfigured('Set ALLOWED_HOSTS when DEBUG=False.')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+if not ALLOWED_HOSTS:
+    raise ImproperlyConfigured('ALLOWED_HOSTS must contain at least one host.')
+if not DEBUG and '*' in ALLOWED_HOSTS:
+    raise ImproperlyConfigured('ALLOWED_HOSTS must not contain * when DEBUG=False.')
 
 
 # Application definition
@@ -69,6 +117,7 @@ INSTALLED_APPS = [
     'stockT',
     # Third-party apps
     'rest_framework',
+    'axes',
 ]
 
 MIDDLEWARE = [
@@ -80,7 +129,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'stockT.middleware.analytics_middleware.AnalyticsMiddleware',  # Analytics tracking
+    'axes.middleware.AxesMiddleware',
 ]
+
+if DEBUG:
+    # Local development is embedded in preview panes, so the default DENY
+    # clickjacking header would prevent the app from rendering there.
+    # Production keeps XFrameOptionsMiddleware enabled.
+    MIDDLEWARE = [
+        middleware for middleware in MIDDLEWARE
+        if middleware != 'django.middleware.clickjacking.XFrameOptionsMiddleware'
+    ]
 
 ROOT_URLCONF = 'app_conf.urls'
 
@@ -99,6 +158,7 @@ TEMPLATES = [
                 'stockT.context_processors.pending_reset_requests',
                 'stockT.context_processors.footer_contacts',
                 'stockT.context_processors.pending_stock_usage_count',
+                'stockT.context_processors.workspace_context',
             ],
         },
     },
@@ -110,16 +170,80 @@ WSGI_APPLICATION = 'app_conf.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Ensure data directory exists
-DATA_DIR = os.path.join(BASE_DIR, 'data')
-os.makedirs(DATA_DIR, exist_ok=True)
+# Ensure the local data directory exists. DATABASE_URL may override SQLite
+# with a relative/absolute SQLite URL or a PostgreSQL connection URL.
+DATA_DIR = BASE_DIR / 'data'
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(DATA_DIR, 'db.sqlite3'),
+        'NAME': str(DATA_DIR / 'db.sqlite3'),
     }
 }
+
+_database_url = str(_env('DATABASE_URL', '') or '').strip()
+if _database_url:
+    try:
+        parsed_database_url = urlparse(_database_url)
+    except ValueError as error:
+        raise ImproperlyConfigured('DATABASE_URL is malformed.') from error
+
+    if parsed_database_url.scheme in ('sqlite', 'sqlite3'):
+        if parsed_database_url.netloc not in ('', 'localhost'):
+            raise ImproperlyConfigured('SQLite DATABASE_URL must not specify a remote host.')
+        sqlite_path = unquote(parsed_database_url.path)
+        if sqlite_path.startswith('//'):
+            # Four-slash URLs represent an absolute path: sqlite:////var/db.sqlite3
+            sqlite_path = sqlite_path[1:]
+        elif sqlite_path.startswith('/'):
+            # Three-slash URLs represent a path relative to BASE_DIR.
+            sqlite_path = sqlite_path[1:]
+        if sqlite_path == ':memory:':
+            database_name = ':memory:'
+        elif sqlite_path:
+            database_path = Path(sqlite_path)
+            if not database_path.is_absolute():
+                database_path = BASE_DIR / database_path
+            database_path.parent.mkdir(parents=True, exist_ok=True)
+            database_name = str(database_path)
+        else:
+            raise ImproperlyConfigured('SQLite DATABASE_URL must include a database path.')
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': database_name,
+            }
+        }
+    elif parsed_database_url.scheme in ('postgres', 'postgresql'):
+        database_name = unquote(parsed_database_url.path.lstrip('/'))
+        try:
+            database_host = parsed_database_url.hostname
+            database_port = parsed_database_url.port
+        except ValueError as error:
+            raise ImproperlyConfigured(
+                'PostgreSQL DATABASE_URL has an invalid host or port.'
+            ) from error
+        if not database_name or not database_host:
+            raise ImproperlyConfigured(
+                'PostgreSQL DATABASE_URL must include a database name and host.'
+            )
+        postgres_config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': database_name,
+            'USER': unquote(parsed_database_url.username or ''),
+            'PASSWORD': unquote(parsed_database_url.password or ''),
+            'HOST': database_host,
+            'PORT': str(database_port or ''),
+        }
+        database_options = dict(parse_qsl(parsed_database_url.query, keep_blank_values=True))
+        if database_options:
+            postgres_config['OPTIONS'] = database_options
+        DATABASES = {'default': postgres_config}
+    else:
+        raise ImproperlyConfigured(
+            'DATABASE_URL must use sqlite://, postgres://, or postgresql://.'
+        )
 
 
 AUTH_USER_MODEL = 'stockT.User'
@@ -133,7 +257,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {'min_length': 4},
+        'OPTIONS': {'min_length': 12},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -149,7 +273,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Users are in Durban — show local wall-clock times, not UTC.
+TIME_ZONE = 'Africa/Johannesburg'
 
 USE_I18N = True
 
@@ -162,8 +287,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'stockT', 'static'),
 ]
+# Only include app-level static dir when it exists (avoids staticfiles.W004).
+_app_static = os.path.join(BASE_DIR, 'stockT', 'static')
+if os.path.isdir(_app_static):
+    STATICFILES_DIRS.append(_app_static)
    
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -177,34 +305,63 @@ LOGOUT_REDIRECT_URL = '/'
 
 ## CORS disabled (no external API usage needed)
 
-# ============================================
-# LOCAL USE ONLY CONFIGURATION
-# ============================================
-# This application is configured for LOCAL NETWORK USE ONLY
-# PWA (Progressive Web App) is enabled for offline functionality
-# Users can install the app on their devices for local area access
-# ============================================
-
-# Security Settings (relaxed for local use)
+# Security settings default to local HTTP during development and HTTPS in
+# production. Each value can be explicitly overridden through the environment.
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-SECURE_SSL_REDIRECT = False  # Disabled for local HTTP access
-SESSION_COOKIE_SECURE = False  # Disabled for local HTTP access
-CSRF_COOKIE_SECURE = False  # Disabled for local HTTP access
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', not DEBUG)
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+_hsts_seconds = _env('SECURE_HSTS_SECONDS')
+if _hsts_seconds is None or not str(_hsts_seconds).strip():
+    _hsts_seconds = 0 if DEBUG else 31536000
+try:
+    SECURE_HSTS_SECONDS = int(_hsts_seconds)
+except (TypeError, ValueError) as error:
+    raise ImproperlyConfigured('SECURE_HSTS_SECONDS must be an integer.') from error
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', False)
+if SECURE_HSTS_SECONDS < 0:
+    raise ImproperlyConfigured('SECURE_HSTS_SECONDS cannot be negative.')
 
-# CSRF Trusted Origins for local network access
-CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',')]
+# The bundled Nginx config sets X-Forwarded-Proto and terminates TLS. Trust it
+# by default in production; local runserver requests bypass the proxy.
+if _env_bool('USE_X_FORWARDED_PROTO', not DEBUG):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Client IPs for device analytics are taken from X-Forwarded-For only when a
+# reverse proxy is in front of the app (default: production). With no proxy a
+# client could otherwise spoof its own address in the tracking data.
+TRUST_X_FORWARDED_FOR = _env_bool('TRUST_X_FORWARDED_FOR', not DEBUG)
+
+# Analytics data retention: page views/sessions/devices beyond these ages are
+# purged by `manage.py analytics_cleanup`, and stored client IPs are redacted
+# sooner than the behavioural data itself (privacy by default).
+ANALYTICS_RETENTION_DAYS = _env_int('ANALYTICS_RETENTION_DAYS', 180)
+ANALYTICS_IP_RETENTION_DAYS = _env_int('ANALYTICS_IP_RETENTION_DAYS', 30)
+if ANALYTICS_RETENTION_DAYS < 1:
+    raise ImproperlyConfigured('ANALYTICS_RETENTION_DAYS must be at least 1.')
+if ANALYTICS_IP_RETENTION_DAYS < 0:
+    raise ImproperlyConfigured('ANALYTICS_IP_RETENTION_DAYS cannot be negative.')
+
+CSRF_TRUSTED_ORIGINS_ENV = str(_env(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:8000,http://127.0.0.1:8000',
+) or '')
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()
+]
 
 # Session Configuration
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Logging Configuration
+# Ensure the log directory exists before handlers are created, otherwise
+# Django crashes at startup with FileNotFoundError.
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -259,13 +416,22 @@ CACHES = {
     }
 }
 
-# Authentication settings (single canonical definition)
-# Keep ModelBackend first to allow normal Django auth; CaseInsensitiveModelBackend
-# provides case-insensitive username handling.
+# Authentication settings (single canonical definition).
+# Axes runs first to reject locked-out requests; the app backend handles
+# case-insensitive username authentication and Django permission checks.
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    'stockT.auth_backends.RequestOptionalAxesBackend',
     'stockT.auth_backends.CaseInsensitiveModelBackend',
 ]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
+AXES_RESET_ON_SUCCESS = True
+# Do not let repeated attempts during a lockout extend the lockout window.
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
+AXES_LOCKOUT_TEMPLATE = 'login_locked.html'
+# In production, nginx overwrites X-Real-IP. In direct/local mode use REMOTE_ADDR.
+AXES_CLIENT_IP_CALLABLE = 'stockT.auth_backends.axes_client_ip'
 
 # Login/Logout redirects
 LOGIN_REDIRECT_URL = '/workspaces/'

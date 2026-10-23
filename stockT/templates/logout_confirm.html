@@ -1,21 +1,17 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Logout - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/logout-confirm.css' %}">
-{% endblock %}
+{% block title %}Log out · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="logout-container">
     <div class="logout-card">
-        <h1><i class="fas fa-right-from-bracket"></i> Logout</h1>
-        <p>Are you sure you want to log out of your account?</p>
+        <span class="eyebrow">Session</span>
+        <h1>Log out of Stock Tracker?</h1>
+        <p>You will need to sign in again to access your workspace, stock and reports.</p>
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Yes, log me out</button>
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Log out</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Stay signed in</a>
         </form>
     </div>
 </div>

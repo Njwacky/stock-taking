@@ -40,15 +40,20 @@ class KitAdmin(admin.ModelAdmin):
 
 @admin.register(KitType)
 class KitTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'unit_of_measure', 'is_active')
+    list_display = ('name', 'code', 'unit_of_measure', 'reorder_level', 'is_active')
+    list_filter = ('is_active',)
     search_fields = ('name', 'code')
 
 
 @admin.register(StockUsage)
 class StockUsageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'kit_type_name', 'quantity_used', 'status', 'stock_deleted', 'usage_date')
+    list_display = ('id', 'user', 'kit_type_name', 'quantity_used', 'status', 'stock_deleted', 'removed', 'usage_date')
     list_filter = ('status', 'stock_deleted')
     search_fields = ('user__username', 'clock_number', 'kit_type_name')
+
+    @admin.display(boolean=True, description='Removed')
+    def removed(self, obj):
+        return obj.deleted_at is not None
 
 
 @admin.register(UserComment)

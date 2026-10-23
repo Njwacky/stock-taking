@@ -1,76 +1,111 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Manage Users - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/manage-users.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Manage users · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-users-gear"></i> Manage Users</h1>
-        {% if user.is_superuser %}
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-user-shield"></i> Create Admin</a>
-        {% endif %}
-    </div>
-
-    <form method="get" class="dashboard-controls">
-        <input type="text" name="search" class="form-control" placeholder="Search users..." value="{{ search }}">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i> Search</button>
-    </form>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="bulk-actions-bar">
-            <span id="sel_count">0</span> selected
-            <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">Activate</button>
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Manage users</h1>
+            <p class="dashboard-subtitle">Accounts in {{ current_workspace.name|default:"this workspace" }}. Update details, roles and access.</p>
+        </div>
+        <div class="dashboard-header-actions">
             {% if user.is_admin %}
-            <button type="submit" name="action" value="deactivate" class="btn btn-danger btn-sm">Deactivate</button>
+            <a href="{% url 'add_user' %}" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>
+                Add user
+            </a>
+            {% endif %}
+            {% if user.is_superuser %}
+            <a href="{% url 'create_admin' %}" class="btn btn-secondary">
+                <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+                Create admin
+            </a>
             {% endif %}
         </div>
+    </header>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="select_all"></th>
-                    <th>Username</th>
-                    <th>Name</th>
-                    <th>Clock #</th>
-                    <th>Department</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in users %}
-                <tr>
-                    <td><input type="checkbox" class="row-check" name="user_ids" value="{{ u.id }}"></td>
-                    <td><a href="{% url 'user_profile' u.id %}">{{ u.username }}</a></td>
-                    <td>{{ u.first_name }} {{ u.last_name }}</td>
-                    <td>{{ u.clock_number|default:"-" }}</td>
-                    <td>{{ u.department|default:"-" }}</td>
-                    <td><span class="role-badge role-{{ u.role }}">{{ u.role_display }}</span></td>
-                    <td>{% if u.is_active %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
-                    <td>
-                        <a href="{% url 'edit_user' u.id %}" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i> Edit</a>
-                        {% if user.is_superuser %}
-                        <button type="submit" formaction="{% url 'delete_user' u.id %}" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Delete {{ u.username }}?');">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="empty-state">No users found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </form>
+    <section class="panel table-panel" aria-labelledby="users-title">
+        <div class="panel-head">
+            <div>
+                <h2 id="users-title">Workspace members</h2>
+                <p>{{ users|length }} account{{ users|length|pluralize }} shown.</p>
+            </div>
+            <form method="get" class="panel-head-actions" role="search">
+                <div class="filter-field filter-field--search">
+                    <label for="user-search" class="visually-hidden">Search users</label>
+                    <input id="user-search" type="search" name="search" class="form-control" placeholder="Search users" value="{{ search }}">
+                </div>
+                <button type="submit" class="btn btn-secondary">
+                    <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <form method="post" aria-label="Manage selected users">
+            {% csrf_token %}
+            <div class="bulk-actions-bar" style="display: none" aria-live="polite">
+                <span><strong id="sel_count">0</strong> selected</span>
+                <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">Activate</button>
+                {% if user.is_admin %}
+                <button type="submit" name="action" value="deactivate" class="btn btn-danger btn-sm">Deactivate</button>
+                {% endif %}
+            </div>
+
+            <div class="table-scroll-region" role="region" tabindex="0" aria-label="Workspace users">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="select-column"><input type="checkbox" id="select_all" aria-label="Select all users on this page"></th>
+                            <th scope="col">User</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Clock no.</th>
+                            <th scope="col">Department</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="cell-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="select-column"><input type="checkbox" class="row-check" name="user_ids" value="{{ u.id }}" aria-label="Select user {{ u.username }}"></td>
+                            <td><a href="{% url 'user_profile' u.id %}" class="kit-name">{{ u.username }}</a></td>
+                            <td>{{ u.first_name }} {{ u.last_name }}</td>
+                            <td class="num-left">{{ u.clock_number|default:"—" }}</td>
+                            <td>{{ u.department|default:"—" }}</td>
+                            <td><span class="role-badge role-{{ u.role }}">{{ u.role_display }}</span></td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="status-badge status-approved">Active</span>
+                                {% else %}
+                                <span class="status-badge status-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-actions">
+                                <a href="{% url 'edit_user' u.id %}" class="btn btn-secondary btn-sm">
+                                    <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+                                    Edit
+                                </a>
+                                {% if user.is_superuser %}
+                                <button type="submit" formaction="{% url 'delete_user' u.id %}" class="btn btn-danger btn-sm"
+                                        aria-label="Delete user {{ u.username }}" title="Delete user"
+                                        onclick="return confirm('Delete {{ u.username }}?');">
+                                    <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="empty-state">No users match this search.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </section>
 </div>
 {% endblock %}
 

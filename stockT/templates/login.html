@@ -1,36 +1,70 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Login - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/login.css' %}">
-{% endblock %}
+{% block title %}Sign in · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <h1><i class="fas fa-right-to-bracket"></i> Login</h1>
-        <form method="post" class="login-form">
-            {% csrf_token %}
-            {% if form.errors %}
-            <div class="alert alert-danger">Invalid username or password.</div>
-            {% endif %}
-            <div class="form-group">
-                <label for="id_username">Username</label>
-                <input type="text" name="username" id="id_username" class="form-control" required autofocus>
+<div class="auth-layout">
+    <div class="auth-main">
+        <div>
+            <span class="eyebrow">Welcome back</span>
+            <h1>Sign in to your workspace</h1>
+            <p class="auth-lead">Use the account your workspace administrator created for you.</p>
+
+            <form method="post" class="login-form" novalidate>
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {% if form.errors %}
+                <div class="alert alert-error" role="alert">
+                    <span class="alert-icon" aria-hidden="true">
+                        <svg class="icon"><use href="#i-help"></use></svg>
+                    </span>
+                    <span class="alert-text">Invalid username or password.</span>
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="id_username">Username</label>
+                    <input type="text" name="username" id="id_username" class="form-control" autocomplete="username"
+                           placeholder="e.g. jsmith" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    <input type="password" name="password" id="id_password" class="form-control"
+                           autocomplete="current-password" placeholder="Your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">Sign in</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="{% url 'password_reset_request' %}">Forgot your password?</a>
+                {% if registration_open %}
+                <span class="dot-sep" aria-hidden="true">·</span>
+                <span>New here? <a href="{% url 'register' %}">Create a workspace</a></span>
+                {% endif %}
             </div>
-            <div class="form-group">
-                <label for="id_password">Password</label>
-                <input type="password" name="password" id="id_password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
-        <div class="login-links">
-            <a href="{% url 'register' %}">Create an account</a>
-            &middot;
-            <a href="{% url 'password_reset_request' %}">Forgot password?</a>
         </div>
     </div>
+
+    <aside class="auth-aside" aria-label="About Stock Tracker">
+        <div class="auth-aside-inner">
+            <span class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 10.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5ZM9 16.5h6.5v5H9v-5Zm7.5 0H23v5h-6.5v-5Z" fill="#fff" fill-opacity=".92"/><path d="M20 16.5h3v5h-3v-5Z" fill="#fff" fill-opacity=".45"/></svg>
+                </span>
+                <span class="brand-copy">
+                    <span class="brand-name">Stock Tracker</span>
+                    <span class="brand-meta">Inventory operations</span>
+                </span>
+            </span>
+            <p class="auth-quote">Every kit accounted for. Every movement recorded.</p>
+            <p class="auth-quote-meta">A quieter way to run stock across your team.</p>
+            <ul class="auth-points">
+                <li><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg> Private workspaces, separated by team</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg> Reviewable usage and distribution history</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg> Reporting built into the daily workflow</li>
+            </ul>
+        </div>
+        <p class="auth-aside-foot">Stock Tracker · internal inventory system</p>
+    </aside>
 </div>
 {% endblock %}
