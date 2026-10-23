@@ -33,7 +33,5 @@ Thumbs.db
 # Node (PWA tooling, if used)
 node_modules/
 
-# local scratch
-cookies.txt
-page_*.html
-.venv/
+# Local UI test dependencies
+.cache/

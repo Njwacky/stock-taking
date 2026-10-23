@@ -1,5 +1,5 @@
 // Service Worker for Stock Tracker PWA
-const CACHE_NAME = 'stock-tracker-v1.4';
+const CACHE_NAME = 'stock-tracker-v1.2';
 const OFFLINE_URL = '/offline/';
 
 // Application shell. Keep this list in sync with the assets the templates
@@ -18,15 +18,9 @@ const urlsToCache = [
   '/static/css/login-lockout.css',
   '/static/js/base.js',
   '/static/js/floating-comment.js',
-  '/static/js/dashboard.js',
-  '/static/js/add_items.js',
-  '/static/js/advanced-calculator.js',
-  '/static/js/analytics.js',
-  '/static/js/manage_users.js',
-  '/static/images/light_blue.png',
-  '/static/images/red.png',
-  '/static/images/green.png',
-  '/static/images/yellow.png'
+  '/static/images/favicon.svg',
+  '/static/images/icon-192x192.png',
+  '/static/images/icon-512x512.png'
 ];
 
 // Install event - cache the application shell

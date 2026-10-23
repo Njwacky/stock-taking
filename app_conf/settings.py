@@ -434,5 +434,5 @@ AXES_LOCKOUT_TEMPLATE = 'login_locked.html'
 AXES_CLIENT_IP_CALLABLE = 'stockT.auth_backends.axes_client_ip'
 
 # Login/Logout redirects
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/workspaces/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'

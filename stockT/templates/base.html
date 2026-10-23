@@ -6,18 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Stock Tracker{% endblock %}</title>
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#f7f8f6">
-    <script>
-        try {
-            if (localStorage.getItem('stock-theme') === 'dark') {
-                document.documentElement.dataset.theme = 'dark';
-            }
-        } catch (error) {
-            console.warn('Could not restore the saved theme preference:', error);
-        }
-    </script>
-    <link rel="preload" href="{% static 'fonts/inter-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
-    <link rel="icon" type="image/png" href="{% static 'images/light_blue.png' %}">
+    <meta name="theme-color" content="#3498db">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="16x16 32x32 48x48">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
@@ -25,8 +19,50 @@
     {% block extra_css %}{% endblock %}
     <link rel="stylesheet" href="{% static 'css/ui.css' %}?v=20261021a">
 </head>
-<body class="app-body{% if not user.is_authenticated %} app-body--guest{% endif %}">
-    <a href="#main" class="skip-link">Skip to content</a>
+<body>
+    <nav class="navbar" role="navigation">
+        <a href="{% url 'dashboard' %}" class="nav-brand">
+            <i class="fas fa-boxes-stacked"></i>
+            <span>Stock Tracker</span>
+        </a>
+        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Open navigation menu">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
+        <div id="navLinks" class="nav-links">
+            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            {% if user.is_authenticated %}
+            <a class="nav-link" href="{% url 'workspace_list' %}"><i class="fas fa-layer-group"></i> My Workspaces</a>
+            <a class="nav-link" href="{% url 'add_items' %}"><i class="fas fa-plus"></i> Add Stock</a>
+            <a class="nav-link" href="{% url 'stock_usage_tracking' %}">
+                <i class="fas fa-clipboard-list"></i> Track Usage
+                {% if pending_stock_usage_count %}
+                <span class="badge">{{ pending_stock_usage_count }}</span>
+                {% endif %}
+            </a>
+            <a class="nav-link" href="{% url 'stock_distribution' %}"><i class="fas fa-share-nodes"></i> Distribute</a>
+            <a class="nav-link" href="{% url 'inventory_calculator' %}"><i class="fas fa-calculator"></i> Calculator</a>
+            {% if user.is_manager %}
+            <a class="nav-link" href="{% url 'manage_users' %}"><i class="fas fa-users-gear"></i> Manage Users</a>
+            <a class="nav-link" href="{% url 'manage_comments' %}"><i class="fas fa-comments"></i> Feedback</a>
+            <a class="nav-link" href="{% url 'analytics_dashboard' %}"><i class="fas fa-chart-pie"></i> Analytics</a>
+            {% endif %}
+            {% if user.is_superuser %}
+            <a class="nav-link" href="{% url 'manage_admins' %}"><i class="fas fa-user-shield"></i> Admins</a>
+            {% endif %}
+            <a class="nav-link" href="{% url 'notifications' %}">
+                <i class="fas fa-bell"></i>
+                {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
+            </a>
+            <a class="nav-link" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Profile</a>
+            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            {% else %}
+            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
+            <a class="nav-link" href="{% url 'register' %}"><i class="fas fa-user-plus"></i> Register</a>
+            {% endif %}
+        </div>
+    </nav>
 
     <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true" focusable="false">
         <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>

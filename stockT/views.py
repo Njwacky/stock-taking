@@ -309,22 +309,13 @@ def register(request):
     one-time setup and registration never closes.
     """
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('workspace_list')
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        with transaction.atomic():
-            user = form.save(commit=False)
-            user.save()
-            workspace = ensure_user_workspace(user)
-        set_current_workspace(request, workspace)
-        # Multiple auth backends are configured, so the backend must be explicit.
-        login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
-        messages.success(
-            request,
-            f'Welcome, {user.username}! Your workspace “{workspace.name}” is ready — '
-            'and it comes pre-loaded with the standard kit types.',
-        )
-        return redirect('dashboard')
+        user = form.save()
+        login(request, user)
+        messages.success(request, 'Welcome! Your account has been created.')
+        return redirect('workspace_list')
     return render(request, 'register.html', {'form': form})
 
 

@@ -119,7 +119,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemsSelected = selectedCheckboxes.length > 0;
         const quantitiesValid = Array.from(quantityInputs).every(input => {
             if (input.disabled) return true;
-            return input.value === '' || Number(input.value) >= 0;
+            const value = Number(input.value);
+            return Number.isInteger(value) && value > 0 && input.checkValidity();
         });
         const selectedQuantities = selectedCheckboxes.map(checkbox => {
             const input = checkbox.closest('.item-card').querySelector('.quantity-input');
@@ -164,6 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 quantityInput.style.display = 'block'; // Show quantity input when selected
                 kitDetails.classList.add('show'); // Use smooth transition
                 detailFields.forEach(field => field.disabled = false);
+                itemUnit.hidden = false;
                 itemUnit.style.display = 'block'; // Show unit when item is selected
                 quantityInput.focus();
                 
@@ -179,7 +181,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // disabled fields are not submitted until the item is selected again.
                 detailFields.forEach(field => {
                     field.disabled = true;
+                    if (field.tagName === 'SELECT') field.selectedIndex = 0;
+                    else field.value = '';
                 });
+                quantityInput.value = '';
+                itemUnit.hidden = true;
                 itemUnit.style.display = 'none'; // Hide unit when item is not selected
                 
                 // Hide tape calculation
@@ -281,35 +287,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== CRUD FUNCTIONALITY FOR EXISTING KITS ==========
 
-    // Existing-stock tools are only rendered for users who can select a
-    // recipient. Guard these optional controls for regular members.
-    if (existingKitsSection && selectedUserName && refreshKitsBtn &&
-        kitsListContainer && kitsEmptyState && kitSearchInput && kitFilterSelect) {
-        userSelect.addEventListener('change', function() {
-            const userId = this.value;
-            if (userId) {
-                loadUserKits(userId);
-                const selectedOption = this.options[this.selectedIndex];
-                selectedUserName.textContent = selectedOption.text.split(' (')[0];
-                existingKitsSection.hidden = false;
-            } else {
-                existingKitsSection.hidden = true;
-            }
-        });
-
-        refreshKitsBtn.addEventListener('click', function() {
-            const userId = userSelect.value;
-            if (userId) loadUserKits(userId);
-        });
-        kitSearchInput.addEventListener('input', filterKits);
-        kitFilterSelect.addEventListener('change', filterKits);
-
-        if (userSelect.value) {
-            const selectedOption = userSelect.options[userSelect.selectedIndex];
-            selectedUserName.textContent = selectedOption.text.split(' (')[0];
-            loadUserKits(userSelect.value);
+    // Load user's existing kits when user is selected
+    userSelect.addEventListener('change', function() {
+        if (!existingKitsSection) return;
+        const userId = this.value;
+        if (userId) {
+            loadUserKits(userId);
+            const selectedOption = this.options[this.selectedIndex];
+            const userName = selectedOption.text.split(' (')[0]; // Extract username without clock number
+            selectedUserName.textContent = userName;
+            existingKitsSection.style.display = 'block';
+        } else {
+            existingKitsSection.style.display = 'none';
         }
-    }
+    });
+
+    // Refresh kits button
+    refreshKitsBtn?.addEventListener('click', function() {
+        const userId = userSelect.value;
+        if (userId) {
+            loadUserKits(userId);
+        }
+    });
+
+    // Search and filter functionality
+    kitSearchInput?.addEventListener('input', filterKits);
+    kitFilterSelect?.addEventListener('change', filterKits);
 
     // Load user's kits from API
     async function loadUserKits(userId) {
@@ -582,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Save kit changes
-    saveKitChangesBtn.addEventListener('click', async function() {
+    saveKitChangesBtn?.addEventListener('click', async function() {
         if (!currentEditingKitId) return;
 
         const formData = new FormData(document.getElementById('kitEditForm'));
@@ -643,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Confirm kit deletion
-    confirmKitDeleteBtn.addEventListener('click', async function() {
+    confirmKitDeleteBtn?.addEventListener('click', async function() {
         if (!currentDeletingKitId) return;
 
         try {
@@ -722,29 +725,11 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => alertDiv.remove(), 6000);
     }
 
-    // Modal close buttons
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
-                modal.hidden = true;
-            }
-        });
-    });
-    
-    // Close modals when clicking outside
-    [kitEditModal, kitDeleteModal].forEach(modal => {
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                    modal.hidden = true;
-                }
-            });
-        }
-    });
-    
+    if (existingKitsSection && userSelect.value) {
+        selectedUserName.textContent = userSelect.options[userSelect.selectedIndex].text.split(' (')[0];
+        loadUserKits(userSelect.value);
+    }
+
     // Make functions globally available
     window.viewKit = viewKit;
     window.editKit = editKit;

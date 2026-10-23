@@ -555,3 +555,39 @@ class DailyStats(models.Model):
 
     def __str__(self):
         return f'Stats for {self.date}'
+
+
+class Workspace(models.Model):
+    """A private inventory, independent of the legacy kit workflow."""
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspaces')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+
+    def __str__(self):
+        return self.name
+
+
+class WorkspaceProduct(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='products')
+    name = models.CharField(max_length=100)
+    sku = models.CharField('Product code', max_length=50)
+    version = models.PositiveIntegerField(default=0, editable=False)
+    quantity = models.PositiveIntegerField(default=0)
+    unit = models.CharField(max_length=50, default='pieces')
+    location = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['workspace', 'sku'], name='unique_workspace_product_sku'),
+        ]
+
+    def __str__(self):
+        return self.name
