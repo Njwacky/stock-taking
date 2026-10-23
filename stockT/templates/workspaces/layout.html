@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+<style>
+.workspace-page{max-width:1100px;margin:32px auto;padding:0 20px;color:#193044}.workspace-page h1{margin-bottom:10px}.workspace-page .muted{color:#546879}.workspace-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:24px}.workspace-card{background:#fff;border:1px solid #dce5ed;border-radius:12px;padding:24px;box-shadow:0 4px 14px #19304408}.workspace-page label{display:block;font-weight:600;margin-bottom:6px}.workspace-page input,.workspace-page textarea{box-sizing:border-box;width:100%;padding:10px;border:1px solid #bacbd8;border-radius:6px}.workspace-page button,.workspace-page .action{display:inline-block;background:#176b69;color:white;padding:11px 18px;border:0;border-radius:6px;text-decoration:none;cursor:pointer}.workspace-page .errorlist{color:#ad2424}.workspace-table{overflow-x:auto}.workspace-page table{width:100%;border-collapse:collapse}.workspace-page th,.workspace-page td{text-align:left;padding:14px 10px;border-bottom:1px solid #e4ebf0}.workspace-page header{margin-bottom:24px}
+</style>
+{% endblock %}
+{% block content %}<main class="workspace-page">{% block workspace_content %}{% endblock %}</main>{% endblock %}

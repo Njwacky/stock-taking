@@ -3,8 +3,8 @@
   "short_name": "Stock Tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2c3e50",
-  "theme_color": "#3498db",
+  "background_color": "#382523",
+  "theme_color": "#2E6347",
   "description": "Efficient stock and inventory management system for tracking items and kits",
   "orientation": "portrait",
   "icons": [
@@ -39,7 +39,7 @@
       "name": "Track Stock Usage",
       "short_name": "Track Usage",
       "description": "Monitor and track stock usage",
-      "url": "/stock-usage/"
+      "url": "/tracking/"
     },
     {
       "name": "View Dashboard",

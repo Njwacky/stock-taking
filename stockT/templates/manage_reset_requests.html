@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Password Resets · Stock Tracker{% endblock %}
+
+{% block content %}
+<div class="manage-users-container reset-requests-page">
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Password resets</h1>
+            <p class="dashboard-subtitle">Verify the username and clock number before approving. Share the temporary password securely — the person can change it after signing in.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'notifications' %}" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg> Notifications</a>
+        </div>
+    </header>
+
+    <section class="panel table-panel">
+    <div class="panel-head">
+        <div>
+            <h2>Recovery requests</h2>
+            <p>{{ requests|length }} request{{ requests|length|pluralize }} on record.</p>
+        </div>
+    </div>
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Password reset requests">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Clock number</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Processed</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td><a href="{% url 'user_profile' r.user.id %}">{{ r.username }}</a></td>
+                    <td>{{ r.clock_number }}</td>
+                    <td>{{ r.requested_at|date:"M j, Y H:i" }}</td>
+                    <td><span class="status-badge status-{% if r.status == 'approved' %}approved{% elif r.status == 'rejected' %}rejected{% else %}pending{% endif %}">{{ r.get_status_display }}</span></td>
+                    <td>
+                        {% if r.processed_at %}
+                        {{ r.processed_at|date:"M j, Y H:i" }}<br><small class="text-muted">by {{ r.processed_by.username|default:"—" }}</small>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="reset-actions-cell">
+                        {% if r.status == 'pending' %}
+                        <form method="post" action="{% url 'process_reset_request' r.id %}" class="reset-action-form">
+                            {% csrf_token %}
+                            <div class="reset-password-fields">
+                                <div class="form-group">
+                                    <label class="visually-hidden" for="reset-password-{{ r.id }}">Temporary password for {{ r.username }}</label>
+                                    <input id="reset-password-{{ r.id }}" type="password" name="new_password" class="form-control" placeholder="Temporary password" autocomplete="new-password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="visually-hidden" for="reset-confirm-{{ r.id }}">Confirm temporary password for {{ r.username }}</label>
+                                    <input id="reset-confirm-{{ r.id }}" type="password" name="confirm_password" class="form-control" placeholder="Confirm password" autocomplete="new-password" required>
+                                </div>
+                            </div>
+                            <div class="reset-action-buttons">
+                                <button type="submit" name="action" value="approve" class="btn btn-success btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Approve</button>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm" formnovalidate><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg> Reject</button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-state">No password reset requests.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </section>
+</div>
+{% endblock %}

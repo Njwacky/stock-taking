@@ -1,42 +1,53 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}My Feedback - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}My Feedback · Stock Tracker{% endblock %}
 
 {% block content %}
 <div class="comments-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-comments"></i> My Feedback</h1>
-        <a href="{% url 'submit_comment' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Feedback</a>
-    </div>
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>My feedback</h1>
+            <p class="dashboard-subtitle">Questions, suggestions and issues you have sent to the workspace team.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="{% url 'submit_comment' %}" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> New feedback</a>
+        </div>
+    </header>
 
+    <section class="panel table-panel">
+    <div class="panel-head">
+        <div>
+            <h2>Submissions</h2>
+            <p>{{ comments|length }} entr{{ comments|length|pluralize:"y,ies" }}.</p>
+        </div>
+    </div>
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Your feedback submissions">
     <table class="data-table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Admin Response</th>
+                <th scope="col">Date</th>
+                <th scope="col">Category</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Status</th>
+                <th scope="col">Admin Response</th>
             </tr>
         </thead>
         <tbody>
             {% for comment in comments %}
             <tr>
-                <td>{{ comment.created_at|date:"Y-m-d" }}</td>
+                <td>{{ comment.created_at|date:"j M Y" }}</td>
                 <td>{{ comment.get_category_display }}</td>
                 <td>{{ comment.subject }}</td>
                 <td><span class="status-badge status-{{ comment.status }}">{{ comment.get_status_display }}</span></td>
-                <td>{{ comment.admin_response|default:"-" }}</td>
+                <td>{{ comment.admin_response|default:"—" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="5" class="empty-state">You have not submitted any feedback yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
+    </section>
 </div>
 {% endblock %}

@@ -1,30 +1,75 @@
 """
 Analytics middleware: tracks devices, sessions and page views.
 
-Never raises - analytics must not break request handling.
+Design rules (kept deliberately boring so tracking can never hurt the app):
+
+* Never raises — analytics failures are logged, not surfaced.
+* Workspace-scoped — every tracked session records the workspace it belongs
+  to (resolved without side effects: no workspaces are auto-created here),
+  so dashboards can filter to the active tenant.
+* AJAX polls are not page views — "live" endpoints (which send the standard
+  ``X-Requested-With`` header) update liveness only, so the dashboard's own
+  polling cannot inflate its statistics.
+* Sessions close on idle — after ``SESSION_IDLE_MINUTES`` without activity a
+  new tracked session starts and the old one is finalised with a real
+  duration, instead of one session row growing forever.
+* Cookies are HttpOnly (server-side only) and honour the deployment's secure
+  cookie policy.
 """
 import logging
 import re
 import uuid
+from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
-from stockT.models import DeviceTracker, PageView, SessionTracker
+from stockT.models import DeviceTracker, PageView, SessionTracker, Workspace, WorkspaceMember
 
 logger = logging.getLogger('stockT')
 
 DEVICE_COOKIE = 'device_id'
+SESSION_IDLE_MINUTES = 30
 SKIP_PATHS = re.compile(
     r'^/(static|admin|django-admin|health|sw\.js|manifest\.json|favicon|__debug__|media)(/|$)'
 )
 
 
 def _client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
+    """Return the client IP, trusting X-Forwarded-For only behind a proxy."""
+    if getattr(settings, 'TRUST_X_FORWARDED_FOR', False):
+        forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+        if forwarded:
+            return forwarded.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR', '')
+
+
+def _is_xhr(request):
+    """True for AJAX/polling requests (fetch with the conventional header)."""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
+def _resolve_workspace(request, user):
+    """Workspace for this request without creating anything as a side effect.
+
+    Resolution mirrors ``workspace.current_workspace`` minus the
+    auto-provisioning step: the session's active workspace when it is valid,
+    otherwise the user's earliest membership.
+    """
+    if user is None:
+        return None
+    ws_id = request.session.get('workspace_id')
+    if ws_id:
+        workspace = Workspace.objects.filter(
+            id=ws_id, is_active=True, memberships__user=user,
+        ).first()
+        if workspace:
+            return workspace
+    membership = WorkspaceMember.objects.filter(
+        user=user, workspace__is_active=True,
+    ).order_by('joined_at', 'id').first()
+    return membership.workspace if membership else None
 
 
 class AnalyticsMiddleware(MiddlewareMixin):
@@ -93,23 +138,51 @@ class AnalyticsMiddleware(MiddlewareMixin):
         if len(session_key) > 32:
             session_key = session_key[:32]
 
-        track_session, s_created = SessionTracker.objects.get_or_create(
-            session_id=session_key,
-            defaults={
-                'device': device,
-                'user': user,
-                'last_activity': now,
-                'entry_page': path,
-            },
-        )
-        if not s_created:
+        workspace = _resolve_workspace(request, user)
+        idle_cutoff = now - timedelta(minutes=SESSION_IDLE_MINUTES)
+        track_session = SessionTracker.objects.filter(session_id=session_key).first()
+
+        if track_session and track_session.last_activity < idle_cutoff:
+            # Idle gap exceeded: finalise the old visit and start a fresh
+            # session row under the same Django session key.
+            self._close_session(track_session, session_key)
+            track_session = None
+
+        if track_session is None:
+            track_session, _ = SessionTracker.objects.get_or_create(
+                session_id=session_key,
+                defaults={
+                    'device': device,
+                    'user': user,
+                    'workspace': workspace,
+                    'last_activity': now,
+                    'entry_page': path,
+                    'duration': 0,
+                },
+            )
+        else:
+            updates = ['last_activity', 'duration']
             track_session.last_activity = now
-            track_session.exit_page = path
+            track_session.duration = max(int((now - track_session.started_at).total_seconds()), 0)
             if user is not None and track_session.user_id != user.id:
                 track_session.user = user
-            track_session.save(update_fields=['last_activity', 'exit_page', 'user'])
+                updates.append('user')
+            # Sessions often start before login; adopt the workspace as soon
+            # as the member is known so their activity is scoped correctly.
+            if user is not None and not track_session.workspace_id and workspace is not None:
+                track_session.workspace = workspace
+                updates.append('workspace')
+            if not _is_xhr(request):
+                track_session.exit_page = path
+                updates.append('exit_page')
+            track_session.save(update_fields=updates)
 
-        # --- Page view ---------------------------------------------------
+        # --- Page view / action -------------------------------------------
+        # AJAX polls update liveness (handled above) but are never counted as
+        # page views or actions — otherwise the live dashboard inflates its
+        # own numbers once a minute.
+        if _is_xhr(request):
+            return
         if request.method == 'GET':
             PageView.objects.create(
                 page_url=path[:500],
@@ -125,6 +198,28 @@ class AnalyticsMiddleware(MiddlewareMixin):
             track_session.actions_performed += 1
             track_session.save(update_fields=['actions_performed'])
 
+    @staticmethod
+    def _close_session(session, session_key):
+        """Finalise an idle session: real end time, real duration.
+
+        The row's ``session_id`` gets a unique suffix so the base Django
+        session key is free for the next visit's row (unique constraint).
+        """
+        ended = session.last_activity or timezone.now()
+        session.duration = max(int((ended - session.started_at).total_seconds()), 0)
+        session.ended_at = ended
+        suffix = uuid.uuid4().hex[:8]
+        candidate = f'{session_key}-{suffix}'
+        while SessionTracker.objects.filter(session_id=candidate).exists():
+            suffix = uuid.uuid4().hex[:8]
+            candidate = f'{session_key}-{suffix}'
+        session.session_id = candidate
+        session.save(update_fields=['session_id', 'ended_at', 'duration'])
+        logger.info(
+            'Closed idle session for workspace %s (duration %ss)',
+            session.workspace_id, session.duration,
+        )
+
     def process_response(self, request, response):
         device_id = getattr(request, '_analytics_device_id', None)
         if device_id and DEVICE_COOKIE not in response.cookies:
@@ -132,5 +227,7 @@ class AnalyticsMiddleware(MiddlewareMixin):
                 DEVICE_COOKIE, device_id,
                 max_age=60 * 60 * 24 * 365,
                 samesite='Lax',
+                httponly=True,
+                secure=getattr(settings, 'SESSION_COOKIE_SECURE', False),
             )
         return response

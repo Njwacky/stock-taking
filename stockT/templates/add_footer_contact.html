@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Add Contact - Stock Management System{% endblock %}
+{% block title %}Add Contact · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <h1><i class="fas fa-address-book"></i> Add Footer Contact</h1>
+<div class="form-page">
+    <div class="form-card">
+        <h1>Add Footer Contact</h1>
         <form method="post">
             {% csrf_token %}
             {% for field in form %}
@@ -19,7 +19,7 @@
                 {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block">Save Contact</button>
+            <button type="submit" class="btn btn-primary">Save Contact</button>
         </form>
         <div class="login-links"><a href="{% url 'manage_footer_contacts' %}">Back to contacts</a></div>
     </div>

@@ -5,7 +5,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    background: #ffffff;
+    background: var(--card-bg);
     min-height: calc(100vh - 200px);
 }
 
@@ -16,12 +16,12 @@
     gap: 30px;
     margin-bottom: 50px;
     padding: 40px 0;
-    border-bottom: 3px solid #f0f0f0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: 3px solid #f4efec;
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     border-radius: 15px;
     padding: 40px;
     color: white;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 10px 30px rgba(46, 99, 71, 0.1);
     position: relative;
     overflow: hidden;
 }
@@ -88,7 +88,7 @@
 }
 
 .dev-location i {
-    color: #ffd700;
+    color: #18B864;
 }
 
 /* Section Headers */
@@ -96,7 +96,7 @@
 .dev-projects h2,
 .dev-skills h2,
 .dev-contact h2 {
-    color: #333;
+    color: var(--text);
     font-size: 2rem;
     margin-bottom: 25px;
     display: flex;
@@ -113,7 +113,7 @@
     content: '';
     flex: 1;
     height: 3px;
-    background: linear-gradient(90deg, #667eea 0%, transparent 100%);
+    background: linear-gradient(90deg, #2E6347 0%, transparent 100%);
     border-radius: 2px;
 }
 
@@ -121,7 +121,7 @@
 .dev-projects h2 i,
 .dev-skills h2 i,
 .dev-contact h2 i {
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.8rem;
 }
 
@@ -129,16 +129,16 @@
 .dev-about {
     margin-bottom: 50px;
     padding: 30px;
-    background: #f8f9fa;
+    background: var(--page-bg);
     border-radius: 12px;
-    border-left: 5px solid #667eea;
+    border-left: 5px solid #2E6347;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
 .dev-about p {
     font-size: 1.1rem;
     line-height: 1.8;
-    color: #555;
+    color: var(--text-muted);
     margin: 0;
 }
 
@@ -153,7 +153,7 @@
     padding: 30px;
     margin-bottom: 25px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    border: 1px solid #e9ecef;
+    border: 1px solid #e8dedb;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -166,7 +166,7 @@
     left: 0;
     width: 5px;
     height: 100%;
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #2E6347 0%, #78352E 100%);
     transform: scaleY(0);
     transition: transform 0.3s ease;
 }
@@ -190,19 +190,19 @@
 .project-header h3 {
     margin: 0;
     font-size: 1.5rem;
-    color: #333;
+    color: var(--text);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .project-header h3 i {
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.3rem;
 }
 
 .project-badge {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     padding: 6px 15px;
     border-radius: 20px;
@@ -215,7 +215,7 @@
 .project-desc {
     font-size: 1rem;
     line-height: 1.7;
-    color: #666;
+    color: var(--text-muted);
     margin-bottom: 20px;
 }
 
@@ -226,18 +226,18 @@
 }
 
 .tech-tag {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #eaf3ed;
+    color: #2E6347;
     padding: 6px 12px;
     border-radius: 15px;
     font-size: 0.85rem;
     font-weight: 500;
-    border: 1px solid #bbdefb;
+    border: 1px solid #cfe0d6;
     transition: all 0.2s ease;
 }
 
 .tech-tag:hover {
-    background: #1976d2;
+    background: #2E6347;
     color: white;
     transform: scale(1.05);
 }
@@ -258,7 +258,7 @@
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-    border: 1px solid #e9ecef;
+    border: 1px solid #e8dedb;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -274,7 +274,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(46, 99, 71, 0.1) 0%, rgba(120, 53, 46, 0.1) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -290,7 +290,7 @@
 
 .skill-item i {
     font-size: 2rem;
-    color: #667eea;
+    color: #2E6347;
     position: relative;
     z-index: 1;
 }
@@ -298,7 +298,7 @@
 .skill-item span {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text);
     position: relative;
     z-index: 1;
 }
@@ -319,7 +319,7 @@
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-    border: 1px solid #e9ecef;
+    border: 1px solid #e8dedb;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -337,7 +337,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 0;
@@ -363,7 +363,7 @@
 
 .contact-card i {
     font-size: 1.8rem;
-    color: #667eea;
+    color: #2E6347;
     transition: color 0.3s ease;
     position: relative;
     z-index: 1;
@@ -372,7 +372,7 @@
 .contact-card span {
     font-size: 1rem;
     font-weight: 500;
-    color: #333;
+    color: var(--text);
     transition: color 0.3s ease;
     position: relative;
     z-index: 1;

@@ -26,12 +26,12 @@
     gap: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     font-size: 1.1rem;
-    color: #333;
+    color: var(--text);
 }
 
 .loading-spinner i {
     font-size: 1.5rem;
-    color: #667eea;
+    color: #2E6347;
 }
 
 /* --- Dashboard Statistics Section --- */
@@ -62,7 +62,7 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 20px;
-    color: #2c3e50;
+    color: var(--text);
 }
 
 .stats-header h3 {
@@ -72,7 +72,7 @@
 }
 
 .stats-header i {
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.3rem;
 }
 
@@ -137,20 +137,20 @@
 
 .legend-label {
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text);
     font-size: 0.95rem;
     margin-bottom: 2px;
 }
 
 .legend-stats {
     font-size: 0.85rem;
-    color: #6c757d;
+    color: var(--text-muted);
     font-weight: 500;
 }
 
 /* --- Enhanced Dashboard with Modern Animations --- */
 .dashboard-container {
-    background: #ffffff;
+    background: var(--card-bg);
     border: none;
     box-shadow: none;
     padding: 0;
@@ -193,8 +193,8 @@
     align-items: center;
     margin-bottom: 0;
     padding: 30px 40px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
+    background: var(--page-bg);
+    border-bottom: 1px solid #e8dedb;
     position: relative;
     z-index: 2;
     animation: headerSlideDown 0.8s ease-out;
@@ -212,7 +212,7 @@
 }
 
 .dashboard-title {
-    color: #2c3e50;
+    color: var(--text);
     margin-bottom: 0;
     text-shadow: none;
     font-size: 2.5rem;
@@ -226,10 +226,10 @@
 
 @keyframes titleGlow {
     from {
-        color: #2c3e50;
+        color: var(--text);
     }
     to {
-        color: #007bff;
+        color: #2E6347;
     }
 }
 
@@ -238,7 +238,7 @@
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
     font-size: 2rem;
-    color: #007bff;
+    color: #2E6347;
     animation: iconFloat 3s ease-in-out infinite;
 }
 
@@ -251,14 +251,14 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,123,255,0.07);
 }
 
 .dashboard-table th {
-    background: #007bff !important;
+    background: #2E6347 !important;
     color: #fff !important;
     font-size: 1.1rem;
     font-weight: 600;
@@ -270,15 +270,15 @@
     padding: 10px;
     border: none;
     font-size: 1rem;
-    background: #f8fafd;
+    background: var(--page-bg);
 }
 
 .dashboard-table tr:nth-child(even) td {
-    background: #e3f2fd;
+    background: #eaf3ed;
 }
 
 .dashboard-table tr:hover td {
-    background: #bbdefb;
+    background: #cfe0d6;
 }
 
 .dashboard-pagination {
@@ -287,7 +287,7 @@
 }
 
 .dashboard-pagination .button {
-    background: #007bff;
+    background: #2E6347;
     color: #fff;
     margin-right: 5px;
     margin-left: 5px;
@@ -300,7 +300,7 @@
 
 .dashboard-pagination span {
     font-size: 16px;
-    color: #007bff;
+    color: #2E6347;
     margin: 0 8px;
     font-weight: 600;
 }
@@ -313,9 +313,9 @@
 }
 
 .profile-btn {
-    background: #007bff;
+    background: #2E6347;
     color: white;
-    border: 2px solid #007bff;
+    border: 2px solid #2E6347;
     padding: 12px 24px;
     border-radius: 8px;
     font-weight: 600;
@@ -341,8 +341,8 @@
 }
 
 .profile-btn:hover {
-    background: #0056b3;
-    border-color: #0056b3;
+    background: #24503a;
+    border-color: #24503a;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,123,255,0.3);
     color: white;
@@ -363,7 +363,7 @@
     position: absolute;
     right: 10px;
     top: 36px;
-    color: #dc3545;
+    color: #B72818;
     font-size: 18px;
     text-decoration: none;
 }
@@ -402,7 +402,7 @@
 .no-kits {
     text-align: center;
     padding: 60px 20px;
-    color: #6c757d;
+    color: var(--text-muted);
 }
 
 .no-kits-icon {
@@ -414,7 +414,7 @@
 .no-kits h4 {
     font-size: 1.5rem;
     margin-bottom: 10px;
-    color: #495057;
+    color: var(--text-muted);
 }
 
 .no-kits p {
@@ -423,7 +423,7 @@
 }
 
 .no-kits a {
-    color: #007bff;
+    color: #2E6347;
     text-decoration: none;
     font-weight: 600;
 }
@@ -434,8 +434,8 @@
 
 /* Bulk actions bar */
 .bulk-actions-bar {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
+    background: #f6efec;
+    border: 1px solid #f3e7d3;
     border-radius: 8px;
     padding: 12px 16px;
     margin: 20px 40px;
@@ -449,7 +449,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #856404;
+    color: #78352E;
     font-weight: 600;
 }
 
@@ -459,7 +459,7 @@
 }
 
 .bulk-delete-btn {
-    background: #dc3545;
+    background: #B72818;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -470,11 +470,11 @@
 }
 
 .bulk-delete-btn:hover {
-    background: #c82333;
+    background: #9c2114;
 }
 
 .bulk-cancel-btn {
-    background: #6c757d;
+    background: #6c544f;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -485,7 +485,7 @@
 }
 
 .bulk-cancel-btn:hover {
-    background: #5a6268;
+    background: #6c544f;
 }
 
 /* Table container */

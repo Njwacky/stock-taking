@@ -2,19 +2,19 @@
 
 /* CSS Variables for consistent table theming */
 :root {
-    --table-primary: #667eea;
-    --table-secondary: #764ba2;
-    --table-accent: #ffd700;
-    --table-header-bg: #007bff;
+    --table-primary: #2E6347;
+    --table-secondary: #78352E;
+    --table-accent: #18B864;
+    --table-header-bg: #2E6347;
     --table-header-text: #ffffff;
-    --table-row-even: #f8fafd;
+    --table-row-even: #f8f6f4;
     --table-row-odd: #ffffff;
-    --table-row-hover: #e3f2fd;
-    --table-border: #e0e0e0;
+    --table-row-hover: #eaf3ed;
+    --table-border: #e0d4cf;
     --table-shadow: rgba(0, 0, 0, 0.08);
-    --table-selected: #bbdefb;
-    --table-text-primary: #2c3e50;
-    --table-text-secondary: #6c757d;
+    --table-selected: #cfe0d6;
+    --table-text-primary: #382523;
+    --table-text-secondary: #6c544f;
 }
 
 /* Main table container */
@@ -134,7 +134,7 @@
 
 .dashboard-table a:hover {
     color: var(--table-secondary);
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(46, 99, 71, 0.1);
     text-decoration: none;
     transform: translateY(-1px);
 }
@@ -197,17 +197,17 @@
     color: white;
     border-color: var(--table-primary);
     transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(46, 99, 71, 0.3);
 }
 
 .action-btn.delete:hover {
-    background: #dc3545;
-    border-color: #dc3545;
+    background: #B72818;
+    border-color: #B72818;
 }
 
 .action-btn.edit:hover {
-    background: #28a745;
-    border-color: #28a745;
+    background: #2E6347;
+    border-color: #2E6347;
 }
 
 /* Table pagination styling */
@@ -231,7 +231,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 2px 8px rgba(46, 99, 71, 0.2);
     text-decoration: none;
     display: inline-block;
 }
@@ -239,13 +239,13 @@
 .dashboard-pagination .button:hover {
     background: var(--table-secondary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+    box-shadow: 0 4px 12px rgba(120, 53, 46, 0.3);
     text-decoration: none;
     color: white;
 }
 
 .dashboard-pagination .button:disabled {
-    background: #ccc;
+    background: #d9cdc8;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -256,7 +256,7 @@
     color: var(--table-text-secondary);
     font-weight: 600;
     padding: 10px 15px;
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(46, 99, 71, 0.1);
     border-radius: 8px;
 }
 
@@ -270,7 +270,7 @@
     display: none;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 20px rgba(46, 99, 71, 0.3);
     animation: slideDownBulk 0.3s ease-out;
 }
 
@@ -312,8 +312,8 @@
 }
 
 .bulk-delete-btn:hover {
-    background: #dc3545;
-    border-color: #dc3545;
+    background: #B72818;
+    border-color: #B72818;
     transform: translateY(-2px);
 }
 
@@ -335,7 +335,7 @@
     display: none;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 20px rgba(46, 99, 71, 0.3);
     animation: slideDownStickyBulk 0.3s ease-out;
 }
 
@@ -408,7 +408,7 @@
 .search-input:focus {
     outline: none;
     border-color: var(--table-primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(46, 99, 71, 0.1);
 }
 
 .filter-select {
@@ -424,7 +424,7 @@
 .filter-select:focus {
     outline: none;
     border-color: var(--table-primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(46, 99, 71, 0.1);
 }
 
 /* Empty table state */
@@ -687,9 +687,9 @@
 }
 
 .status-badge.available {
-    background: linear-gradient(135deg, #28a745, #20c997);
+    background: linear-gradient(135deg, #2E6347, #18B864);
     color: white;
-    border-color: #28a745;
+    border-color: #2E6347;
 }
 
 .status-badge.available:hover {
@@ -698,20 +698,20 @@
 }
 
 .status-badge.deleted {
-    background: linear-gradient(135deg, #dc3545, #c82333);
+    background: linear-gradient(135deg, #B72818, #9c2114);
     color: white;
-    border-color: #dc3545;
+    border-color: #B72818;
 }
 
 .status-badge.deleted:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    box-shadow: 0 4px 8px rgba(183, 40, 24, 0.3);
 }
 
 .status-badge.expired {
-    background: linear-gradient(135deg, #fd7e14, #e55a00);
+    background: linear-gradient(135deg, #8a5a33, #744a22);
     color: white;
-    border-color: #fd7e14;
+    border-color: #8a5a33;
 }
 
 .status-badge.expired:hover {

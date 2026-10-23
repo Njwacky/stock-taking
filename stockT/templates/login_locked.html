@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign-in temporarily locked · Stock Tracker{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/login-lockout.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="auth-layout auth-layout--single" aria-labelledby="lockout-title">
+    <div class="auth-main">
+        <div class="auth-notice">
+            <span class="eyebrow">Security check</span>
+            <h1 id="lockout-title">Sign-in temporarily locked</h1>
+            <p class="auth-lead">
+                Too many unsuccessful sign-in attempts were detected. Wait 15 minutes,
+                then try again, or request a password reset if you need help accessing your account.
+            </p>
+            <div class="form-actions">
+                <a href="{% url 'login' %}" class="btn btn-primary">Back to sign in</a>
+                <a href="{% url 'password_reset_request' %}" class="btn btn-secondary">Request password reset</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

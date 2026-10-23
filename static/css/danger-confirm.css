@@ -6,15 +6,15 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+    background: linear-gradient(135deg, #fbece9 0%, #f2d3cd 100%);
     margin-top: 20px;
 }
 
 .danger-confirm-card {
     background: white;
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(220, 53, 69, 0.15);
-    border: 2px solid #dc3545;
+    box-shadow: 0 10px 40px rgba(183, 40, 24, 0.15);
+    border: 2px solid #B72818;
     max-width: 600px;
     width: 100%;
     overflow: hidden;
@@ -33,11 +33,11 @@
 }
 
 .danger-confirm-header {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: linear-gradient(135deg, #B72818 0%, #9c2114 100%);
     color: white;
     padding: 25px 30px;
     text-align: center;
-    border-bottom: 2px solid #bd2130;
+    border-bottom: 2px solid #8c1e12;
 }
 
 .danger-confirm-header i {
@@ -65,8 +65,8 @@
 
 .danger-icon i {
     font-size: 3rem;
-    color: #dc3545;
-    background: #f8d7da;
+    color: #B72818;
+    background: #f7ded8;
     width: 80px;
     height: 80px;
     border-radius: 50%;
@@ -74,34 +74,34 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    border: 3px solid #dc3545;
+    border: 3px solid #B72818;
     animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+        box-shadow: 0 0 0 0 rgba(183, 40, 24, 0.4);
     }
     50% {
         transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        box-shadow: 0 0 0 10px rgba(183, 40, 24, 0);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        box-shadow: 0 0 0 0 rgba(183, 40, 24, 0);
     }
 }
 
 .danger-confirm-message h3 {
-    color: #dc3545;
+    color: #B72818;
     font-size: 1.4rem;
     font-weight: 600;
     margin: 0 0 15px 0;
 }
 
 .danger-confirm-message p {
-    color: #6c757d;
+    color: var(--text-muted);
     font-size: 1rem;
     line-height: 1.6;
     margin: 0;
@@ -112,8 +112,8 @@
 
 /* Item details styling */
 .item-details {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
+    background: var(--page-bg);
+    border: 1px solid #e8dedb;
     border-radius: 8px;
     padding: 20px;
     margin: 25px 0;
@@ -121,7 +121,7 @@
 }
 
 .item-details h4 {
-    color: #495057;
+    color: var(--text-muted);
     margin-top: 0;
     margin-bottom: 15px;
     font-size: 1.1rem;
@@ -137,7 +137,7 @@
 
 .item-details li {
     margin-bottom: 8px;
-    color: #495057;
+    color: var(--text-muted);
 }
 
 .item-details li:last-child {
@@ -147,7 +147,7 @@
 .item-list {
     max-height: 200px;
     overflow-y: auto;
-    border: 1px solid #dee2e6;
+    border: 1px solid #e0d4cf;
     border-radius: 6px;
     padding: 10px;
     background: white;
@@ -156,7 +156,7 @@
 
 .item-list-item {
     padding: 8px;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid #e8dedb;
     font-size: 0.9rem;
     display: flex;
     justify-content: space-between;
@@ -168,7 +168,7 @@
 }
 
 .item-list-item:nth-child(even) {
-    background: #f8f9fa;
+    background: var(--page-bg);
 }
 
 /* Password confirmation styling */
@@ -178,7 +178,7 @@
 }
 
 .password-confirmation h4 {
-    color: #495057;
+    color: var(--text-muted);
     margin-bottom: 15px;
     font-size: 1.1rem;
     display: flex;
@@ -190,13 +190,13 @@
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: #495057;
+    color: var(--text-muted);
 }
 
 .password-confirmation input[type="password"] {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e9ecef;
+    border: 2px solid #e8dedb;
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.3s ease;
@@ -205,14 +205,14 @@
 
 .password-confirmation input[type="password"]:focus {
     outline: none;
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    border-color: #B72818;
+    box-shadow: 0 0 0 3px rgba(183, 40, 24, 0.1);
 }
 
 /* Alert styling */
 .danger-alert {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
+    background: #f7ded8;
+    border: 1px solid #eeb9b1;
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 20px;
@@ -222,27 +222,27 @@
 }
 
 .danger-alert.success {
-    background: #d4edda;
-    border-color: #c3e6cb;
+    background: #e8f5ed;
+    border-color: #c9e2d3;
 }
 
 .danger-alert.success i {
-    color: #155724;
+    color: #24503a;
 }
 
 .danger-alert i {
-    color: #721c24;
+    color: #8c1e12;
     font-size: 1.2rem;
 }
 
 .danger-alert p {
     margin: 0;
-    color: #721c24;
+    color: #8c1e12;
     font-weight: 500;
 }
 
 .danger-alert.success p {
-    color: #155724;
+    color: #24503a;
 }
 
 /* Action buttons */
@@ -255,7 +255,7 @@
 }
 
 .danger-confirm-btn {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: linear-gradient(135deg, #B72818 0%, #9c2114 100%);
     color: white;
     border: none;
     padding: 12px 25px;
@@ -273,9 +273,9 @@
 }
 
 .danger-confirm-btn:hover {
-    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    background: linear-gradient(135deg, #9c2114 0%, #8c1e12 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+    box-shadow: 0 6px 20px rgba(183, 40, 24, 0.3);
 }
 
 .danger-confirm-btn:active {
@@ -283,7 +283,7 @@
 }
 
 .cancel-danger-btn {
-    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    background: linear-gradient(135deg, #6c544f 0%, #6c544f 100%);
     color: white;
     border: none;
     padding: 12px 25px;
@@ -301,9 +301,9 @@
 }
 
 .cancel-danger-btn:hover {
-    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    background: linear-gradient(135deg, #6c544f 0%, #5c4a45 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+    box-shadow: 0 6px 20px rgba(108, 84, 79, 0.3);
 }
 
 .cancel-danger-btn:active {
@@ -316,7 +316,7 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e9ecef;
+    border: 1px solid #e8dedb;
 }
 
 .danger-confirm-form .form-group {
@@ -449,8 +449,8 @@
     
     .danger-icon i {
         border: 3px solid #000;
-        background: #f8d7da;
-        color: #dc3545;
+        background: #f7ded8;
+        color: #B72818;
     }
     
     .item-details {
@@ -485,13 +485,13 @@
 /* Focus styles for accessibility */
 .danger-confirm-btn:focus,
 .cancel-danger-btn:focus {
-    outline: 3px solid #007bff;
+    outline: 3px solid #2E6347;
     outline-offset: 2px;
 }
 
 .danger-confirm-btn:focus-visible,
 .cancel-danger-btn:focus-visible {
-    outline: 3px solid #007bff;
+    outline: 3px solid #2E6347;
     outline-offset: 2px;
 }
 

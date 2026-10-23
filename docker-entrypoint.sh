@@ -1,27 +1,27 @@
 #!/bin/bash
 set -e
 
-echo "Starting Django Stock Management Application (Local Use Only)..."
+echo "Starting Django Stock Management Application..."
 
 # Apply database migrations
 echo "Applying database migrations..."
-python manage.py migrate --noinput --settings=app_conf.settings || echo "Migration completed or skipped"
+python manage.py migrate --noinput --settings=app_conf.settings
 
 # Create superuser if needed (only in development)
 if [ "$DJANGO_CREATE_SUPERUSER" = "true" ]; then
     echo "Creating superuser..."
-    python manage.py createsuperuser --noinput --settings=app_conf.settings || echo "Superuser creation skipped"
+    python manage.py createsuperuser --noinput --settings=app_conf.settings
 fi
 
 # Load initial data if needed
 if [ "$DJANGO_LOAD_INITIAL_DATA" = "true" ]; then
     echo "Loading initial data..."
-    python manage.py loaddata initial_data --settings=app_conf.settings || echo "Initial data load skipped"
+    python manage.py loaddata initial_data --settings=app_conf.settings
 fi
 
 # Collect static files (including PWA manifest and service worker)
 echo "Collecting static files (including PWA assets)..."
-python manage.py collectstatic --noinput --settings=app_conf.settings || echo "Static files collection completed"
+python manage.py collectstatic --noinput --settings=app_conf.settings
 
 # Create necessary directories
 mkdir -p /app/logs /app/media /app/static /app/staticfiles
@@ -38,8 +38,6 @@ if [ -f "/app/staticfiles/manifest.json" ]; then
 fi
 
 echo "Django application setup complete!"
-echo "Application is configured for LOCAL USE ONLY"
-echo "PWA is enabled - users can install the app on their devices"
 
 # Execute the command
 if [ "$DJANGO_RUNSERVER" != "" ]; then

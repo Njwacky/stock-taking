@@ -1,6 +1,6 @@
 # Multi-stage build for Django Stock Management System
 # Stage 1: Build stage
-FROM mcr.microsoft.com/devcontainers/python:3.9 as builder
+FROM mcr.microsoft.com/devcontainers/python:3.12 AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -29,7 +29,7 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Stage 2: Production stage
-FROM mcr.microsoft.com/devcontainers/python:3.9
+FROM mcr.microsoft.com/devcontainers/python:3.12
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -39,6 +39,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install system dependencies needed for runtime
 RUN apt-get update && apt-get install -y \
     libpq5 \
+    postgresql-client \
     libffi-dev \
     libssl-dev \
     zlib1g \
@@ -84,4 +85,4 @@ EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "--reload", "app_conf.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app_conf.wsgi:application"]

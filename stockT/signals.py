@@ -7,31 +7,32 @@ Signal receivers for the stockT application.
 """
 import logging
 
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Q, Sum
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import Kit, NotificationLog, StockUsage, User
+from .models import Kit, KitType, NotificationLog, StockUsage, User, WorkspaceMember
 
 logger = logging.getLogger('stockT')
 
 
 @receiver(post_save, sender=StockUsage)
 def handle_stock_usage_approval(sender, instance, created, **kwargs):
-    """Process approved stock usage requests.
+    """Apply an approved usage to matching stock exactly once.
 
-    When a StockUsage is saved with status='approved':
-      - the referenced kit's quantity is reduced by quantity_used
-      - the kit is deleted entirely when all of its stock is used
-      - the usage is marked as 'completed' with stock_deleted=True
+    Stock rows are locked and checked before any quantity is changed. A
+    shortage raises ValidationError so the reviewing view can roll back the
+    approval and leave the request pending instead of silently consuming only
+    part of the requested amount.
     """
     if instance.status != StockUsage.STATUS_APPROVED:
         # Notify admins about new pending requests.
         if created and instance.status == StockUsage.STATUS_PENDING:
             try:
-                admins = User.objects.filter(
-                    models_q_is_admin()
-                )
+                admins = User.objects.filter(models_q_is_admin())
                 notification = NotificationLog.objects.create(
                     notification_type='stock_usage',
                     title='New stock usage request',
@@ -81,7 +82,7 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                     'Stock usage #%s deleted kit #%s (all stock used)', instance.id, kit_id
                 )
             else:
-                kit.quantity -= instance.quantity_used
+                kit.quantity -= take
                 kit.save(update_fields=['quantity', 'last_updated'])
                 logger.info(
                     'Stock usage #%s reduced kit #%s to %s',
@@ -93,14 +94,55 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
         logger.exception('Failed to process stock deletion for usage #%s', instance.id)
         return
 
-    # Update the usage record without re-triggering this signal.
-    StockUsage.objects.filter(pk=instance.pk).update(
-        status=StockUsage.STATUS_COMPLETED,
-        stock_deleted=True,
-        reviewed_at=instance.reviewed_at or timezone.now(),
-    )
-    instance.status = StockUsage.STATUS_COMPLETED
-    instance.stock_deleted = True
+
+def _notify_low_stock(workspace_id, kit_type_ids):
+    """Alert workspace managers when an approval leaves stock at/below its
+    reorder level.
+
+    Runs after the deduction so the notified quantities are the real ones.
+    Never raises — notifications must not roll back an approval.
+    """
+    if not workspace_id or not kit_type_ids:
+        return
+    try:
+        low = []
+        kit_types = KitType.objects.filter(
+            id__in=kit_type_ids, reorder_level__isnull=False, is_active=True,
+        )
+        for kit_type in kit_types:
+            total = (
+                Kit.objects.filter(
+                    kit_type_fk=kit_type,
+                    workspace_id=workspace_id,
+                    is_active=True,
+                ).aggregate(total=Sum('quantity'))['total']
+                or 0
+            )
+            if total <= kit_type.reorder_level:
+                low.append((kit_type.name, total, kit_type.reorder_level))
+        if not low:
+            return
+        lines = ', '.join(
+            f'{name} ({total}/{level} left)' for name, total, level in low
+        )
+        managers = User.objects.filter(
+            Q(is_superuser=True)
+            | Q(role__in=[User.ROLE_ADMIN, User.ROLE_MANAGER])
+            | Q(
+                workspace_memberships__workspace_id=workspace_id,
+                workspace_memberships__role__in=[
+                    WorkspaceMember.ROLE_OWNER, WorkspaceMember.ROLE_ADMIN,
+                ],
+            )
+        ).distinct()
+        notification = NotificationLog.objects.create(
+            notification_type='low_stock',
+            title='Stock running low',
+            message=f'Reorder threshold reached for: {lines}.',
+        )
+        notification.sent_to.set(managers)
+    except Exception:  # pragma: no cover - alerts must never break approvals
+        logger.exception('Failed to send low-stock notification')
 
 
 @receiver(pre_delete, sender=Kit)

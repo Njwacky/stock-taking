@@ -1,32 +1,77 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Notifications - Stock Management System{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
+{% block title %}Notifications · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <h1><i class="fas fa-bell"></i> Notifications</h1>
-
-    {% for notification in notifications %}
-    <div class="comment-admin-item {% if user not in notification.read_by.all %}unread{% endif %}">
-        <div class="comment-admin-header">
-            <strong>{{ notification.title }}</strong>
-            <small class="text-muted">{{ notification.sent_at|date:"Y-m-d H:i" }}</small>
+<div class="manage-users-container">
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Notifications</h1>
+            <p class="dashboard-subtitle">Workspace messages, password reset requests and system updates.</p>
         </div>
-        <p>{{ notification.message }}</p>
-        {% if user not in notification.read_by.all %}
-        <form method="post" action="{% url 'mark_notification_read' notification.id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Mark as read</button>
-        </form>
+        {% if user.is_manager %}
+        <div class="dashboard-header-actions">
+            <a href="{% url 'manage_reset_requests' %}" class="btn btn-secondary">
+                <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+                Password resets
+                {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
+            </a>
+        </div>
         {% endif %}
+    </header>
+
+    {% if user.is_manager and pending_reset_requests_count %}
+    <div class="alert alert-warning">
+        <svg class="icon alert-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+        <span class="alert-text">
+            <strong>{{ pending_reset_requests_count }} password reset request{{ pending_reset_requests_count|pluralize }}</strong>
+            waiting for a decision.
+        </span>
+        <a href="{% url 'manage_reset_requests' %}" class="btn btn-warning btn-sm">Review</a>
     </div>
-    {% empty %}
-    <p class="empty-state">No notifications yet.</p>
-    {% endfor %}
+    {% endif %}
+
+    <section class="panel" aria-labelledby="notifications-title">
+        <div class="panel-head">
+            <div>
+                <h2 id="notifications-title">All notifications</h2>
+                <p>Most recent first.</p>
+            </div>
+            <span class="panel-note">{{ notifications|length }} item{{ notifications|length|pluralize }}</span>
+        </div>
+
+        {% if notifications %}
+        <div class="notification-list">
+            {% for notification in notifications %}
+            <article class="notification-item{% if user not in notification.read_by.all %} is-unread{% endif %}">
+                <div class="notification-body">
+                    <div class="notification-head">
+                        <h3>{{ notification.title }}</h3>
+                        <time datetime="{{ notification.sent_at|date:'c' }}">{{ notification.sent_at|date:"j M Y, H:i" }}</time>
+                    </div>
+                    <p>{{ notification.message }}</p>
+                </div>
+                {% if user not in notification.read_by.all %}
+                <form method="post" action="{% url 'mark_notification_read' notification.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm">Mark as read</button>
+                </form>
+                {% else %}
+                <span class="notification-read">
+                    <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                    Read
+                </span>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-block">
+            <p>No notifications</p>
+            <span>Workspace messages and reset requests will appear here.</span>
+        </div>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

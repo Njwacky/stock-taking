@@ -38,11 +38,11 @@
 
 /* Smaller Cards for Carousel */
 .register-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f6f4 100%);
     border-radius: 12px;
     padding: 15px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(46, 99, 71, 0.1);
     transition: all 0.3s ease;
     text-align: center;
     min-width: 200px;
@@ -72,8 +72,8 @@
 
 .register-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 24px rgba(46, 99, 71, 0.2);
+    border-color: rgba(46, 99, 71, 0.3);
 }
 
 /* Smaller Card Icon */
@@ -81,19 +81,19 @@
     width: 40px;
     height: 40px;
     margin: 0 auto 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 1.2rem;
-    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 3px 8px rgba(46, 99, 71, 0.3);
 }
 
 /* Smaller Card Text */
 .register-card h4 {
-    color: #2c3e50;
+    color: var(--text);
     font-size: 0.9rem;
     font-weight: 600;
     margin: 0 0 8px 0;
@@ -103,7 +103,7 @@
 }
 
 .register-card p {
-    color: #6c757d;
+    color: var(--text-muted);
     font-size: 0.75rem;
     line-height: 1.3;
     margin: 0;
@@ -114,7 +114,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
     border: none;
     width: 35px;
@@ -125,14 +125,14 @@
     align-items: center;
     justify-content: center;
     font-size: 0.9rem;
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 3px 10px rgba(46, 99, 71, 0.3);
     transition: all 0.3s ease;
     z-index: 2;
 }
 
 .carousel-btn:hover {
     transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(46, 99, 71, 0.4);
 }
 
 .carousel-prev {
@@ -155,22 +155,22 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #ddd;
+    background: #e0d4cf;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .dot.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     transform: scale(1.2);
 }
 
 .dot:hover {
-    background: #bbb;
+    background: #cbbdb6;
 }
 
 .dot.active:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
 }
 
 /* Register CTA Buttons */
@@ -208,25 +208,25 @@
 }
 
 .register-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2E6347 0%, #78352E 100%);
     color: white;
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 3px 10px rgba(46, 99, 71, 0.3);
 }
 
 .register-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(46, 99, 71, 0.4);
     color: white;
 }
 
 .login-btn {
     background: transparent;
-    color: #667eea;
-    border-color: #667eea;
+    color: #2E6347;
+    border-color: #2E6347;
 }
 
 .login-btn:hover {
-    background: #667eea;
+    background: #2E6347;
     color: white;
     transform: translateY(-2px);
 }
@@ -326,7 +326,7 @@
 /* High contrast mode support for carousel */
 @media (prefers-contrast: high) {
     .register-card {
-        border: 2px solid #333;
+        border: 2px solid #382523;
     }
     
     .register-card h4 {
@@ -335,7 +335,7 @@
     }
     
     .register-card p {
-        color: #333;
+        color: var(--text);
         font-weight: 500;
     }
     
@@ -348,7 +348,7 @@
     }
     
     .dot {
-        border: 1px solid #333;
+        border: 1px solid #382523;
     }
 }
 
@@ -417,7 +417,7 @@
 }
 
 .stats-header h3 {
-    color: #2c3e50;
+    color: var(--text);
     font-size: 1.4rem;
     font-weight: 700;
     margin: 0;
@@ -428,7 +428,7 @@
 }
 
 .stats-header h3 i {
-    color: #667eea;
+    color: #2E6347;
     font-size: 1.3rem;
     animation: iconBounce 2s ease-in-out infinite;
 }
@@ -455,7 +455,7 @@
     max-height: 300px;
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    background: #ffffff;
+    background: var(--card-bg);
 }
 
 /* Chart legend container */
@@ -476,17 +476,17 @@
 }
 
 .chart-legend::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #f4efec;
     border-radius: 3px;
 }
 
 .chart-legend::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: #cbbdb6;
     border-radius: 3px;
 }
 
 .chart-legend::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: #a99a94;
 }
 
 /* Individual legend item */
@@ -495,10 +495,10 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f6f4 100%);
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(46, 99, 71, 0.1);
     transition: all 0.3s ease;
     animation: legendSlideIn 0.6s ease-out;
     animation-fill-mode: both;
@@ -524,8 +524,8 @@
 
 .legend-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(46, 99, 71, 0.15);
+    border-color: rgba(46, 99, 71, 0.3);
 }
 
 /* Legend color indicator */
@@ -549,7 +549,7 @@
 .legend-label {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text);
     text-transform: capitalize;
     letter-spacing: 0.3px;
 }
@@ -557,7 +557,7 @@
 /* Legend quantity and percentage */
 .legend-value {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: var(--text-muted);
     font-weight: 500;
 }
 
@@ -568,7 +568,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #6c757d;
+    color: var(--text-muted);
     font-style: italic;
     font-size: 1rem;
     text-align: center;
@@ -578,7 +578,7 @@
 /* Loading state for chart */
 #kitsPieChart.loading {
     position: relative;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background: linear-gradient(90deg, #f4efec 25%, #e0d4cf 50%, #f4efec 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
 }
@@ -675,7 +675,7 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     .legend-item {
-        border: 2px solid #333;
+        border: 2px solid #382523;
     }
     
     .legend-label {
@@ -684,7 +684,7 @@
     }
     
     .legend-value {
-        color: #333;
+        color: var(--text);
         font-weight: 600;
     }
     

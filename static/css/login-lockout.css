@@ -1,0 +1,19 @@
+.auth-layout--single {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 620px;
+}
+
+.auth-layout--single .auth-main {
+    min-height: 300px;
+}
+
+.auth-layout--single .form-actions {
+    margin-top: 0;
+}
+
+@media (max-width: 600px) {
+    .auth-layout--single .auth-main {
+        min-height: 260px;
+        padding: 28px 24px;
+    }
+}

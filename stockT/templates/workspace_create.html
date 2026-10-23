@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Workspace · Stock Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card auth-card-wide">
+        <h1>New Workspace</h1>
+        <p class="auth-lead">
+            A workspace is a separate space for its own stock, kit types and team.
+            You become its <strong>Owner</strong>, and it starts with the standard kit types.
+        </p>
+        <form method="post" class="register-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="field-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="field-errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Create Workspace
+            </button>
+        </form>
+        <div class="login-links">
+            <a href="{% url 'dashboard' %}"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg> Back to dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
