@@ -125,7 +125,7 @@
                 <option value="{{ kit_type.code }}">{{ kit_type.name }}</option>
                 {% endfor %}
             </select>
-            <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><i class="fas fa-rotate"></i> Refresh</button>
+            <button type="button" id="refreshKitsBtn" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh</button>
         </div>
         <div id="kitsListContainer" aria-live="polite" hidden></div>
         <div id="kitsEmptyState" class="empty-block" hidden>

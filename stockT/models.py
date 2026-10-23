@@ -557,23 +557,29 @@ class DailyStats(models.Model):
         return f'Stats for {self.date}'
 
 
-class Workspace(models.Model):
-    """A private inventory, independent of the legacy kit workflow."""
+class Inventory(models.Model):
+    """A private inventory, independent of the multi-tenant workspace model.
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspaces')
+    This used to be a second ``Workspace`` model. Having two classes with the
+    same name in one app caused Django to register only the last one, breaking
+    every foreign key that pointed at the multi-tenant ``Workspace`` (E300).
+    """
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inventories')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name', 'pk']
+        verbose_name_plural = 'inventories'
 
     def __str__(self):
         return self.name
 
 
-class WorkspaceProduct(models.Model):
-    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='products')
+class InventoryProduct(models.Model):
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=100)
     sku = models.CharField('Product code', max_length=50)
     version = models.PositiveIntegerField(default=0, editable=False)
@@ -586,7 +592,7 @@ class WorkspaceProduct(models.Model):
     class Meta:
         ordering = ['name', 'pk']
         constraints = [
-            models.UniqueConstraint(fields=['workspace', 'sku'], name='unique_workspace_product_sku'),
+            models.UniqueConstraint(fields=['inventory', 'sku'], name='unique_inventory_product_sku'),
         ]
 
     def __str__(self):

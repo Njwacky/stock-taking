@@ -312,10 +312,20 @@ def register(request):
         return redirect('workspace_list')
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        login(request, user)
-        messages.success(request, 'Welcome! Your account has been created.')
-        return redirect('workspace_list')
+        with transaction.atomic():
+            user = form.save(commit=False)
+            user.save()
+            workspace = ensure_user_workspace(user)
+        set_current_workspace(request, workspace)
+        # A freshly created user has not gone through authenticate(), so the
+        # backend must be named explicitly when several are configured.
+        login(request, user, backend='stockT.auth_backends.CaseInsensitiveModelBackend')
+        messages.success(
+            request,
+            f'Welcome, {user.username}! Your workspace “{workspace.name}” is ready — '
+            'and it comes pre-loaded with the standard kit types.',
+        )
+        return redirect('dashboard')
     return render(request, 'register.html', {'form': form})
 
 
@@ -907,8 +917,15 @@ def manage_users(request):
             User.objects.filter(id__in=ids).update(is_active=True)
             messages.success(request, f'{len(ids)} user(s) activated.')
         elif action == 'deactivate' and request.user.is_admin:
-            User.objects.filter(id__in=ids).exclude(id=request.user.id).update(is_active=False)
-            messages.success(request, f'{len(ids)} user(s) deactivated.')
+            targets = User.objects.filter(id__in=ids).exclude(id=request.user.id)
+            # Administrators (and role-admins) are account-level privileges:
+            # only a superadmin may deactivate them.
+            if not request.user.is_superuser:
+                targets = targets.exclude(
+                    Q(is_superuser=True) | Q(role=User.ROLE_ADMIN),
+                )
+            deactivated = targets.update(is_active=False)
+            messages.success(request, f'{deactivated} user(s) deactivated.')
         return redirect('manage_users')
 
     return render(request, 'manage_users.html', {'users': users, 'search': search})
@@ -954,6 +971,12 @@ def edit_user(request, user_id):
         return redirect('dashboard')
     target = get_object_or_404(User, id=user_id)
 
+    # Administrator accounts are protected: only another superadmin may edit
+    # them, otherwise a role-admin or manager could deactivate/lock them out.
+    if (target.is_superuser or target.role == User.ROLE_ADMIN) and not request.user.is_superuser:
+        messages.error(request, 'Only superadmins can edit administrator accounts.')
+        return redirect('manage_users')
+
     # Only admins can change roles or staff status. Managers use a restricted
     # form WITHOUT role/is_staff fields so they cannot escalate privileges.
     if not request.user.is_admin:
@@ -989,6 +1012,9 @@ def delete_user(request, user_id):
     target = get_object_or_404(User, id=user_id)
     if target.id == request.user.id:
         messages.error(request, 'You cannot delete your own account.')
+        return redirect('manage_users')
+    if (target.is_superuser or target.role == User.ROLE_ADMIN) and not request.user.is_superuser:
+        messages.error(request, 'Only superadmins can delete administrator accounts.')
         return redirect('manage_users')
     target.delete()
     messages.success(request, f'User {target.username} deleted.')

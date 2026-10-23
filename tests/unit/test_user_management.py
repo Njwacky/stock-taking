@@ -160,3 +160,67 @@ class TestDeleteUser:
     def test_manager_cannot_delete(self, as_manager, member):
         as_manager.post(f'/delete-user/{member.id}/')
         assert User.objects.filter(id=member.id).exists()
+
+
+class TestAdministratorAccountProtection:
+    """Non-superusers must never be able to disable or delete a superadmin."""
+
+    @pytest.fixture
+    def role_admin(self, workspace):
+        from tests.conftest import join_workspace
+
+        user = make_user('role_admin', role='admin')
+        user.is_staff = True
+        user.save(update_fields=['is_staff'])
+        join_workspace(workspace, user, 'admin')
+        return user
+
+    def test_manager_cannot_deactivate_superuser(self, as_manager, owner):
+        as_manager.post(f'/edit-user/{owner.id}/', {
+            'username': owner.username,
+            'first_name': '',
+            'last_name': '',
+            'email': owner.email,
+            'clock_number': owner.clock_number,
+            'department': '',
+            'phone_number': '',
+        })
+        owner.refresh_from_db()
+        assert owner.is_active is True
+
+    def test_role_admin_cannot_edit_superuser(self, client, role_admin, owner):
+        client.force_login(role_admin)
+        response = client.post(f'/edit-user/{owner.id}/', {
+            'username': owner.username,
+            'first_name': 'Hijacked',
+            'last_name': '',
+            'email': owner.email,
+            'clock_number': owner.clock_number,
+            'department': '',
+            'phone_number': '',
+            'role': 'user',
+            'is_staff': 'on',
+        })
+        owner.refresh_from_db()
+        assert response.status_code == 302
+        assert owner.first_name != 'Hijacked'
+        assert owner.is_active is True
+        assert owner.is_superuser is True
+
+    def test_role_admin_cannot_delete_superuser(self, client, role_admin, owner):
+        client.force_login(role_admin)
+        client.post(f'/delete-user/{owner.id}/')
+        assert User.objects.filter(id=owner.id).exists()
+
+    def test_bulk_deactivate_skips_superuser_for_role_admin(
+        self, client, role_admin, owner, member,
+    ):
+        client.force_login(role_admin)
+        client.post('/manage-users/', {
+            'action': 'deactivate',
+            'user_ids': [owner.id, member.id],
+        })
+        owner.refresh_from_db()
+        member.refresh_from_db()
+        assert owner.is_active is True
+        assert member.is_active is False
