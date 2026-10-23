@@ -1,0 +1,116 @@
+/* Inventory calculator page ---------------------------------------------- */
+
+.calculator-container {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.calculator-container > h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 1.6rem;
+    color: var(--ui-text);
+}
+
+.calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.calculator-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    padding: 24px 26px;
+    box-shadow: var(--ui-shadow-sm);
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.calculator-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ui-shadow);
+}
+
+.calculator-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ui-border);
+    font-size: 1.1rem;
+    color: var(--ui-text);
+}
+
+.calculator-card .form-group {
+    margin-bottom: 14px;
+}
+
+.calculator-card .form-control {
+    min-height: 44px;
+}
+
+.calculator-card .btn {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.calculator-result {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: var(--ui-radius);
+    background: var(--ui-primary-light);
+    border: 1px solid #dfe3ff;
+    color: #33407a;
+    font-size: 0.9rem;
+}
+
+.calculator-result:empty {
+    display: none;
+}
+
+.calculator-result p {
+    margin: 0 0 6px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.calculator-result p:last-child {
+    margin-bottom: 0;
+}
+
+.calculator-result strong {
+    font-size: 1.05rem;
+    color: var(--ui-primary-dark);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Note under the heading */
+.calculator-hint {
+    margin: -8px 0 0;
+    color: var(--ui-text-muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+    .calculator-card {
+        padding: 18px 16px;
+    }
+
+    .calculator-card .btn {
+        width: 100%;
+        align-self: stretch;
+    }
+}

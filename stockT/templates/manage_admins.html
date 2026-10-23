@@ -3,50 +3,74 @@
 
 {% block title %}Manage Admins - Stock Management System{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-user-shield"></i> Manage Administrators</h1>
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Admin</a>
-    </div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-user-shield" aria-hidden="true"></i> Administrators</h1>
+            <p>People with elevated access to users, analytics and system settings.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'create_admin' %}" class="btn btn-secondary"><i class="fas fa-plus" aria-hidden="true"></i> Create admin</a>
+        </div>
+    </header>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Superadmin</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for admin_user in admins %}
-            <tr>
-                <td>{{ admin_user.username }}</td>
-                <td>{{ admin_user.first_name }} {{ admin_user.last_name }}</td>
-                <td>{{ admin_user.role_display }}</td>
-                <td>{% if admin_user.is_superuser %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}</td>
-                <td>
-                    {% if admin_user.id != user.id %}
-                    <form method="post" action="{% url 'demote_admin' admin_user.id %}" class="inline-form"
-                          onsubmit="return confirm('Demote {{ admin_user.username }}?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-arrow-down"></i> Demote</button>
-                    </form>
-                    {% else %}
-                    <span class="text-muted">(you)</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="empty-state">No administrators found.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-key" aria-hidden="true"></i> Admin accounts</h2>
+                <p class="panel__subtitle">{{ admins|length }} administrator{{ admins|length|pluralize }}</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Superadmin</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin_user in admins %}
+                    <tr>
+                        <td class="cell-primary">{{ admin_user.username }}</td>
+                        <td>{{ admin_user.first_name }} {{ admin_user.last_name|default:"" }}</td>
+                        <td><span class="role-badge role-{{ admin_user.role }}">{{ admin_user.role_display }}</span></td>
+                        <td>
+                            {% if admin_user.is_superuser %}
+                            <span class="status-badge status-approved">Yes</span>
+                            {% else %}
+                            <span class="text-muted">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if admin_user.id != user.id %}
+                            <form method="post" action="{% url 'demote_admin' admin_user.id %}" class="inline-form"
+                                  onsubmit="return confirm('Demote {{ admin_user.username }} to a regular user?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-arrow-down" aria-hidden="true"></i> Demote</button>
+                            </form>
+                            {% else %}
+                            <span class="badge badge-neutral">You</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <i class="fas fa-user-shield" aria-hidden="true"></i>
+                            <strong>No administrators found</strong>
+                            <p>Create an administrator to help manage the platform.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}

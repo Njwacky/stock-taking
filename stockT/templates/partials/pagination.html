@@ -1,25 +1,15 @@
 {% if paginator.num_pages > 1 %}
-<nav class="pagination">
+<nav class="pagination" aria-label="Pagination">
     {% if page_obj.has_previous %}
-    <a href="#" class="page-link" data-page="{{ page_obj.previous_page_number }}">&laquo; Previous</a>
+    <a href="#" class="page-link" data-page="{{ page_obj.previous_page_number }}" rel="prev"><i class="fas fa-chevron-left" aria-hidden="true"></i> Previous</a>
+    {% else %}
+    <span class="page-link is-disabled" aria-disabled="true"><i class="fas fa-chevron-left" aria-hidden="true"></i> Previous</span>
     {% endif %}
     <span class="page-current">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="#" class="page-link" data-page="{{ page_obj.next_page_number }}">Next &raquo;</a>
+    <a href="#" class="page-link" data-page="{{ page_obj.next_page_number }}" rel="next">Next <i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+    {% else %}
+    <span class="page-link is-disabled" aria-disabled="true">Next <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
     {% endif %}
 </nav>
-<script>
-    document.querySelectorAll('.page-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof loadPage === 'function') {
-                loadPage(this.dataset.page);
-            } else {
-                const url = new URL(window.location.href);
-                url.searchParams.set('page', this.dataset.page);
-                window.location.href = url.toString();
-            }
-        });
-    });
-</script>
 {% endif %}

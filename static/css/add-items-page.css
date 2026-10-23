@@ -1,0 +1,383 @@
+/* Add stock page --------------------------------------------------------- */
+
+.add-items-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.add-items-form .panel {
+    padding: 24px;
+}
+
+/* Kit type selection grid ------------------------------------------------ */
+
+.kit-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 6px;
+}
+
+.kit-type-card {
+    position: relative;
+    background: #fff;
+    border: 1.5px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    padding: 16px 18px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.kit-type-card:hover {
+    border-color: #c3cbe4;
+    box-shadow: var(--ui-shadow);
+}
+
+.kit-type-card.selected {
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 3px rgba(91, 110, 225, 0.12);
+    background: #fbfcff;
+}
+
+.kit-type-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    font-weight: 600;
+    color: var(--ui-text);
+}
+
+.kit-type-label .modern-checkbox {
+    position: static;
+    width: 18px;
+    height: 18px;
+    opacity: 1;
+    accent-color: var(--ui-primary);
+    cursor: pointer;
+    flex: none;
+}
+
+.item-name,
+.kit-type-name {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ui-text);
+}
+
+.kit-type-code {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #eef1f8;
+    border: 1px solid #dfe4ef;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* Detail fields slide open when a kit type is selected. */
+.kit-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    margin-top: 0;
+}
+
+.kit-details.show {
+    max-height: 900px;
+    opacity: 1;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--ui-border);
+}
+
+.kit-details .form-group {
+    margin-bottom: 12px;
+}
+
+.kit-details .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.kit-details .form-control {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+.kit-details .detail-textarea {
+    min-height: 64px;
+}
+
+.kit-details .item-quantity {
+    width: 100%;
+}
+
+.item-unit {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--ui-text-muted);
+}
+
+/* Total kit calculator output inside a card */
+.tape-calculation {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: var(--ui-primary-light);
+    border: 1px solid #dfe3ff;
+    color: #3b47a8;
+    font-size: 0.82rem;
+}
+
+.tape-calculation.show {
+    display: block;
+}
+
+/* Existing kits ---------------------------------------------------------- */
+
+.existing-kits-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.existing-kits-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.kits-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.kits-toolbar .form-control {
+    min-height: 42px;
+    flex: 1 1 180px;
+    max-width: 340px;
+}
+
+#kitsListContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.kit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    padding: 16px 18px;
+    box-shadow: var(--ui-shadow-sm);
+    transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kit-item:hover {
+    border-color: #c3cbe4;
+    box-shadow: var(--ui-shadow);
+}
+
+.kit-item.inactive {
+    opacity: 0.7;
+    background: #fafbfe;
+}
+
+.kit-info-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.kit-type-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ui-text);
+    flex-wrap: wrap;
+}
+
+.kit-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-size: 0.8rem;
+    color: var(--ui-text-muted);
+}
+
+.kit-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kit-meta-item i {
+    color: #9aa5bd;
+}
+
+.kit-details-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--ui-border);
+    font-size: 0.8rem;
+    color: var(--ui-text-muted);
+}
+
+.kit-details-preview i {
+    color: #9aa5bd;
+    margin-right: 4px;
+}
+
+.kit-actions,
+.kit-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #eef1f7;
+}
+
+.kit-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--ui-border);
+    background: #f7f9fd;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.kit-action-btn:hover {
+    background: #eef2fb;
+    border-color: #cfd7e8;
+}
+
+.kit-view-btn:hover {
+    color: var(--ui-primary-dark);
+}
+
+.kit-edit-btn:hover {
+    color: var(--ui-info);
+}
+
+.kit-delete-btn {
+    color: var(--ui-danger);
+    background: #fdf5f6;
+    border-color: #f3c7cc;
+}
+
+.kit-delete-btn:hover {
+    background: var(--ui-danger-light);
+    color: #a52633;
+}
+
+/* Older kit list markup (single-column rows) */
+.kits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.kit-card {
+    background: #fff;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    padding: 16px 18px;
+    box-shadow: var(--ui-shadow-sm);
+}
+
+.kit-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.kit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--ui-primary-light);
+    color: var(--ui-primary);
+    flex: none;
+}
+
+.kit-title h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--ui-text);
+}
+
+.kit-title p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--ui-text-muted);
+}
+
+.kit-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kit-input {
+    flex: 1;
+}
+
+.kit-unit {
+    font-size: 0.78rem;
+    color: var(--ui-text-muted);
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .add-items-form .panel {
+        padding: 18px 16px;
+    }
+
+    .kit-type-grid,
+    #kitsListContainer,
+    .kits-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kits-toolbar .form-control {
+        max-width: none;
+        flex: 1 1 100%;
+    }
+
+    .kits-toolbar .btn {
+        width: 100%;
+    }
+}

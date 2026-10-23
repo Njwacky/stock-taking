@@ -1,0 +1,237 @@
+/* Dashboard page --------------------------------------------------------- */
+
+.dashboard-chart-panel .chart-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 8px 0;
+}
+
+.dashboard-chart-panel canvas {
+    width: 280px !important;
+    height: 280px !important;
+    flex: none;
+}
+
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 220px;
+    max-width: 360px;
+    flex: 1 1 220px;
+}
+
+.chart-legend-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chart-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--ui-border);
+    background: #fbfcff;
+}
+
+.chart-legend .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    flex: none;
+}
+
+.chart-legend .legend-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.chart-legend .legend-label {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ui-text);
+}
+
+.chart-legend .legend-stats {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ui-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.stock-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stock-panel .toolbar {
+    background: #fbfcff;
+    box-shadow: none;
+}
+
+.stock-panel .toolbar .form-control {
+    max-width: 220px;
+}
+
+.stock-panel .data-table {
+    box-shadow: none;
+}
+
+.stock-panel #pagination-container:empty {
+    display: none;
+}
+
+/* Public landing page ---------------------------------------------------- */
+
+.hero-section {
+    max-width: 900px;
+    margin: 10px auto 40px;
+    padding: 56px 32px;
+    text-align: center;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #5b6ee1 0%, #7c4dff 100%);
+    color: #fff;
+    box-shadow: 0 20px 50px rgba(91, 110, 225, 0.3);
+}
+
+.hero-section h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: #fff;
+}
+
+.hero-section p {
+    margin: 0 auto 26px;
+    max-width: 52ch;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 1.02rem;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.hero-section .btn-primary {
+    background: #fff;
+    border-color: #fff;
+    color: var(--ui-primary-dark);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.hero-section .btn-primary:hover {
+    background: #f1f3ff;
+    border-color: #f1f3ff;
+    color: var(--ui-primary-dark);
+}
+
+.hero-section .btn-secondary {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+}
+
+.hero-section .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.26);
+    color: #fff;
+}
+
+.why-register {
+    max-width: 1180px;
+    margin: 0 auto 48px;
+}
+
+.why-register h2 {
+    text-align: center;
+    margin: 0 0 24px;
+    font-size: 1.4rem;
+    color: var(--ui-text);
+}
+
+.why-register-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.register-card-item {
+    background: #fff;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    padding: 22px 20px;
+    box-shadow: var(--ui-shadow-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.register-card-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ui-shadow);
+}
+
+.register-card-item i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: var(--ui-primary-light);
+    color: var(--ui-primary);
+    font-size: 1rem;
+}
+
+.register-card-item h3 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: var(--ui-text);
+}
+
+.register-card-item p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--ui-text-muted);
+    line-height: 1.55;
+}
+
+.carousel-dots {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .dashboard-chart-panel canvas {
+        width: 220px !important;
+        height: 220px !important;
+    }
+
+    .stock-panel .toolbar .form-control {
+        max-width: none;
+    }
+}
+
+@media (max-width: 700px) {
+    .hero-section {
+        padding: 40px 20px;
+        margin: 0 auto 28px;
+    }
+
+    .chart-legend {
+        min-width: 100%;
+    }
+
+    .bulk-actions-bar .btn {
+        margin-left: 0;
+        width: 100%;
+    }
+}

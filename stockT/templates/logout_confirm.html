@@ -1,21 +1,28 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Logout - Stock Management System{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/logout-confirm.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="logout-container">
-    <div class="logout-card">
-        <h1><i class="fas fa-right-from-bracket"></i> Logout</h1>
-        <p>Are you sure you want to log out of your account?</p>
+<div class="page-shell page-shell--narrow">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Log out</h1>
+            <p>You will need to sign in again to continue managing stock.</p>
+        </div>
+    </header>
+
+    <div class="form-card">
+        <div class="form-note">
+            <i class="fas fa-circle-info" aria-hidden="true"></i>
+            <span>Any unsaved changes on this page will be lost when you log out.</span>
+        </div>
+
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Yes, log me out</button>
-            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Yes, log me out</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </div>
         </form>
     </div>
 </div>

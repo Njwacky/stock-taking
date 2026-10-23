@@ -3,73 +3,98 @@
 
 {% block title %}Manage Users - Stock Management System{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/manage-users.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="manage-users-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-users-gear"></i> Manage Users</h1>
-        {% if user.is_superuser %}
-        <a href="{% url 'create_admin' %}" class="btn btn-primary"><i class="fas fa-user-shield"></i> Create Admin</a>
-        {% endif %}
-    </div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-users-gear" aria-hidden="true"></i> Manage users</h1>
+            <p>Search, edit and manage access for everyone on the platform.</p>
+        </div>
+        <div class="page-header__actions">
+            {% if user.is_superuser %}
+            <a href="{% url 'create_admin' %}" class="btn btn-secondary"><i class="fas fa-user-shield" aria-hidden="true"></i> Create admin</a>
+            {% endif %}
+        </div>
+    </header>
 
-    <form method="get" class="dashboard-controls">
-        <input type="text" name="search" class="form-control" placeholder="Search users..." value="{{ search }}">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i> Search</button>
-    </form>
+    <div class="toolbar">
+        <form method="get" class="filter-form" role="search">
+            <input type="text" name="search" class="form-control" placeholder="Search by username, name or clock number..."
+                   value="{{ search }}" aria-label="Search users">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search" aria-hidden="true"></i> Search</button>
+            {% if search %}
+            <a href="{% url 'manage_users' %}" class="btn btn-secondary"><i class="fas fa-xmark" aria-hidden="true"></i> Clear</a>
+            {% endif %}
+        </form>
+    </div>
 
     <form method="post">
         {% csrf_token %}
         <div class="bulk-actions-bar">
-            <span id="sel_count">0</span> selected
-            <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">Activate</button>
-            {% if user.is_admin %}
-            <button type="submit" name="action" value="deactivate" class="btn btn-danger btn-sm">Deactivate</button>
-            {% endif %}
+            <span class="bulk-actions-info"><strong id="sel_count">0</strong> selected</span>
+            <div class="inline-actions">
+                <button type="submit" name="action" value="activate" class="btn btn-success btn-sm"><i class="fas fa-toggle-on" aria-hidden="true"></i> Activate</button>
+                {% if user.is_admin %}
+                <button type="submit" name="action" value="deactivate" class="btn btn-outline-danger btn-sm"><i class="fas fa-toggle-off" aria-hidden="true"></i> Deactivate</button>
+                {% endif %}
+            </div>
         </div>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="select_all"></th>
-                    <th>Username</th>
-                    <th>Name</th>
-                    <th>Clock #</th>
-                    <th>Department</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in users %}
-                <tr>
-                    <td><input type="checkbox" class="row-check" name="user_ids" value="{{ u.id }}"></td>
-                    <td><a href="{% url 'user_profile' u.id %}">{{ u.username }}</a></td>
-                    <td>{{ u.first_name }} {{ u.last_name }}</td>
-                    <td>{{ u.clock_number|default:"-" }}</td>
-                    <td>{{ u.department|default:"-" }}</td>
-                    <td><span class="role-badge role-{{ u.role }}">{{ u.role_display }}</span></td>
-                    <td>{% if u.is_active %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
-                    <td>
-                        <a href="{% url 'edit_user' u.id %}" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i> Edit</a>
-                        {% if user.is_superuser %}
-                        <button type="submit" formaction="{% url 'delete_user' u.id %}" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Delete {{ u.username }}?');">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="empty-state">No users found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="cell-select"><input type="checkbox" id="select_all" aria-label="Select all users"></th>
+                        <th scope="col">Username</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Clock #</th>
+                        <th scope="col">Department</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Active</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td><input type="checkbox" class="row-check" name="user_ids" value="{{ u.id }}" aria-label="Select {{ u.username }}"></td>
+                        <td class="cell-primary"><a href="{% url 'user_profile' u.id %}">{{ u.username }}</a></td>
+                        <td>{{ u.first_name }} {{ u.last_name }}</td>
+                        <td class="cell-muted">{{ u.clock_number|default:"—" }}</td>
+                        <td>{{ u.department|default:"—" }}</td>
+                        <td><span class="role-badge role-{{ u.role }}">{{ u.role_display }}</span></td>
+                        <td>
+                            {% if u.is_active %}
+                            <span class="status-badge status-approved"><i class="fas fa-check" aria-hidden="true"></i> Active</span>
+                            {% else %}
+                            <span class="status-badge status-dismissed"><i class="fas fa-ban" aria-hidden="true"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="cell-actions">
+                                <a href="{% url 'edit_user' u.id %}" class="btn btn-secondary btn-sm" title="Edit {{ u.username }}"><i class="fas fa-pen" aria-hidden="true"></i> Edit</a>
+                                {% if user.is_superuser %}
+                                <button type="submit" formaction="{% url 'delete_user' u.id %}" class="btn btn-outline-danger btn-sm btn-icon"
+                                        onclick="return confirm('Delete {{ u.username }}? This cannot be undone.');"
+                                        aria-label="Delete {{ u.username }}" title="Delete {{ u.username }}">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-user-slash" aria-hidden="true"></i>
+                            <strong>No users found</strong>
+                            <p>{% if search %}No user matches “{{ search }}”.{% else %}There are no registered users yet.{% endif %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </form>
 </div>
 {% endblock %}

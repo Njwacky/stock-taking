@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Stock Management System{% endblock %}</title>
     <link rel="manifest" href="{% url 'manifest' %}">
-    <meta name="theme-color" content="#3498db">
+    <meta name="theme-color" content="#5b6ee1">
+    <meta name="description" content="Track kits, log stock usage and manage inventory in one place.">
     <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="16x16 32x32 48x48">
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
@@ -17,57 +18,67 @@
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/floating-comment.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar" role="navigation">
+    <a href="#main-content" class="sr-only">Skip to main content</a>
+    {% with current=request.resolver_match.url_name %}
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
         <a href="{% url 'dashboard' %}" class="nav-brand">
-            <i class="fas fa-boxes-stacked"></i>
+            <i class="fas fa-boxes-stacked" aria-hidden="true"></i>
             <span>Stock Tracker</span>
         </a>
-        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Open navigation menu">
+        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Open navigation menu" aria-expanded="false">
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
         </button>
         <div id="navLinks" class="nav-links">
-            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a class="nav-link {% if current == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}" {% if current == 'dashboard' %}aria-current="page"{% endif %}><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</a>
             {% if user.is_authenticated %}
-            <a class="nav-link" href="{% url 'add_items' %}"><i class="fas fa-plus"></i> Add Stock</a>
-            <a class="nav-link" href="{% url 'stock_usage_tracking' %}">
-                <i class="fas fa-clipboard-list"></i> Track Usage
+            <a class="nav-link {% if current == 'add_items' %}active{% endif %}" href="{% url 'add_items' %}" {% if current == 'add_items' %}aria-current="page"{% endif %}><i class="fas fa-plus" aria-hidden="true"></i> Add Stock</a>
+            <a class="nav-link {% if current == 'stock_usage_tracking' or current == 'stock_usage_history' %}active{% endif %}" href="{% url 'stock_usage_tracking' %}" {% if current == 'stock_usage_tracking' %}aria-current="page"{% endif %}>
+                <i class="fas fa-clipboard-list" aria-hidden="true"></i> Track Usage
                 {% if pending_stock_usage_count %}
-                <span class="badge">{{ pending_stock_usage_count }}</span>
+                <span class="badge">{{ pending_stock_usage_count }}<span class="sr-only"> pending requests</span></span>
                 {% endif %}
             </a>
-            <a class="nav-link" href="{% url 'stock_distribution' %}"><i class="fas fa-share-nodes"></i> Distribute</a>
-            <a class="nav-link" href="{% url 'inventory_calculator' %}"><i class="fas fa-calculator"></i> Calculator</a>
+            <a class="nav-link {% if current == 'stock_distribution' %}active{% endif %}" href="{% url 'stock_distribution' %}" {% if current == 'stock_distribution' %}aria-current="page"{% endif %}><i class="fas fa-share-nodes" aria-hidden="true"></i> Distribute</a>
+            <a class="nav-link {% if current == 'inventory_calculator' %}active{% endif %}" href="{% url 'inventory_calculator' %}" {% if current == 'inventory_calculator' %}aria-current="page"{% endif %}><i class="fas fa-calculator" aria-hidden="true"></i> Calculator</a>
             {% if user.is_manager %}
-            <a class="nav-link" href="{% url 'manage_users' %}"><i class="fas fa-users-gear"></i> Manage Users</a>
-            <a class="nav-link" href="{% url 'manage_comments' %}"><i class="fas fa-comments"></i> Feedback</a>
-            <a class="nav-link" href="{% url 'analytics_dashboard' %}"><i class="fas fa-chart-pie"></i> Analytics</a>
+            <a class="nav-link {% if current == 'manage_users' or current == 'edit_user' %}active{% endif %}" href="{% url 'manage_users' %}" {% if current == 'manage_users' %}aria-current="page"{% endif %}><i class="fas fa-users-gear" aria-hidden="true"></i> Manage Users</a>
+            <a class="nav-link {% if current == 'manage_comments' %}active{% endif %}" href="{% url 'manage_comments' %}" {% if current == 'manage_comments' %}aria-current="page"{% endif %}><i class="fas fa-comments" aria-hidden="true"></i> Feedback</a>
+            <a class="nav-link {% if current == 'analytics_dashboard' or current == 'analytics_devices' or current == 'analytics_notifications' or current == 'devices' %}active{% endif %}" href="{% url 'analytics_dashboard' %}" {% if current == 'analytics_dashboard' %}aria-current="page"{% endif %}><i class="fas fa-chart-pie" aria-hidden="true"></i> Analytics</a>
             {% endif %}
             {% if user.is_superuser %}
-            <a class="nav-link" href="{% url 'manage_admins' %}"><i class="fas fa-user-shield"></i> Admins</a>
+            <a class="nav-link {% if current == 'manage_admins' or current == 'create_admin' %}active{% endif %}" href="{% url 'manage_admins' %}" {% if current == 'manage_admins' %}aria-current="page"{% endif %}><i class="fas fa-user-shield" aria-hidden="true"></i> Admins</a>
             {% endif %}
-            <a class="nav-link" href="{% url 'notifications' %}">
-                <i class="fas fa-bell"></i>
-                {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}</span>{% endif %}
+            <a class="nav-link {% if current == 'notifications' %}active{% endif %}" href="{% url 'notifications' %}" {% if current == 'notifications' %}aria-current="page"{% endif %}>
+                <i class="fas fa-bell" aria-hidden="true"></i> Notifications
+                {% if pending_reset_requests_count %}<span class="badge">{{ pending_reset_requests_count }}<span class="sr-only"> new notifications</span></span>{% endif %}
             </a>
-            <a class="nav-link" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Profile</a>
-            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            <a class="nav-link {% if current == 'profile' or current == 'user_profile' %}active{% endif %}" href="{% url 'profile' %}" {% if current == 'profile' %}aria-current="page"{% endif %}><i class="fas fa-id-badge" aria-hidden="true"></i> Profile</a>
+            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Logout</a>
             {% else %}
-            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-right-to-bracket"></i> Login</a>
-            <a class="nav-link" href="{% url 'register' %}"><i class="fas fa-user-plus"></i> Register</a>
+            <a class="nav-link {% if current == 'login' %}active{% endif %}" href="{% url 'login' %}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Login</a>
+            <a class="nav-link {% if current == 'register' %}active{% endif %}" href="{% url 'register' %}"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</a>
             {% endif %}
         </div>
     </nav>
+    {% endwith %}
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         {% if messages %}
-        <div class="messages-container">
+        <div class="messages-container" role="status" aria-live="polite">
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            <div class="alert alert-{{ message.tags }}">
+                {% if message.tags == 'success' %}<i class="fas fa-circle-check" aria-hidden="true"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+                {% elif message.tags == 'warning' %}<i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                {% else %}<i class="fas fa-circle-info" aria-hidden="true"></i>{% endif %}
+                <span>{{ message }}</span>
+            </div>
             {% endfor %}
         </div>
         {% endif %}
@@ -77,12 +88,12 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
-                <h3><i class="fas fa-boxes-stacked"></i> Stock Tracker</h3>
-                <p>Efficient stock and inventory management.</p>
+                <h3><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock Tracker</h3>
+                <p>Efficient stock and inventory management for your team.</p>
             </div>
             {% if footer_contacts %}
             <div class="footer-section">
-                <h3>Contact</h3>
+                <h3><i class="fas fa-address-book" aria-hidden="true"></i> Contact</h3>
                 <ul class="footer-contacts">
                     {% for contact in footer_contacts %}
                     <li><strong>{{ contact.label }}:</strong> {{ contact.value }}</li>
@@ -91,11 +102,12 @@
             </div>
             {% endif %}
             <div class="footer-section">
-                <h3>Links</h3>
+                <h3><i class="fas fa-link" aria-hidden="true"></i> Links</h3>
                 <ul>
                     <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
                     {% if user.is_authenticated %}
                     <li><a href="{% url 'my_comments' %}">My Feedback</a></li>
+                    <li><a href="{% url 'profile' %}">My Profile</a></li>
                     {% endif %}
                     {% if user.is_superuser %}
                     <li><a href="{% url 'manage_footer_contacts' %}">Manage Footer</a></li>
@@ -104,49 +116,51 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; {% now "Y" %} Stock Management System</p>
+            <p>&copy; {% now "Y" %} Stock Management System. All rights reserved.</p>
         </div>
     </footer>
 
     {% if user.is_authenticated %}
     <!-- Floating feedback widget -->
-    <button id="floatingCommentBtn" class="floating-comment-btn" title="Send feedback">
-        <i class="fas fa-comment-dots"></i>
+    <button id="floatingCommentBtn" class="floating-comment-btn" type="button" title="Send feedback" aria-label="Send feedback">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
     </button>
-    <div id="floatingCommentPanel" class="floating-comment-panel">
+    <div id="floatingCommentPanel" class="floating-comment-panel" role="dialog" aria-label="Feedback panel">
         <div class="floating-panel-header">
-            <h4><i class="fas fa-comment-dots"></i> Feedback</h4>
-            <button id="floatingPanelClose" class="floating-panel-close">&times;</button>
+            <h4><i class="fas fa-comment-dots" aria-hidden="true"></i> Feedback</h4>
+            <button id="floatingPanelClose" class="floating-panel-close" type="button" aria-label="Close feedback panel">&times;</button>
         </div>
-        <div class="floating-tabs">
-            <button class="floating-tab active" data-tab="submit" type="button">Submit</button>
-            <button class="floating-tab" data-tab="myComments" type="button">My Feedback</button>
-        </div>
-        <div id="submitTab" class="floating-tab-content active">
-            <form id="floatingCommentForm" method="post" action="{% url 'submit_comment' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <select name="category" class="form-control" required>
-                        <option value="">Category...</option>
-                        <option value="bug">Bug Report</option>
-                        <option value="feature">Feature Request</option>
-                        <option value="improvement">Improvement</option>
-                        <option value="question">Question</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="text" name="subject" class="form-control" placeholder="Subject" maxlength="200" required>
-                </div>
-                <div class="form-group">
-                    <textarea name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane"></i> Send</button>
-            </form>
-        </div>
-        <div id="myCommentsTab" class="floating-tab-content">
-            <div id="userCommentsList"></div>
-            <a href="{% url 'my_comments' %}" class="btn btn-link btn-sm">View all feedback &rarr;</a>
+        <div class="floating-panel-content">
+            <div class="floating-tabs">
+                <button class="floating-tab active" data-tab="submit" type="button">Submit</button>
+                <button class="floating-tab" data-tab="myComments" type="button">My Feedback</button>
+            </div>
+            <div id="submitTab" class="floating-tab-content active">
+                <form id="floatingCommentForm" method="post" action="{% url 'submit_comment' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <select name="category" class="form-control" required aria-label="Feedback category">
+                            <option value="">Category...</option>
+                            <option value="bug">Bug Report</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="improvement">Improvement</option>
+                            <option value="question">Question</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="subject" class="form-control" placeholder="Subject" maxlength="200" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea name="message" class="form-control" placeholder="Your message..." rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send</button>
+                </form>
+            </div>
+            <div id="myCommentsTab" class="floating-tab-content">
+                <div id="userCommentsList"></div>
+                <a href="{% url 'my_comments' %}" class="btn btn-link btn-sm">View all feedback &rarr;</a>
+            </div>
         </div>
     </div>
     {% endif %}

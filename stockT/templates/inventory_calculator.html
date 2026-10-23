@@ -4,50 +4,57 @@
 {% block title %}Inventory Calculator - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/inventory-calculator.css' %}">
-<link rel="stylesheet" href="{% static 'css/calculator.css' %}">
+<link rel="stylesheet" href="{% static 'css/calculator-page.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="calculator-container">
-    <h1><i class="fas fa-calculator"></i> Inventory Calculator</h1>
-
-    <div class="calculator-grid">
-        <div class="calculator-card">
-            <h2>Tape Length</h2>
-            <div class="form-group">
-                <label for="tapeWidth">Tape Width (mm)</label>
-                <input type="number" id="tapeWidth" class="form-control" value="18" min="1">
-            </div>
-            <div class="form-group">
-                <label for="tapeQty">Number of Rolls</label>
-                <input type="number" id="tapeQty" class="form-control" value="1" min="0">
-            </div>
-            <button id="calcTapeBtn" class="btn btn-primary">Calculate</button>
-            <div id="tapeResult" class="calculator-result"></div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-calculator" aria-hidden="true"></i> Inventory calculator</h1>
+            <p>Work out tape length, coverage and kit quantities before you order or distribute.</p>
         </div>
+        <div class="page-header__actions">
+            <a href="{% url 'add_items' %}" class="btn btn-secondary"><i class="fas fa-plus" aria-hidden="true"></i> Add stock</a>
+        </div>
+    </header>
 
-        <div class="calculator-card">
-            <h2>General Quantity</h2>
-            <div class="form-group">
-                <label for="itemQty">Items per Kit</label>
-                <input type="number" id="itemQty" class="form-control" value="1" min="0">
-            </div>
-            <div class="form-group">
-                <label for="kitQty">Number of Kits</label>
-                <input type="number" id="kitQty" class="form-control" value="1" min="0">
-            </div>
-            <button id="calcItemsBtn" class="btn btn-primary">Calculate</button>
-            <div id="itemsResult" class="calculator-result"></div>
+    <div class="calculator-container">
+        <div class="calculator-grid">
+            <section class="calculator-card">
+                <h2><i class="fas fa-tape" aria-hidden="true"></i> Tape length</h2>
+                <div class="form-group">
+                    <label for="tapeWidth">Tape width (mm)</label>
+                    <input type="number" id="tapeWidth" class="form-control" value="18" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="tapeQty">Number of rolls</label>
+                    <input type="number" id="tapeQty" class="form-control" value="1" min="0">
+                </div>
+                <button id="calcTapeBtn" type="button" class="btn btn-primary"><i class="fas fa-equals" aria-hidden="true"></i> Calculate</button>
+                <div id="tapeResult" class="calculator-result" aria-live="polite"></div>
+            </section>
+
+            <section class="calculator-card">
+                <h2><i class="fas fa-layer-group" aria-hidden="true"></i> General quantity</h2>
+                <div class="form-group">
+                    <label for="itemQty">Items per kit</label>
+                    <input type="number" id="itemQty" class="form-control" value="1" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="kitQty">Number of kits</label>
+                    <input type="number" id="kitQty" class="form-control" value="1" min="0">
+                </div>
+                <button id="calcItemsBtn" type="button" class="btn btn-primary"><i class="fas fa-equals" aria-hidden="true"></i> Calculate</button>
+                <div id="itemsResult" class="calculator-result" aria-live="polite"></div>
+            </section>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/calculator.js' %}"></script>
 <script>
-    // Simple calculator fallback if calculator.js targets other element ids
     (function() {
         function calcTape() {
             const width = parseFloat(document.getElementById('tapeWidth').value) || 0;
@@ -55,14 +62,14 @@
             const totalLength = qty * 33;
             const totalArea = totalLength * (width / 1000);
             document.getElementById('tapeResult').innerHTML =
-                `<p><strong>${totalLength.toFixed(2)} m</strong> total length</p>` +
-                `<p><strong>${totalArea.toFixed(4)} m²</strong> total area</p>`;
+                `<p><span>Total length</span><strong>${totalLength.toFixed(2)} m</strong></p>` +
+                `<p><span>Total area</span><strong>${totalArea.toFixed(4)} m²</strong></p>`;
         }
         function calcItems() {
             const items = parseFloat(document.getElementById('itemQty').value) || 0;
             const kits = parseFloat(document.getElementById('kitQty').value) || 0;
             document.getElementById('itemsResult').innerHTML =
-                `<p><strong>${items * kits}</strong> items in total</p>`;
+                `<p><span>Items in total</span><strong>${items * kits}</strong></p>`;
         }
         document.getElementById('calcTapeBtn').addEventListener('click', calcTape);
         document.getElementById('calcItemsBtn').addEventListener('click', calcItems);

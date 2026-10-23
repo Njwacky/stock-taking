@@ -3,25 +3,38 @@
 {% block title %}Edit Contact - Stock Management System{% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <h1><i class="fas fa-address-book"></i> Edit Contact</h1>
-        <form method="post">
+<div class="page-shell page-shell--narrow">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-pen-to-square" aria-hidden="true"></i> Edit footer contact</h1>
+            <p>Update how this contact appears in the site footer.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'manage_footer_contacts' %}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+        </div>
+    </header>
+
+    <div class="form-card">
+        <form method="post" novalidate>
             {% csrf_token %}
             {% for field in form %}
             <div class="form-group {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
                 {% if field.field.widget.input_type == 'checkbox' %}
-                {{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {% else %}
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% endif %}
+                {% if field.help_text %}<p class="form-hint">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Save changes</button>
+                <a href="{% url 'manage_footer_contacts' %}" class="btn btn-secondary">Cancel</a>
+            </div>
         </form>
-        <div class="login-links"><a href="{% url 'manage_footer_contacts' %}">Back to contacts</a></div>
     </div>
 </div>
 {% endblock %}

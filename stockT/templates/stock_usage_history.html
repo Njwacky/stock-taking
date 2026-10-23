@@ -4,72 +4,104 @@
 {% block title %}Usage History - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/stock-usage-tracking.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/stock-usage.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="tracking-container">
-    <div class="tracking-header">
-        <h1><i class="fas fa-history"></i> Stock Usage History</h1>
-        <a href="{% url 'stock_usage_tracking' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Log Usage</a>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-history" aria-hidden="true"></i> Stock usage history</h1>
+            <p>Every usage request, with its approval status and whether stock was deducted.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'stock_usage_tracking' %}" class="btn btn-secondary"><i class="fas fa-plus" aria-hidden="true"></i> Log usage</a>
+        </div>
+    </header>
+
+    <div class="feedback-filters" role="group" aria-label="Filter usage by status">
+        <span class="filter-label">Status</span>
+        <a href="{% url 'stock_usage_history' %}" class="filter-tab {% if not status_filter %}is-active{% endif %}">All</a>
+        <a href="{% url 'stock_usage_history' %}?status=pending" class="filter-tab {% if status_filter == 'pending' %}is-active{% endif %}">Pending</a>
+        <a href="{% url 'stock_usage_history' %}?status=approved" class="filter-tab {% if status_filter == 'approved' %}is-active{% endif %}">Approved</a>
+        <a href="{% url 'stock_usage_history' %}?status=completed" class="filter-tab {% if status_filter == 'completed' %}is-active{% endif %}">Completed</a>
+        <a href="{% url 'stock_usage_history' %}?status=rejected" class="filter-tab {% if status_filter == 'rejected' %}is-active{% endif %}">Rejected</a>
     </div>
 
-    <div class="dashboard-controls">
-        <a href="{% url 'stock_usage_history' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
-        <a href="{% url 'stock_usage_history' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
-        <a href="{% url 'stock_usage_history' %}?status=approved" class="btn btn-sm {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">Approved</a>
-        <a href="{% url 'stock_usage_history' %}?status=completed" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}">Completed</a>
-        <a href="{% url 'stock_usage_history' %}?status=rejected" class="btn btn-sm {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
-    </div>
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-list-check" aria-hidden="true"></i> Usage records</h2>
+                <p class="panel__subtitle">{{ usages|length }} record{{ usages|length|pluralize }} shown</p>
+            </div>
+        </div>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>User</th>
-                <th>Clock #</th>
-                <th>Kit Type</th>
-                <th>Qty</th>
-                <th>Purpose</th>
-                <th>Status</th>
-                <th>Stock Deleted</th>
-                {% if user.is_manager %}<th>Actions</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for usage in usages %}
-            <tr>
-                <td>{{ usage.usage_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ usage.user.username }}</td>
-                <td>{{ usage.clock_number }}</td>
-                <td>{{ usage.kit_type_name }}</td>
-                <td>{{ usage.quantity_used }}</td>
-                <td>{{ usage.purpose|default:"-" }}</td>
-                <td><span class="status-badge status-{{ usage.status }}">{{ usage.get_status_display }}</span></td>
-                <td>{% if usage.stock_deleted %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-minus"></i>{% endif %}</td>
-                {% if user.is_manager %}
-                <td>
-                    {% if usage.status == 'pending' %}
-                    <form method="post" action="{% url 'review_stock_usage' usage.id %}" class="inline-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
-                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
-                    </form>
-                    {% endif %}
-                    <form method="post" action="{% url 'delete_stock_usage' usage.id %}" class="inline-form"
-                          onsubmit="return confirm('Delete this usage record?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
-                    </form>
-                </td>
-                {% endif %}
-            </tr>
-            {% empty %}
-            <tr><td colspan="9" class="empty-state">No usage records found.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">User</th>
+                        <th scope="col">Clock #</th>
+                        <th scope="col">Kit type</th>
+                        <th scope="col">Qty</th>
+                        <th scope="col">Purpose</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Stock deducted</th>
+                        {% if user.is_manager %}<th scope="col">Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usage in usages %}
+                    <tr>
+                        <td class="text-nowrap">{{ usage.usage_date|date:"j M Y, H:i" }}</td>
+                        <td class="cell-primary">{{ usage.user.username }}</td>
+                        <td class="cell-muted">{{ usage.clock_number }}</td>
+                        <td>{{ usage.kit_type_name }}</td>
+                        <td class="cell-num">{{ usage.quantity_used }}</td>
+                        <td>{{ usage.purpose|default:"—" }}</td>
+                        <td><span class="status-badge status-{{ usage.status }}">{{ usage.get_status_display }}</span></td>
+                        <td>
+                            {% if usage.stock_deleted %}
+                            <span class="text-success"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
+                            {% else %}
+                            <span class="text-muted"><i class="fas fa-minus" aria-hidden="true"></i></span>
+                            {% endif %}
+                        </td>
+                        {% if user.is_manager %}
+                        <td>
+                            <div class="cell-actions">
+                                {% if usage.status == 'pending' %}
+                                <form method="post" action="{% url 'review_stock_usage' usage.id %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" name="action" value="approve" class="btn btn-success btn-sm" title="Approve"><i class="fas fa-check" aria-hidden="true"></i></button>
+                                    <button type="submit" name="action" value="reject" class="btn btn-outline-danger btn-sm" title="Reject"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+                                </form>
+                                {% endif %}
+                                <form method="post" action="{% url 'delete_stock_usage' usage.id %}" class="inline-form"
+                                      onsubmit="return confirm('Delete this usage record?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" aria-label="Delete record" title="Delete">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_manager %}9{% else %}8{% endif %}" class="empty-state">
+                            <i class="fas fa-clipboard" aria-hidden="true"></i>
+                            <strong>No usage records found</strong>
+                            <p>{% if status_filter %}Nothing matches this status filter.{% else %}Logged usage will appear here.{% endif %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}

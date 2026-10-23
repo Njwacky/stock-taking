@@ -1,0 +1,133 @@
+/* Analytics pages (dashboard, devices, milestones) */
+
+.chart-panel .panel__header {
+    align-items: flex-start;
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+    height: 320px;
+}
+
+.chart-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.legend-dot--sessions { background: #5b6ee1; }
+.legend-dot--views { background: #12a06a; }
+.legend-dot--devices { background: #c9861a; }
+
+.page-tag {
+    display: inline-block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+    white-space: nowrap;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #f1f4fd;
+    border: 1px solid #e0e5f5;
+    color: #4553b8;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Device cards ----------------------------------------------------------- */
+
+.device-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.device-name i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: #eef0ff;
+    color: #5b6ee1;
+    font-size: 0.85rem;
+    flex: none;
+}
+
+.device-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #334155;
+}
+
+.device-user i {
+    color: #94a3b8;
+}
+
+.last-seen {
+    font-variant-numeric: tabular-nums;
+    color: #475569;
+}
+
+/* Milestones ------------------------------------------------------------- */
+
+.milestone-message {
+    color: #475569;
+    max-width: 46ch;
+}
+
+.milestone-message.is-empty {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.milestone-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.milestone-state--done { color: #128f5f; }
+.milestone-state--pending { color: #94a3b8; }
+
+@media (max-width: 700px) {
+    .chart-box {
+        height: 260px;
+    }
+
+    .chart-legend {
+        gap: 10px;
+        font-size: 0.75rem;
+    }
+
+    .page-tag {
+        max-width: 160px;
+    }
+}

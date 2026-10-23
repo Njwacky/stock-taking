@@ -4,60 +4,133 @@
 {% block title %}Analytics - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-    <h1><i class="fas fa-chart-pie"></i> Analytics</h1>
-    <div>
-        <a href="{% url 'analytics_devices' %}" class="btn btn-secondary"><i class="fas fa-mobile-screen"></i> Devices</a>
-        <a href="{% url 'analytics_notifications' %}" class="btn btn-secondary"><i class="fas fa-trophy"></i> Milestones</a>
-    </div>
-</div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-chart-pie" aria-hidden="true"></i> Analytics</h1>
+            <p>Usage, sessions and device activity across the platform.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'analytics_devices' %}" class="btn btn-secondary"><i class="fas fa-mobile-screen" aria-hidden="true"></i> Devices</a>
+            <a href="{% url 'analytics_notifications' %}" class="btn btn-secondary"><i class="fas fa-trophy" aria-hidden="true"></i> Milestones</a>
+        </div>
+    </header>
 
-<div class="stats-grid">
-    <div class="stat-card"><h3>Online Now</h3><p class="stat-value">{{ stats.online_sessions }}</p></div>
-    <div class="stat-card"><h3>Today's Sessions</h3><p class="stat-value">{{ stats.today_sessions }}</p></div>
-    <div class="stat-card"><h3>Today's Page Views</h3><p class="stat-value">{{ stats.today_page_views }}</p></div>
-    <div class="stat-card"><h3>Total Users</h3><p class="stat-value">{{ stats.total_users }}</p></div>
-    <div class="stat-card"><h3>Total Devices</h3><p class="stat-value">{{ stats.total_devices }}</p></div>
-    <div class="stat-card"><h3>Total Page Views</h3><p class="stat-value">{{ stats.total_page_views }}</p></div>
-</div>
+    <section class="stats-grid" aria-label="Live statistics">
+        <div class="stat-card">
+            <span class="stat-icon stat-icon--success"><i class="fas fa-signal" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Online now</p>
+                <p class="stat-value">{{ stats.online_sessions }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-clock" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Sessions today</p>
+                <p class="stat-value">{{ stats.today_sessions }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon stat-icon--info"><i class="fas fa-eye" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Page views today</p>
+                <p class="stat-value">{{ stats.today_page_views }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon stat-icon--warning"><i class="fas fa-users" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Total users</p>
+                <p class="stat-value">{{ stats.total_users }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon"><i class="fas fa-mobile-screen" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Total devices</p>
+                <p class="stat-value">{{ stats.total_devices }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon stat-icon--info"><i class="fas fa-chart-line" aria-hidden="true"></i></span>
+            <div>
+                <p class="stat-label">Total page views</p>
+                <p class="stat-value">{{ stats.total_page_views }}</p>
+            </div>
+        </div>
+    </section>
 
-<div class="dashboard-stats">
-    <h2>Last 14 Days</h2>
-    <canvas id="analyticsChart" width="800" height="300"></canvas>
-</div>
+    <section class="panel chart-panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-chart-area" aria-hidden="true"></i> Last 14 days</h2>
+                <p class="panel__subtitle">Sessions, page views and unique devices per day.</p>
+            </div>
+            <div class="chart-legend" aria-hidden="true">
+                <span class="legend-dot legend-dot--sessions"></span> Sessions
+                <span class="legend-dot legend-dot--views"></span> Page views
+                <span class="legend-dot legend-dot--devices"></span> Devices
+            </div>
+        </div>
+        <div class="chart-box">
+            <canvas id="analyticsChart" role="img" aria-label="Line chart of sessions, page views and devices over the last 14 days"></canvas>
+        </div>
+    </section>
 
-<h2>Daily Breakdown</h2>
-<table class="data-table">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Devices</th>
-            <th>Sessions</th>
-            <th>Page Views</th>
-            <th>Active Users</th>
-            <th>Top Page</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for day in daily %}
-        <tr>
-            <td>{{ day.date }}</td>
-            <td>{{ day.unique_devices }}</td>
-            <td>{{ day.total_sessions }}</td>
-            <td>{{ day.total_page_views }}</td>
-            <td>{{ day.active_users }}</td>
-            <td>{{ day.most_visited_page|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="empty-state">No daily stats yet. They are generated by <code>manage.py</code> tasks or the analytics service.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-calendar-days" aria-hidden="true"></i> Daily breakdown</h2>
+                <p class="panel__subtitle">Aggregated statistics for each recorded day.</p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Devices</th>
+                        <th scope="col">Sessions</th>
+                        <th scope="col">Page views</th>
+                        <th scope="col">Active users</th>
+                        <th scope="col">Top page</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in daily %}
+                    <tr>
+                        <td class="cell-primary">{{ day.date|date:"D, j M Y" }}</td>
+                        <td class="cell-num">{{ day.unique_devices }}</td>
+                        <td class="cell-num">{{ day.total_sessions }}</td>
+                        <td class="cell-num">{{ day.total_page_views }}</td>
+                        <td class="cell-num">{{ day.active_users }}</td>
+                        <td>
+                            {% if day.most_visited_page %}
+                            <span class="page-tag">{{ day.most_visited_page }}</span>
+                            {% else %}
+                            <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-chart-simple" aria-hidden="true"></i>
+                            <strong>No daily statistics yet</strong>
+                            <p>Daily snapshots appear here once the analytics service has run.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -74,12 +147,21 @@
             data: {
                 labels: rows.map(r => r.date),
                 datasets: [
-                    { label: 'Sessions', data: rows.map(r => r.total_sessions), borderColor: '#3498db', tension: 0.3 },
-                    { label: 'Page Views', data: rows.map(r => r.total_page_views), borderColor: '#2ecc71', tension: 0.3 },
-                    { label: 'Devices', data: rows.map(r => r.unique_devices), borderColor: '#e67e22', tension: 0.3 }
+                    { label: 'Sessions', data: rows.map(r => r.total_sessions), borderColor: '#5b6ee1', backgroundColor: 'rgba(91, 110, 225, 0.12)', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 2 },
+                    { label: 'Page Views', data: rows.map(r => r.total_page_views), borderColor: '#12a06a', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2, pointRadius: 2 },
+                    { label: 'Devices', data: rows.map(r => r.unique_devices), borderColor: '#c9861a', backgroundColor: 'transparent', tension: 0.35, borderWidth: 2, pointRadius: 2 }
                 ]
             },
-            options: { responsive: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(15, 23, 42, 0.06)' } }
+                }
+            }
         });
     })();
 </script>

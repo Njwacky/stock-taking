@@ -4,51 +4,86 @@
 {% block title %}Track Usage - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/stock-usage-tracking.css' %}">
+<link rel="stylesheet" href="{% static 'css/stock-usage.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="tracking-container">
-    <div class="tracking-header">
-        <h1><i class="fas fa-clipboard-list"></i> Track Stock Usage</h1>
-        <a href="{% url 'stock_usage_history' %}" class="btn btn-secondary">
-            <i class="fas fa-history"></i> View History
-            {% if pending_stock_usage_count %}<span class="badge">{{ pending_stock_usage_count }} pending</span>{% endif %}
-        </a>
-    </div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-clipboard-list" aria-hidden="true"></i> Track stock usage</h1>
+            <p>Log the kits you have used and follow the approval status of each request.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'stock_usage_history' %}" class="btn btn-secondary">
+                <i class="fas fa-history" aria-hidden="true"></i> View history
+                {% if pending_stock_usage_count %}<span class="badge">{{ pending_stock_usage_count }}</span>{% endif %}
+            </a>
+        </div>
+    </header>
 
-    <div class="tracking-grid">
-        <div class="tracking-form-card">
-            <h2>Log Usage</h2>
+    <div class="usage-layout">
+        <section class="panel usage-form-panel">
+            <div class="panel__header">
+                <div>
+                    <h2><i class="fas fa-pen-to-square" aria-hidden="true"></i> Log usage</h2>
+                    <p class="panel__subtitle">Requests are reviewed by a manager before stock is deducted.</p>
+                </div>
+            </div>
+
             <form method="post">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label>Clock Number</label>
-                    <input type="text" class="form-control" value="{{ user.clock_number|default:'' }}" disabled>
+                    <label for="id_clock_number_display">Clock number</label>
+                    <input type="text" id="id_clock_number_display" class="form-control"
+                           value="{{ user.clock_number|default:'Not set' }}" disabled>
+                    <p class="form-hint">Taken from your profile. Contact an admin if this is wrong.</p>
                 </div>
                 {% for field in form %}
                 <div class="form-group">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
+                    {% if field.help_text %}<p class="form-hint">{{ field.help_text }}</p>{% endif %}
                     {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
                 </div>
                 {% endfor %}
-                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Usage</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Submit usage</button>
+                </div>
             </form>
-        </div>
+        </section>
 
-        <div class="tracking-sidebar">
-            <h2>My Recent Requests</h2>
-            {% for usage in recent %}
-            <div class="usage-item status-{{ usage.status }}">
-                <strong>{{ usage.quantity_used }} x {{ usage.kit_type_name }}</strong>
-                <span class="status-badge">{{ usage.get_status_display }}</span>
-                <small>{{ usage.usage_date|date:"Y-m-d H:i" }}</small>
+        <aside class="panel usage-side-panel">
+            <div class="panel__header">
+                <div>
+                    <h2><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> My recent requests</h2>
+                    <p class="panel__subtitle">Latest five submissions.</p>
+                </div>
             </div>
-            {% empty %}
-            <p class="empty-state">No usage recorded yet.</p>
-            {% endfor %}
-        </div>
+
+            <ul class="usage-list">
+                {% for usage in recent %}
+                <li class="usage-item">
+                    <div class="usage-item__main">
+                        <span class="usage-item__qty">{{ usage.quantity_used }}&times;</span>
+                        <div>
+                            <p class="usage-item__kit">{{ usage.kit_type_name }}</p>
+                            <p class="usage-item__meta">{{ usage.usage_date|date:"j M Y, H:i" }}</p>
+                        </div>
+                    </div>
+                    <span class="status-badge status-{{ usage.status }}">{{ usage.get_status_display }}</span>
+                </li>
+                {% empty %}
+                <li class="empty-state">
+                    <i class="fas fa-clipboard" aria-hidden="true"></i>
+                    <strong>No usage recorded yet</strong>
+                    <p>Your submitted usage will appear here.</p>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <a href="{% url 'stock_usage_history' %}" class="btn btn-secondary btn-block">See all requests</a>
+        </aside>
     </div>
 </div>
 {% endblock %}

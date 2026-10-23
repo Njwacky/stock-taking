@@ -1,0 +1,178 @@
+/* Feedback / notifications pages ----------------------------------------- */
+
+.notification-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    border-radius: 9px;
+    background: var(--ui-primary-light);
+    color: var(--ui-primary);
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
+.comment-admin-item.unread .notification-icon {
+    background: var(--ui-primary);
+    color: #fff;
+}
+
+.comment-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+    white-space: nowrap;
+}
+
+.comment-admin-header strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.98rem;
+    line-height: 1.4;
+}
+
+.response-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #475569;
+    font-size: 0.85rem;
+    max-width: 380px;
+}
+
+/* Admin feedback review ------------------------------------------------- */
+
+.feedback-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.feedback-card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.feedback-card-title h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--ui-text);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.feedback-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--ui-text-muted);
+}
+
+.feedback-meta .badge-neutral {
+    text-transform: capitalize;
+}
+
+.feedback-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.feedback-reply {
+    margin-top: 4px;
+}
+
+.feedback-reply summary {
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ui-primary);
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 0;
+}
+
+.feedback-reply summary::-webkit-details-marker {
+    display: none;
+}
+
+.feedback-reply summary::before {
+    content: "\f105";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+}
+
+.feedback-reply[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.feedback-reply summary:hover {
+    color: var(--ui-primary-dark);
+}
+
+.feedback-reply-body {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.feedback-reply .form-actions {
+    margin-top: 4px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.feedback-reply .form-actions .btn {
+    min-width: 0;
+}
+
+.response-editor {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.response-editor .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .response-preview {
+        max-width: none;
+    }
+
+    .page-shell--narrow .comment-body {
+        font-size: 0.9rem;
+    }
+
+    .feedback-reply .form-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .feedback-reply .form-actions .btn {
+        flex: 1 1 auto;
+        width: auto;
+    }
+}

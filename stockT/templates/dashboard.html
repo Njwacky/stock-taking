@@ -4,10 +4,7 @@
 {% block title %}Dashboard - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard-controls.css' %}">
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
-<link rel="stylesheet" href="{% static 'css/most-received-kits.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard-page.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -25,73 +22,95 @@
     <h2>Why Register?</h2>
     <div class="carousel-container">
         <div class="why-register-cards">
-            <div class="register-card-item"><i class="fas fa-clipboard-list"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>
-            <div class="register-card-item"><i class="fas fa-chart-pie"></i><h3>Insights</h3><p>See what stock you have at a glance.</p></div>
-            <div class="register-card-item"><i class="fas fa-qrcode"></i><h3>QR Profile</h3><p>Share your profile with a scannable code.</p></div>
-            <div class="register-card-item"><i class="fas fa-comments"></i><h3>Feedback</h3><p>Report bugs and request features.</p></div>
-            <div class="register-card-item"><i class="fas fa-mobile-screen"></i><h3>PWA</h3><p>Install the app on any device.</p></div>
-            <div class="register-card-item"><i class="fas fa-shield-halved"></i><h3>Secure</h3><p>Role-based access keeps data safe.</p></div>
+            <div class="register-card-item"><i class="fas fa-clipboard-list" aria-hidden="true"></i><h3>Track Usage</h3><p>Log stock usage and keep an accurate history.</p></div>
+            <div class="register-card-item"><i class="fas fa-chart-pie" aria-hidden="true"></i><h3>Insights</h3><p>See what stock you have at a glance.</p></div>
+            <div class="register-card-item"><i class="fas fa-qrcode" aria-hidden="true"></i><h3>QR Profile</h3><p>Share your profile with a scannable code.</p></div>
+            <div class="register-card-item"><i class="fas fa-comments" aria-hidden="true"></i><h3>Feedback</h3><p>Report bugs and request features.</p></div>
+            <div class="register-card-item"><i class="fas fa-mobile-screen" aria-hidden="true"></i><h3>PWA</h3><p>Install the app on any device.</p></div>
+            <div class="register-card-item"><i class="fas fa-shield-halved" aria-hidden="true"></i><h3>Secure</h3><p>Role-based access keeps data safe.</p></div>
         </div>
-        <div class="carousel-dots">
+        <div class="carousel-dots" aria-hidden="true">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
     </div>
 </section>
 {% else %}
-<div class="dashboard-header">
-    <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-    <a href="{% url 'add_items' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Stock</a>
-</div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-chart-line" aria-hidden="true"></i> Dashboard</h1>
+            <p>Stock currently assigned to your team, with the most received kit types.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'most_received_kits' %}" class="btn btn-secondary"><i class="fas fa-ranking-star" aria-hidden="true"></i> Most received kits</a>
+            <a href="{% url 'add_items' %}" class="btn btn-secondary"><i class="fas fa-plus" aria-hidden="true"></i> Add stock</a>
+        </div>
+    </header>
 
-<div class="dashboard-stats">
-    <h2>Most Received Kits</h2>
-    <div class="chart-wrapper">
-        <canvas id="kitsPieChart" width="320" height="320"></canvas>
-        <div id="chartLegend" class="chart-legend"></div>
-    </div>
-    {{ kit_stats|json_script:"kitStatsData" }}
-</div>
+    <section class="panel dashboard-chart-panel dashboard-stats">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-chart-pie" aria-hidden="true"></i> Most received kits</h2>
+                <p class="panel__subtitle">Share of total quantity per kit type.</p>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="kitsPieChart" width="320" height="320" role="img" aria-label="Pie chart of stock quantity by kit type"></canvas>
+            <div id="chartLegend" class="chart-legend"></div>
+        </div>
+        {{ kit_stats|json_script:"kitStatsData" }}
+    </section>
 
-<form id="filter-form" method="get" class="dashboard-controls">
-    {% if user.is_manager %}
-    <select name="user" class="form-control">
-        <option value="">All users</option>
-        {% for u in users %}
-        <option value="{{ u.username }}" {% if filters.user == u.username %}selected{% endif %}>{{ u.username }}</option>
-        {% endfor %}
-    </select>
-    {% endif %}
-    <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ filters.search }}">
-    <select name="sort" class="form-control">
-        <option value="timestamp" {% if filters.sort == 'timestamp' %}selected{% endif %}>Date</option>
-        <option value="quantity" {% if filters.sort == 'quantity' %}selected{% endif %}>Quantity</option>
-        <option value="kit_type" {% if filters.sort == 'kit_type' %}selected{% endif %}>Kit Type</option>
-        <option value="condition" {% if filters.sort == 'condition' %}selected{% endif %}>Condition</option>
-    </select>
-    <select name="order" class="form-control">
-        <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descending</option>
-        <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascending</option>
-    </select>
-    <button type="submit" class="btn btn-secondary"><i class="fas fa-filter"></i> Filter</button>
-</form>
+    <section class="panel stock-panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Stock items</h2>
+                <p class="panel__subtitle">Filter, sort and manage the kits in the system.</p>
+            </div>
+        </div>
 
-<form id="bulk-delete-form" method="post">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="bulk_delete">
-    <div id="bulk-actions-bar" class="bulk-actions-bar">
-        <span id="selected-count">0</span> selected
-        {% if user.is_manager %}
-        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Selected</button>
-        {% endif %}
-    </div>
+        <form id="filter-form" method="get" class="toolbar filter-form">
+            {% if user.is_manager %}
+            <select name="user" class="form-control" aria-label="Filter by user">
+                <option value="">All users</option>
+                {% for u in users %}
+                <option value="{{ u.username }}" {% if filters.user == u.username %}selected{% endif %}>{{ u.username }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            <input type="text" name="search" class="form-control" placeholder="Search kit type, location..." value="{{ filters.search }}" aria-label="Search stock">
+            <select name="sort" class="form-control" aria-label="Sort by">
+                <option value="timestamp" {% if filters.sort == 'timestamp' %}selected{% endif %}>Date</option>
+                <option value="quantity" {% if filters.sort == 'quantity' %}selected{% endif %}>Quantity</option>
+                <option value="kit_type" {% if filters.sort == 'kit_type' %}selected{% endif %}>Kit type</option>
+                <option value="condition" {% if filters.sort == 'condition' %}selected{% endif %}>Condition</option>
+            </select>
+            <select name="order" class="form-control" aria-label="Sort direction">
+                <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descending</option>
+                <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascending</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
+        </form>
 
-    <div id="table-container">
-        {% include 'partials/kit_table.html' %}
-    </div>
-</form>
+        <form id="bulk-delete-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="bulk_delete">
+            <div id="bulk-actions-bar" class="bulk-actions-bar">
+                <span class="bulk-actions-info"><strong id="selected-count">0</strong> selected</span>
+                {% if user.is_manager %}
+                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash" aria-hidden="true"></i> Delete selected</button>
+                {% endif %}
+            </div>
 
-<div id="pagination-container">
-    {% include 'partials/pagination.html' %}
+            <div id="table-container" class="dashboard-table-wrapper">
+                {% include 'partials/kit_table.html' %}
+            </div>
+        </form>
+
+        <div id="pagination-container">
+            {% include 'partials/pagination.html' %}
+        </div>
+    </section>
 </div>
 {% endif %}
 {% endblock %}

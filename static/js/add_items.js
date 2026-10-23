@@ -1,3 +1,49 @@
+/* --------------------------------------------------------------------------
+   Modal helper
+   The kit edit/delete dialogs are opened with a jQuery-style call further down
+   this file, but the page does not load jQuery or Bootstrap. This tiny helper
+   provides the same `.modal('show' | 'hide')` behaviour using plain DOM APIs.
+   -------------------------------------------------------------------------- */
+(function () {
+    function factory(selector) {
+        const element = typeof selector === 'string' ? document.querySelector(selector) : selector;
+        return {
+            modal(action) {
+                if (!element) return this;
+                if (action === 'show') {
+                    element.style.display = 'flex';
+                    element.classList.add('is-open');
+                } else if (action === 'hide') {
+                    element.style.display = 'none';
+                    element.classList.remove('is-open');
+                }
+                return this;
+            }
+        };
+    }
+
+    window.$ = window.$ || factory;
+
+    document.addEventListener('click', function (event) {
+        const closer = event.target.closest('.modal-close');
+        if (closer) {
+            const modal = closer.closest('.modal');
+            if (modal) modal.style.display = 'none';
+            return;
+        }
+        if (event.target.classList && event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        document.querySelectorAll('.modal').forEach(function (modal) {
+            modal.style.display = 'none';
+        });
+    });
+})();
+
 // Add Items functionality with CRUD for existing kits
 document.addEventListener('DOMContentLoaded', function() {
     const userSelect = document.getElementById('user');

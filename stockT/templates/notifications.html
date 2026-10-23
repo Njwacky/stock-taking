@@ -4,29 +4,60 @@
 {% block title %}Notifications - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/feedback.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <h1><i class="fas fa-bell"></i> Notifications</h1>
-
-    {% for notification in notifications %}
-    <div class="comment-admin-item {% if user not in notification.read_by.all %}unread{% endif %}">
-        <div class="comment-admin-header">
-            <strong>{{ notification.title }}</strong>
-            <small class="text-muted">{{ notification.sent_at|date:"Y-m-d H:i" }}</small>
+<div class="page-shell page-shell--narrow">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-bell" aria-hidden="true"></i> Notifications</h1>
+            <p>Alerts and updates sent to your account.</p>
         </div>
-        <p>{{ notification.message }}</p>
+    </header>
+
+    <div class="comments-container">
+        {% for notification in notifications %}
         {% if user not in notification.read_by.all %}
-        <form method="post" action="{% url 'mark_notification_read' notification.id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Mark as read</button>
-        </form>
+        <article class="comment-admin-item unread">
+            <div class="comment-admin-header">
+                <strong>
+                    <i class="fas fa-{% if notification.notification_type == 'stock' %}boxes-stacked{% elif notification.notification_type == 'security' %}shield-halved{% else %}circle-info{% endif %} notification-icon" aria-hidden="true"></i>
+                    {{ notification.title }}
+                </strong>
+                <span class="comment-date"><i class="far fa-clock" aria-hidden="true"></i> {{ notification.sent_at|date:"j M Y, H:i" }}</span>
+            </div>
+            <p class="comment-body">{{ notification.message }}</p>
+            <div class="inline-actions">
+                <span class="badge badge-soft">New</span>
+                <form method="post" action="{% url 'mark_notification_read' notification.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Mark as read</button>
+                </form>
+            </div>
+        </article>
+        {% else %}
+        <article class="comment-admin-item">
+            <div class="comment-admin-header">
+                <strong>
+                    <i class="fas fa-circle-info notification-icon" aria-hidden="true"></i>
+                    {{ notification.title }}
+                </strong>
+                <span class="comment-date"><i class="far fa-clock" aria-hidden="true"></i> {{ notification.sent_at|date:"j M Y, H:i" }}</span>
+            </div>
+            <p class="comment-body">{{ notification.message }}</p>
+            <div class="inline-actions">
+                <span class="text-muted"><i class="fas fa-check-double" aria-hidden="true"></i> Read</span>
+            </div>
+        </article>
         {% endif %}
+        {% empty %}
+        <div class="empty-panel">
+            <i class="fas fa-bell-slash" aria-hidden="true"></i>
+            <h3>You're all caught up</h3>
+            <p>There are no notifications for your account right now.</p>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <p class="empty-state">No notifications yet.</p>
-    {% endfor %}
 </div>
 {% endblock %}

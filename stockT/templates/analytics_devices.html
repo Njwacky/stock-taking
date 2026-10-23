@@ -4,41 +4,80 @@
 {% block title %}Devices - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-mobile-screen"></i> Tracked Devices</h1>
-        <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-chart-pie"></i> Back to Analytics</a>
-    </div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-mobile-screen" aria-hidden="true"></i> Tracked devices</h1>
+            <p>Devices that have signed in to the system, ordered by most recent activity.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'analytics_dashboard' %}" class="btn btn-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to analytics</a>
+        </div>
+    </header>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Device</th>
-                <th>Browser</th>
-                <th>OS</th>
-                <th>User</th>
-                <th>Sessions</th>
-                <th>Last Seen</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for device in devices %}
-            <tr>
-                <td>{{ device.device_type|default:"Unknown" }}</td>
-                <td>{{ device.browser|default:"-" }}</td>
-                <td>{{ device.os|default:"-" }}</td>
-                <td>{{ device.user.username|default:"Anonymous" }}</td>
-                <td>{{ device.total_sessions }}</td>
-                <td>{{ device.last_seen|date:"Y-m-d H:i" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="empty-state">No devices tracked yet.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-laptop" aria-hidden="true"></i> Device list</h2>
+                <p class="panel__subtitle">{{ devices|length }} device{{ devices|length|pluralize }} tracked</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Device</th>
+                        <th scope="col">Browser</th>
+                        <th scope="col">Operating system</th>
+                        <th scope="col">User</th>
+                        <th scope="col">Sessions</th>
+                        <th scope="col">Last seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                    <tr>
+                        <td>
+                            <span class="device-name">
+                                {% if device.device_type|lower == 'mobile' %}
+                                <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                                {% elif device.device_type|lower == 'tablet' %}
+                                <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
+                                {% else %}
+                                <i class="fas fa-desktop" aria-hidden="true"></i>
+                                {% endif %}
+                                {{ device.device_type|default:"Unknown device" }}
+                            </span>
+                        </td>
+                        <td>{{ device.browser|default:"—" }}</td>
+                        <td>{{ device.os|default:"—" }}</td>
+                        <td>
+                            {% if device.user %}
+                            <span class="device-user"><i class="fas fa-user" aria-hidden="true"></i> {{ device.user.username }}</span>
+                            {% else %}
+                            <span class="text-muted">Anonymous</span>
+                            {% endif %}
+                        </td>
+                        <td class="cell-num">{{ device.total_sessions }}</td>
+                        <td class="last-seen">{{ device.last_seen|date:"j M Y, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-mobile-screen" aria-hidden="true"></i>
+                            <strong>No devices tracked yet</strong>
+                            <p>Devices appear here after users sign in from the app.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}

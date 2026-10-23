@@ -4,39 +4,67 @@
 {% block title %}My Feedback - Stock Management System{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/table_data.css' %}">
+<link rel="stylesheet" href="{% static 'css/feedback.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <div class="dashboard-header">
-        <h1><i class="fas fa-comments"></i> My Feedback</h1>
-        <a href="{% url 'submit_comment' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Feedback</a>
-    </div>
+<div class="page-shell">
+    <header class="page-header">
+        <div class="page-header__text">
+            <h1><i class="fas fa-comments" aria-hidden="true"></i> My feedback</h1>
+            <p>Track the bugs, ideas and questions you have shared with the team.</p>
+        </div>
+        <div class="page-header__actions">
+            <a href="{% url 'submit_comment' %}" class="btn btn-secondary"><i class="fas fa-plus" aria-hidden="true"></i> New feedback</a>
+        </div>
+    </header>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Admin Response</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for comment in comments %}
-            <tr>
-                <td>{{ comment.created_at|date:"Y-m-d" }}</td>
-                <td>{{ comment.get_category_display }}</td>
-                <td>{{ comment.subject }}</td>
-                <td><span class="status-badge status-{{ comment.status }}">{{ comment.get_status_display }}</span></td>
-                <td>{{ comment.admin_response|default:"-" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="empty-state">You have not submitted any feedback yet.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2><i class="fas fa-list-check" aria-hidden="true"></i> Submitted feedback</h2>
+                <p class="panel__subtitle">{{ comments|length }} item{{ comments|length|pluralize }}</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Subject</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Admin response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in comments %}
+                    <tr>
+                        <td class="text-nowrap">{{ comment.created_at|date:"j M Y" }}</td>
+                        <td><span class="badge badge-neutral">{{ comment.get_category_display }}</span></td>
+                        <td class="cell-primary">{{ comment.subject }}</td>
+                        <td><span class="status-badge status-{{ comment.status }}">{{ comment.get_status_display }}</span></td>
+                        <td>
+                            {% if comment.admin_response %}
+                            <span class="response-preview">{{ comment.admin_response }}</span>
+                            {% else %}
+                            <span class="text-muted">Awaiting response</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <i class="fas fa-comment-slash" aria-hidden="true"></i>
+                            <strong>No feedback submitted yet</strong>
+                            <p>Use the feedback button or the link above to send your first report.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}

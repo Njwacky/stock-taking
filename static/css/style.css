@@ -1,22 +1,8 @@
-/* Main stylesheet - imports all other stylesheets */
+/* Global stylesheet -------------------------------------------------------
+   Page-specific design now lives in components.css and in each page's own
+   stylesheet, so this file only keeps the true global resets and helpers.
+   ----------------------------------------------------------------------- */
 
-/* Import base styles first */
-@import url('base.css');
-
-/* Import component-specific stylesheets */
-@import url('navbar.css');
-@import url('login.css');
-@import url('register.css');
-@import url('add-items.css');
-@import url('dashboard.css');
-@import url('dashboard-controls.css');
-@import url('table_data.css');
-@import url('most-received-kits.css');
-@import url('manage-users.css');
-@import url('logout-confirm.css');
-@import url('danger-confirm.css');
-
-/* Global styles and overrides */
 * {
     box-sizing: border-box;
 }
@@ -25,13 +11,14 @@ body {
     margin: 0;
     padding: 70px 0 0 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #f4f6fb;
+    color: #1f2937;
 }
 
 /* Ensure proper spacing after navbar */
 .navbar + .container,
 .navbar + * {
-    margin-top: 20px;
+    margin-top: 0;
 }
 
 /* Responsive grid system */
@@ -93,7 +80,18 @@ body {
     align-items: center !important;
 }
 
-/* Responsive adjustments */
+/* Images never overflow their container */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+    outline: 2px solid #5b6ee1;
+    outline-offset: 2px;
+}
+
 @media (max-width: 768px) {
     .row {
         flex-direction: column;
@@ -101,11 +99,6 @@ body {
 
     .col-6 {
         flex: 0 0 100%;
-    }
-
-    .navbar {
-        flex-direction: column;
-        gap: 10px;
     }
 
     .nav-link {

@@ -510,3 +510,19 @@ function generateChartLegend(chartData, colors) {
     legendHTML += '</div>';
     legendContainer.innerHTML = legendHTML;
 }
+
+// Pagination links are re-rendered after every AJAX refresh, so handle clicks
+// through event delegation instead of binding each link individually.
+document.addEventListener('click', function (event) {
+    const link = event.target.closest('.page-link[data-page]');
+    if (!link) return;
+    event.preventDefault();
+    const page = link.dataset.page;
+    if (typeof loadPage === 'function') {
+        loadPage(page);
+    } else {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        window.location.href = url.toString();
+    }
+});
