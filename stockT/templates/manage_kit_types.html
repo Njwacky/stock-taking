@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kit Types · Stock Tracker{% endblock %}
+
+{% block content %}
+<div class="manage-users-container kit-types-page">
+    <header class="page-header">
+        <div class="dashboard-heading">
+            <h1>Kit types</h1>
+            <p class="dashboard-subtitle">The stock types available to this workspace. Deactivating a type hides it from new entries without touching its history.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <span class="panel-note">{{ kit_types|length }} type{{ kit_types|length|pluralize }}</span>
+        </div>
+    </header>
+
+    <form method="post" class="kit-type-create-form" aria-label="Add a kit type">
+        <div class="panel-head">
+            <div>
+                <h2>Add a kit type</h2>
+                <p>Name and code are required. The unit appears next to quantities.</p>
+            </div>
+        </div>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div class="kit-type-create-grid">
+            <div class="form-group">
+                <label for="new-kit-name">Name</label>
+                <input id="new-kit-name" type="text" name="name" class="form-control" placeholder="e.g. VHB Boss Tape 18mm" required>
+            </div>
+            <div class="form-group">
+                <label for="new-kit-code">Code</label>
+                <input id="new-kit-code" type="text" name="code" class="form-control" placeholder="e.g. VHB18" required>
+            </div>
+            <div class="form-group">
+                <label for="new-kit-unit">Unit of measure</label>
+                <input id="new-kit-unit" type="text" name="unit_of_measure" class="form-control" placeholder="Pieces">
+            </div>
+            <div class="form-group">
+                <label for="new-kit-description">Description <span class="text-muted">(optional)</span></label>
+                <input id="new-kit-description" type="text" name="description" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="new-kit-reorder">Reorder level <span class="text-muted">(optional)</span></label>
+                <input id="new-kit-reorder" type="number" name="reorder_level" min="0" step="1" class="form-control" placeholder="e.g. 20">
+                <small class="text-muted">Alert managers when total stock drops to this level.</small>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg> Add kit type</button>
+    </form>
+
+    <div class="table-panel panel">
+    <div class="table-scroll-region" role="region" tabindex="0" aria-label="Kit types in this workspace">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Unit</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Reorder at</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in kit_types %}
+                <tr>
+                    <td>{{ t.name }}</td>
+                    <td><code>{{ t.code }}</code></td>
+                    <td>{{ t.unit_of_measure }}</td>
+                    <td>{{ t.description|default:"—" }}</td>
+                    <td>
+                        <form method="post" class="inline-form reorder-form" aria-label="Set reorder level for {{ t.name }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_reorder">
+                            <input type="hidden" name="kit_type_id" value="{{ t.id }}">
+                            <input type="number" name="reorder_level" min="0" step="1" class="form-control form-control-sm" value="{{ t.reorder_level|default_if_none:'' }}" aria-label="Reorder level for {{ t.name }}">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">Save</button>
+                        </form>
+                    </td>
+                    <td>{% if t.is_active %}<span class="status-badge status-approved">Active</span>{% else %}<span class="status-badge status-dismissed">Inactive</span>{% endif %}</td>
+                    <td>
+                        <form method="post" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle">
+                            <input type="hidden" name="kit_type_id" value="{{ t.id }}">
+                            {% if t.is_active %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Deactivate</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty-state">No kit types yet. Add one using the form above.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+</div>
+{% endblock %}

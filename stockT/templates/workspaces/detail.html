@@ -1,0 +1,15 @@
+{% extends 'workspaces/layout.html' %}
+{% block title %}{{ workspace.name }} · Stock Tracker{% endblock %}
+{% block workspace_content %}
+<header><a href="{% url 'workspace_list' %}">← My Workspaces / Switch workspace</a><h1>{{ workspace.name }}</h1><p class="muted">{{ workspace.description }}</p><p>Private inventory · {{ product_count }} product{{ product_count|pluralize }}</p></header>
+<section class="workspace-card"><h2>Products</h2><div class="workspace-table"><table><thead><tr><th>Product</th><th>Code</th><th>Quantity</th><th>Unit</th><th>Location</th><th>Actions</th></tr></thead><tbody>
+{% for product in products %}<tr><td>{{ product.name }}</td><td>{{ product.sku }}</td><td>{{ product.quantity }}</td><td>{{ product.unit }}</td><td>{{ product.location|default:'—' }}</td><td><a href="{% url 'workspace_product_edit' workspace.pk product.pk %}">Edit product</a></td></tr>
+{% empty %}<tr><td colspan="6">This workspace is empty. Add your first product below — no preset kits or BHV products required.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if products.has_other_pages %}<nav aria-label="Product pages">
+{% if products.has_previous %}<a href="?page={{ products.previous_page_number }}">Previous</a>{% endif %}
+ Page {{ products.number }} of {{ products.paginator.num_pages }}
+{% if products.has_next %}<a href="?page={{ products.next_page_number }}">Next</a>{% endif %}
+</nav>{% endif %}</section>
+<div class="workspace-grid"><section class="workspace-card"><h2>{% if editing %}Edit product{% else %}Add a new product{% endif %}</h2><p class="muted">Saving to {{ workspace.name }} only.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{% if editing %}Save changes{% else %}Add product{% endif %}</button> {% if editing %}<a href="{% url 'workspace_detail' workspace.pk %}">Cancel</a>{% endif %}</form></section></div>
+{% endblock %}

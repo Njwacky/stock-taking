@@ -80,19 +80,113 @@ class User(AbstractUser):
         return self.get_role_display()
 
 
+class Workspace(models.Model):
+    """A workspace is a tenant: each registered user owns one (their "apps"),
+    can create more, and can invite other users as members. All stock data
+    (kit types, kits, usage) is scoped to a workspace."""
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=120, unique=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='created_workspaces',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.name)[:100] or 'workspace'
+            slug = base
+            n = 2
+            while Workspace.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f'{base}-{n}'
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def owner(self):
+        """The user who owns this workspace (first owner membership)."""
+        membership = self.memberships.filter(role=WorkspaceMember.ROLE_OWNER).first()
+        return membership.user if membership else self.created_by
+
+
+class WorkspaceMember(models.Model):
+    """Membership of a user in a workspace, with a per-workspace role."""
+
+    ROLE_OWNER = 'owner'
+    ROLE_ADMIN = 'admin'
+    ROLE_MEMBER = 'member'
+    ROLE_CHOICES = [
+        (ROLE_OWNER, 'Owner'),
+        (ROLE_ADMIN, 'Admin'),
+        (ROLE_MEMBER, 'Member'),
+    ]
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspace_memberships')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['joined_at']
+        constraints = [
+            models.UniqueConstraint(fields=['workspace', 'user'], name='unique_workspace_user'),
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} @ {self.workspace.name} ({self.role})'
+
+    @property
+    def is_manager(self):
+        return self.role in (self.ROLE_OWNER, self.ROLE_ADMIN)
+
+
 class KitType(models.Model):
     """Type/category of stock kits (e.g. VHB tape, rivnuts, feets)."""
 
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     unit_of_measure = models.CharField(max_length=50, default='pieces')
+    # Low-stock threshold: when the workspace's total active quantity for
+    # this type falls to/below the level, managers are alerted.
+    reorder_level = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='kit_types',
+    )
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='created_kit_types',
     )
+
+    class Meta:
+        constraints = [
+            # Names/codes are unique per workspace (null workspace = legacy
+            # rows, which are exempt so old fixtures keep working).
+            models.UniqueConstraint(
+                fields=['workspace', 'name'],
+                condition=models.Q(workspace__isnull=False),
+                name='unique_kit_type_name_per_workspace',
+            ),
+            models.UniqueConstraint(
+                fields=['workspace', 'code'],
+                condition=models.Q(workspace__isnull=False),
+                name='unique_kit_type_code_per_workspace',
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -122,6 +216,10 @@ class Kit(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     location = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='kits',
+    )
     # Legacy field kept for backwards compatibility with older data.
     kit_type_legacy = models.CharField(max_length=20, null=True, blank=True)
     kit_type_string = models.CharField(max_length=20, default='')
@@ -300,6 +398,17 @@ class StockUsage(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     admin_notes = models.TextField(null=True, blank=True)
     stock_deleted = models.BooleanField(default=False)
+    # Soft delete: records are flagged, never destroyed, so the audit trail
+    # of who used what (and what stock moved) stays intact.
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='deleted_usages',
+    )
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='stock_usages',
+    )
     kit = models.ForeignKey(Kit, on_delete=models.SET_NULL, null=True, blank=True, related_name='usages')
     kit_type = models.ForeignKey(
         KitType, on_delete=models.SET_NULL, null=True, blank=True, related_name='usages',
@@ -393,6 +502,12 @@ class SessionTracker(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions',
     )
+    # Tenant scope captured when the session starts (and filled in on login)
+    # so each workspace's analytics only ever include its own members.
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='tracked_sessions',
+    )
 
     class Meta:
         ordering = ['-started_at']
@@ -440,3 +555,45 @@ class DailyStats(models.Model):
 
     def __str__(self):
         return f'Stats for {self.date}'
+
+
+class Inventory(models.Model):
+    """A private inventory, independent of the multi-tenant workspace model.
+
+    This used to be a second ``Workspace`` model. Having two classes with the
+    same name in one app caused Django to register only the last one, breaking
+    every foreign key that pointed at the multi-tenant ``Workspace`` (E300).
+    """
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inventories')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        verbose_name_plural = 'inventories'
+
+    def __str__(self):
+        return self.name
+
+
+class InventoryProduct(models.Model):
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name='products')
+    name = models.CharField(max_length=100)
+    sku = models.CharField('Product code', max_length=50)
+    version = models.PositiveIntegerField(default=0, editable=False)
+    quantity = models.PositiveIntegerField(default=0)
+    unit = models.CharField(max_length=50, default='pieces')
+    location = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['inventory', 'sku'], name='unique_inventory_product_sku'),
+        ]
+
+    def __str__(self):
+        return self.name

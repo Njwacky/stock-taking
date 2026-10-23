@@ -12,7 +12,7 @@ ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512]
 # Colors
 BACKGROUND_COLOR = (102, 126, 234)  # #667eea
 TEXT_COLOR = (255, 255, 255)
-
+#TEXT
 def create_icon(size, output_path):
     """Create a simple icon with text"""
     # Create image with gradient-like background

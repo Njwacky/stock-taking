@@ -1,14 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Submit Feedback - Stock Management System{% endblock %}
+{% block title %}Submit Feedback · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="comments-container">
-    <div class="login-card" style="max-width:640px">
-        <h1><i class="fas fa-comment-dots"></i> Submit Feedback</h1>
+<div class="form-page">
+    <div class="form-card">
+        <h1>Submit Feedback</h1>
+        <p class="text-muted">Report a bug, request a feature, or share an idea.</p>
         <form method="post">
             {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="field-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
             {% for field in form %}
             <div class="form-group">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -16,7 +20,10 @@
                 {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Feedback</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-send"></use></svg> Send Feedback</button>
+                <a href="{% url 'my_comments' %}" class="btn btn-secondary">Cancel</a>
+            </div>
         </form>
     </div>
 </div>
