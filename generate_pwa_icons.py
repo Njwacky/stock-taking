@@ -60,8 +60,8 @@ def main():
     images_dir = os.path.join('static', 'images')
     os.makedirs(images_dir, exist_ok=True)
     
-    # Check if we have an existing icon to use
-    existing_icon = os.path.join(images_dir, 'light_blue.png')
+    # Use the Stock Tracker artwork rather than the old solid-color placeholder.
+    existing_icon = os.path.join(images_dir, 'icon-512x512.png')
     
     if os.path.exists(existing_icon):
         print(f"📷 Found existing icon: {existing_icon}")

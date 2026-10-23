@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Stock Tracker</title>
+  <desc id="description">A white stock box with a green check mark on a blue background</desc>
+  <defs>
+    <linearGradient id="background" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#42b8f5"/>
+      <stop offset="1" stop-color="#246bbd"/>
+    </linearGradient>
+    <filter id="box-shadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.25" flood-color="#123e67" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#background)"/>
+  <path d="M7 0h50L0 57V7a7 7 0 0 1 7-7Z" fill="#fff" opacity="0.055"/>
+
+  <g filter="url(#box-shadow)" stroke-linejoin="round">
+    <path d="M32 10 51 19.5 32 29 13 19.5Z" fill="#fff"/>
+    <path d="M13 19.5 32 29v22l-19-9.5Z" fill="#eaf6ff"/>
+    <path d="m32 29 19-9.5v22L32 51Z" fill="#cde8fa"/>
+    <path d="m24 14 8-4 19 9.5-8 4Z" fill="#d8effc" opacity="0.7"/>
+  </g>
+
+  <circle cx="45" cy="44" r="10.5" fill="#2ecc71" stroke="#fff" stroke-width="2.25"/>
+  <path d="m39.5 44 4 4 7.5-8.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
