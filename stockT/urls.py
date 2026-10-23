@@ -1,9 +1,12 @@
 """URL configuration for the stockT application."""
 from django.urls import path
 
-from . import views
+from . import views, workspaces
 
 urlpatterns = [
+    path('workspaces/', workspaces.workspace_list, name='workspace_list'),
+    path('workspaces/<int:workspace_id>/', workspaces.workspace_detail, name='workspace_detail'),
+    path('workspaces/<int:workspace_id>/products/<int:product_id>/edit/', workspaces.workspace_detail, name='workspace_product_edit'),
     # Dashboard / home
     path('', views.dashboard, name='dashboard'),
 

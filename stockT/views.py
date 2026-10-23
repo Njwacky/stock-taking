@@ -149,13 +149,13 @@ def dashboard(request):
 
 def register(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('workspace_list')
     form = RegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
         messages.success(request, 'Welcome! Your account has been created.')
-        return redirect('dashboard')
+        return redirect('workspace_list')
     return render(request, 'register.html', {'form': form})
 
 

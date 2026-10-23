@@ -82,8 +82,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemsSelected = Array.from(checkboxes).some(cb => cb.checked);
         const quantitiesValid = Array.from(quantityInputs).every(input => {
             if (input.disabled) return true;
-            const value = parseInt(input.value) || 0;
-            return value >= 0;
+            const value = Number(input.value);
+            return Number.isInteger(value) && value > 0 && input.checkValidity();
         });
 
         submitBtn.disabled = !(userSelected && itemsSelected && quantitiesValid);
@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 quantityInput.style.display = 'block'; // Show quantity input when selected
                 kitDetails.classList.add('show'); // Use smooth transition
                 detailFields.forEach(field => field.disabled = false);
+                itemUnit.hidden = false;
                 itemUnit.style.display = 'block'; // Show unit when item is selected
                 quantityInput.focus();
                 
@@ -125,9 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 kitDetails.classList.remove('show'); // Use smooth transition
                 detailFields.forEach(field => {
                     field.disabled = true;
-                    field.value = '';
+                    if (field.tagName === 'SELECT') field.selectedIndex = 0;
+                    else field.value = '';
                 });
                 quantityInput.value = '';
+                itemUnit.hidden = true;
                 itemUnit.style.display = 'none'; // Hide unit when item is not selected
                 
                 // Hide tape calculation
@@ -193,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load user's existing kits when user is selected
     userSelect.addEventListener('change', function() {
+        if (!existingKitsSection) return;
         const userId = this.value;
         if (userId) {
             loadUserKits(userId);
@@ -206,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Refresh kits button
-    refreshKitsBtn.addEventListener('click', function() {
+    refreshKitsBtn?.addEventListener('click', function() {
         const userId = userSelect.value;
         if (userId) {
             loadUserKits(userId);
@@ -214,8 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Search and filter functionality
-    kitSearchInput.addEventListener('input', filterKits);
-    kitFilterSelect.addEventListener('change', filterKits);
+    kitSearchInput?.addEventListener('input', filterKits);
+    kitFilterSelect?.addEventListener('change', filterKits);
 
     // Load user's kits from API
     async function loadUserKits(userId) {
@@ -470,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Save kit changes
-    saveKitChangesBtn.addEventListener('click', async function() {
+    saveKitChangesBtn?.addEventListener('click', async function() {
         if (!currentEditingKitId) return;
 
         const formData = new FormData(document.getElementById('kitEditForm'));
@@ -529,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Confirm kit deletion
-    confirmKitDeleteBtn.addEventListener('click', async function() {
+    confirmKitDeleteBtn?.addEventListener('click', async function() {
         if (!currentDeletingKitId) return;
 
         try {
@@ -610,6 +614,11 @@ document.addEventListener('DOMContentLoaded', function() {
             alertDiv.classList.remove('show');
             setTimeout(() => alertDiv.remove(), 150);
         }, 5000);
+    }
+
+    if (existingKitsSection && userSelect.value) {
+        selectedUserName.textContent = userSelect.options[userSelect.selectedIndex].text.split(' (')[0];
+        loadUserKits(userSelect.value);
     }
 
     // Make functions globally available

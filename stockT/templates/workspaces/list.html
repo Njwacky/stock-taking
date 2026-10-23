@@ -1,0 +1,12 @@
+{% extends 'workspaces/layout.html' %}
+{% block title %}My Workspaces · Stock Tracker{% endblock %}
+{% block workspace_content %}
+<header><h1>My Workspaces</h1><p class="muted">Your business. Your products. A fresh inventory for every project.</p><p>Each workspace is private to your account and separate from the existing kit inventory.</p></header>
+<div class="workspace-grid">
+<section class="workspace-card"><h2>Your workspaces</h2>
+{% for workspace in workspaces %}<article><h3><a href="{% url 'workspace_detail' workspace.pk %}">{{ workspace.name }}</a></h3><p>{{ workspace.description|linebreaksbr }}</p><hr></article>
+{% empty %}<h3>Start with a clean slate</h3><p class="muted">No workspaces yet. Create one for your shop, storeroom or project, then add any products you need.</p>{% endfor %}
+</section>
+<section class="workspace-card"><h2>Create a workspace</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Create workspace</button></form></section>
+</div>
+{% endblock %}

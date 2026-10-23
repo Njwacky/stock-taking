@@ -268,5 +268,5 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Login/Logout redirects
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/workspaces/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'

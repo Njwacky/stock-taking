@@ -31,3 +31,6 @@ Thumbs.db
 
 # Node (PWA tooling, if used)
 node_modules/
+
+# Local UI test dependencies
+.cache/
