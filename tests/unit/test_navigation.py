@@ -146,6 +146,18 @@ class TestSingleNavigationImplementation:
         for selector in ('.mobile-menu-btn {', '.hamburger-line {', '.nav-links {', '.navbar {'):
             assert selector not in navbar_css
 
+    def test_sidebar_keeps_its_footer_visible_when_navigation_is_long(self):
+        """The scrollable flex child must be allowed to shrink within the rail."""
+        from pathlib import Path
+
+        ui_css = (Path('static/css') / 'ui.css').read_text()
+        sidebar = ui_css.split('.sidebar {', 1)[1].split('}', 1)[0]
+        sidebar_nav = ui_css.split('.sidebar-nav {', 1)[1].split('}', 1)[0]
+
+        assert 'min-height: 0;' in sidebar
+        assert 'min-height: 0;' in sidebar_nav
+        assert 'overflow-y: auto;' in sidebar_nav
+
     def test_service_worker_precaches_only_existing_assets(self):
         """A stale precache entry aborts the SW install, so the PWA stops updating."""
         import re
