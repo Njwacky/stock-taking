@@ -46,35 +46,65 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                 logger.exception('Failed to create stock usage notification')
         return
 
-    kit = instance.kit
-    # LOGIC FIX: If kit is None (e.g. usage logged before fix), try to resolve via user+kit_type
-    if kit is None and instance.kit_type_id:
-        try:
-            # Find best candidate: user's kit of that type with most stock
-            kit = Kit.objects.filter(
-                user=instance.user,
-                kit_type_fk=instance.kit_type,
-                is_active=True
-            ).order_by('-quantity', '-timestamp').first()
-            if kit:
-                # Link it for audit trail (save without triggering signal again)
-                StockUsage.objects.filter(pk=instance.pk).update(kit=kit)
-                instance.kit = kit
-                logger.info('Stock usage #%s auto-linked to kit #%s (fallback resolution)', instance.id, kit.id)
-            else:
-                logger.warning('Stock usage #%s approved but no matching kit found for user %s and kit_type %s', instance.id, instance.user_id, instance.kit_type_id)
-        except Exception:
-            logger.exception('Failed to auto-link kit for usage #%s', instance.id)
-            kit = None
+    if instance.stock_deleted:
+        raise ValidationError(
+            'This usage cannot be approved because its linked stock was already removed or processed.'
+        )
+    if instance.quantity_used < 1:
+        raise ValidationError('Usage quantity must be at least 1.')
 
-    try:
-        if kit is not None:
-            # Refresh to get latest quantity (avoid stale data)
-            try:
-                kit.refresh_from_db()
-            except Exception:
-                pass
-            if instance.quantity_used >= kit.quantity:
+    # The review view wraps the status change and this signal in one outer
+    # transaction. Keep the stock changes and completion write grouped here as
+    # well; callers that approve usages directly must also use a transaction.
+    with transaction.atomic():
+        if instance.kit_id:
+            kits = list(
+                Kit.objects.select_for_update().filter(pk=instance.kit_id)
+            )
+            if not kits:
+                raise ValidationError('The selected stock item no longer exists.')
+            kit = kits[0]
+            if (
+                kit.user_id != instance.user_id
+                or (instance.kit_type_id and kit.kit_type_fk_id != instance.kit_type_id)
+                or kit.workspace_id != instance.workspace_id
+                or not kit.is_active
+            ):
+                raise ValidationError(
+                    'The selected stock item does not match this usage request.'
+                )
+        elif instance.kit_type_id:
+            # The tracking form selects a type, not a particular kit. Apply
+            # usage FIFO, but only to active stock owned by this user in the
+            # same workspace as the request.
+            kits = list(
+                Kit.objects.select_for_update().filter(
+                    user_id=instance.user_id,
+                    kit_type_fk_id=instance.kit_type_id,
+                    workspace_id=instance.workspace_id,
+                    is_active=True,
+                    quantity__gt=0,
+                ).order_by('timestamp', 'pk')
+            )
+        else:
+            kits = []
+
+        available = sum(kit.quantity for kit in kits)
+        if available < instance.quantity_used:
+            raise ValidationError(
+                f'Not enough stock to approve this request: '
+                f'{available} available, {instance.quantity_used} requested.'
+            )
+
+        touched_kit_types = {
+            kit.kit_type_fk_id for kit in kits if kit.kit_type_fk_id
+        }
+        remaining = instance.quantity_used
+        for kit in kits:
+            if remaining <= 0:
+                break
+            take = min(kit.quantity, remaining)
+            if take == kit.quantity:
                 # Full depletion -> delete the kit entirely.
                 kit_id = kit.id
                 kit.delete()
@@ -88,11 +118,19 @@ def handle_stock_usage_approval(sender, instance, created, **kwargs):
                     'Stock usage #%s reduced kit #%s to %s',
                     instance.id, kit.id, kit.quantity,
                 )
-        else:
-            logger.warning('Stock usage #%s has no kit to deduct from; marking as completed without stock change', instance.id)
-    except Exception:
-        logger.exception('Failed to process stock deletion for usage #%s', instance.id)
-        return
+            remaining -= take
+
+        # Update without re-triggering this signal. Since stock and usage are
+        # in the same transaction, a failure rolls both changes back.
+        StockUsage.objects.filter(pk=instance.pk).update(
+            status=StockUsage.STATUS_COMPLETED,
+            stock_deleted=True,
+            reviewed_at=instance.reviewed_at or timezone.now(),
+        )
+        instance.status = StockUsage.STATUS_COMPLETED
+        instance.stock_deleted = True
+
+    _notify_low_stock(instance.workspace_id, touched_kit_types)
 
 
 def _notify_low_stock(workspace_id, kit_type_ids):

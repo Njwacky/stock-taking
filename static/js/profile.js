@@ -38,7 +38,7 @@ async function downloadPDF() {
         }
         
         const originalText = downloadBtn.innerHTML;
-        downloadBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Generating...';
+        downloadBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Generating...';
         downloadBtn.disabled = true;
 
         // Get the profile container
@@ -54,99 +54,64 @@ async function downloadPDF() {
         // Create a clone of the profile container for PDF generation
         const clone = profileContainer.cloneNode(true);
         
-        // Remove buttons from the clone (they don't need to be in PDF)
-        const buttons = clone.querySelectorAll('.print-btn, .download-btn');
-        buttons.forEach(button => button.remove());
+        // Remove interactive elements from clone
+        const actionsDiv = clone.querySelector('.profile-actions');
+        if (actionsDiv) {
+            actionsDiv.remove();
+        }
         
-        // Add PDF-specific styling
-        clone.style.width = '210mm'; // A4 width
-        clone.style.margin = '0';
-        clone.style.padding = '20mm';
+        // Style the clone for PDF
+        clone.style.width = '800px';
+        clone.style.padding = '20px';
+        clone.style.backgroundColor = 'white';
         clone.style.boxShadow = 'none';
-        clone.style.background = 'white';
+        clone.style.position = 'absolute';
+        clone.style.left = '-9999px';
+        clone.style.top = '0';
         
-        // Create a temporary container for rendering
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.top = '0';
-        tempContainer.style.width = '210mm';
-        tempContainer.style.background = 'white';
-        tempContainer.appendChild(clone);
+        // Append clone to body temporarily
+        document.body.appendChild(clone);
         
-        document.body.appendChild(tempContainer);
-        
-        console.log('Temporary container created');
-        
-        // Wait a bit for any dynamic content to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Generate canvas from HTML
-        console.log('Starting html2canvas...');
+        // Configure html2canvas options
         const canvas = await html2canvas(clone, {
-            scale: 2, // Higher resolution
+            scale: 2,
             useCORS: true,
-            allowTaint: true,
+            logging: false,
             backgroundColor: '#ffffff',
-            width: clone.offsetWidth,
-            height: clone.offsetHeight,
-            logging: true
+            windowWidth: 800
         });
         
-        console.log('Canvas generated:', canvas);
-        
-        // Remove temporary container
-        document.body.removeChild(tempContainer);
+        // Remove the clone
+        document.body.removeChild(clone);
         
         // Create PDF
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         
-        const imgData = canvas.toDataURL('image/png');
         const imgWidth = 210; // A4 width in mm
         const pageHeight = 295; // A4 height in mm
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         let heightLeft = imgHeight;
-        
         let position = 0;
         
-        // Add first page
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        // Add image to PDF
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
         
-        // Add additional pages if needed
+        // Add additional pages if content is long
         while (heightLeft >= 0) {
             position = heightLeft - imgHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
         }
         
-        // Get profile username for filename - use the current logged-in user if available
-        let profileTitle = 'profile';
-        try {
-            const titleElement = document.querySelector('.profile-title');
-            if (titleElement) {
-                profileTitle = titleElement.textContent.trim();
-            }
-            // If it's "My Profile", try to get the actual username
-            if (profileTitle === 'My Profile') {
-                const usernameElement = document.querySelector('.info-value');
-                if (usernameElement && usernameElement.textContent.trim()) {
-                    profileTitle = usernameElement.textContent.trim() + '_profile';
-                }
-            }
-        } catch (e) {
-            console.log('Could not get profile title, using default');
-        }
+        // Generate filename
+        const username = document.querySelector('.profile-title')?.textContent?.trim() || 'user';
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `${username}_profile_${date}.pdf`;
         
-        const sanitizedTitle = profileTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = `${sanitizedTitle}_${timestamp}.pdf`;
-        
-        console.log('Saving PDF with filename:', filename);
-        
-        // Save the PDF
+        // Save PDF
         pdf.save(filename);
         
         // Show success message
@@ -159,7 +124,7 @@ async function downloadPDF() {
         // Restore button state
         const downloadBtn = document.querySelector('.download-btn');
         if (downloadBtn) {
-            downloadBtn.innerHTML = '<i class="fa fa-download"></i> Download PDF';
+            downloadBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg> Download PDF';
             downloadBtn.disabled = false;
         }
     }
@@ -179,11 +144,12 @@ function showNotification(message, type = 'info') {
     notification.style.right = '20px';
     notification.style.zIndex = '9999';
     notification.style.maxWidth = '400px';
+    const iconName = type === 'success' ? 'i-check' : (type === 'error' ? 'i-alert' : 'i-help');
     notification.innerHTML = `
-        <i class="fa fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
-        ${message}
-        <button type="button" class="close" onclick="this.parentElement.remove()">
-            <span>&times;</span>
+        <span class="alert-icon" aria-hidden="true"><svg class="icon"><use href="#${iconName}"></use></svg></span>
+        <span class="alert-text">${message}</span>
+        <button type="button" class="alert-close" aria-label="Dismiss message" onclick="this.closest('.pdf-notification').remove()">
+            <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
         </button>
     `;
     

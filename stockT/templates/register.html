@@ -4,92 +4,163 @@
 {% block title %}Create account · Stock Tracker{% endblock %}
 
 {% block content %}
-<div class="register-container">
-    <div class="register-card">
-        <div class="register-header">
-            <h1><i class="fas fa-user-plus"></i> Create Account</h1>
-            <p>Join Stock Tracker to manage and track inventory</p>
-        </div>
+<div class="auth-layout auth-layout--wide">
+    <div class="auth-main">
+        <div>
+            <span class="eyebrow">Get started</span>
+            <h1>Create your workspace</h1>
+            <p class="auth-lead">
+                Your account comes with a private workspace and configurable inventory.
+                You can invite teammates and create more workspaces later.
+            </p>
 
-        {% if form.non_field_errors %}
-        <div class="alert alert-error">
-            {% for error in form.non_field_errors %}
-            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" role="alert">
+                <span class="alert-icon" aria-hidden="true">
+                    <svg class="icon"><use href="#i-help"></use></svg>
+                </span>
+                <span class="alert-text">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </span>
+            </div>
+            {% endif %}
 
-        <form method="post" class="register-form" novalidate>
-            {% csrf_token %}
-
-            {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">
-                    {{ field.label }}
-                    {% if field.field.required %}<span class="required-badge">Required</span>{% endif %}
-                </label>
-                {{ field }}
-                {% if field.help_text %}
-                <small class="helptext">{{ field.help_text }}</small>
-                {% endif %}
-                {% if field.errors %}
-                <div class="field-errors">
-                    <ul class="errorlist">
-                        {% for error in field.errors %}
-                        <li><i class="fas fa-exclamation-triangle"></i> {{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
+            <form method="post" class="register-form" novalidate>
+                {% csrf_token %}
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="{{ form.username.id_for_label }}">Username</label>
+                        <label for="{{ form.username.id_for_label }}">
+                            Username <span class="required-badge">Required</span>
+                        </label>
                         {{ form.username }}
-                        {% if form.username.errors %}<div class="field-errors">{{ form.username.errors }}</div>{% endif %}
+                        {% if form.username.help_text %}
+                        <small class="helptext">{{ form.username.help_text }}</small>
+                        {% endif %}
+                        {% if form.username.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.username.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.email.id_for_label }}">Work email</label>
                         {{ form.email }}
-                        {% if form.email.errors %}<div class="field-errors">{{ form.email.errors }}</div>{% endif %}
+                        {% if form.email.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.email.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.first_name.id_for_label }}">First name</label>
                         {{ form.first_name }}
-                        {% if form.first_name.errors %}<div class="field-errors">{{ form.first_name.errors }}</div>{% endif %}
+                        {% if form.first_name.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.first_name.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.last_name.id_for_label }}">Last name</label>
                         {{ form.last_name }}
-                        {% if form.last_name.errors %}<div class="field-errors">{{ form.last_name.errors }}</div>{% endif %}
+                        {% if form.last_name.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.last_name.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="{{ form.clock_number.id_for_label }}">Clock number</label>
+                        <label for="{{ form.clock_number.id_for_label }}">
+                            Clock number <span class="required-badge">Required</span>
+                        </label>
                         {{ form.clock_number }}
-                        {% if form.clock_number.errors %}<div class="field-errors">{{ form.clock_number.errors }}</div>{% endif %}
+                        {% if form.clock_number.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.clock_number.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.department.id_for_label }}">Department</label>
                         {{ form.department }}
-                        {% if form.department.errors %}<div class="field-errors">{{ form.department.errors }}</div>{% endif %}
+                        {% if form.department.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.department.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="{{ form.phone_number.id_for_label }}">Phone number</label>
                         {{ form.phone_number }}
-                        {% if form.phone_number.errors %}<div class="field-errors">{{ form.phone_number.errors }}</div>{% endif %}
+                        {% if form.phone_number.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.phone_number.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="{{ form.password1.id_for_label }}">Password</label>
+                        <label for="{{ form.password1.id_for_label }}">
+                            Password <span class="required-badge">Required</span>
+                        </label>
                         {{ form.password1 }}
-                        {% if form.password1.errors %}<div class="field-errors">{{ form.password1.errors }}</div>{% endif %}
+                        {% if form.password1.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.password1.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                        <label for="{{ form.password2.id_for_label }}">
+                            Confirm password <span class="required-badge">Required</span>
+                        </label>
                         {{ form.password2 }}
-                        {% if form.password2.errors %}<div class="field-errors">{{ form.password2.errors }}</div>{% endif %}
+                        {% if form.password2.errors %}
+                        <div class="field-errors">
+                            <ul class="errorlist">
+                                {% for error in form.password2.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -102,18 +173,9 @@
 
             <div class="auth-links">
                 <span>Already have an account? <a href="{% url 'login' %}">Sign in</a></span>
+                <span class="dot-sep" aria-hidden="true">·</span>
+                <a href="{% url 'password_reset_request' %}">Forgot password?</a>
             </div>
-            {% endfor %}
-
-            <button type="submit" class="register-button">
-                <i class="fas fa-user-plus"></i> Register
-            </button>
-        </form>
-
-        <div class="register-links">
-            Already have an account? <a href="{% url 'login' %}">Login</a>
-            <span class="divider">|</span>
-            <a href="{% url 'password_reset_request' %}">Forgot password?</a>
         </div>
     </div>
 
@@ -131,7 +193,7 @@
             <p class="auth-quote">Set up in a minute. Useful from day one.</p>
             <ul class="auth-points">
                 <li><svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg> A private workspace, owned by you</li>
-                <li><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg> Standard kit types pre-configured</li>
+                <li><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg> Add products and units you actually use</li>
                 <li><svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg> Invite the team when you are ready</li>
                 <li><svg class="icon" aria-hidden="true"><use href="#i-device"></use></svg> Works on desktop, tablet and phone</li>
             </ul>

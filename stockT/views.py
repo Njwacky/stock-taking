@@ -722,51 +722,65 @@ def add_items(request):
             messages.error(request, f'{target.username} is not a member of this workspace.')
             return redirect('add_items')
 
-        created = 0
-        errors = []
+        entries = []
+        valid_conditions = {value for value, _label in Kit.CONDITION_CHOICES}
         for kit_type in kit_types:
             qty_raw = request.POST.get(f'quantity_{kit_type.id}', '0')
             try:
                 qty = int(str(qty_raw).strip() or 0)
             except (TypeError, ValueError):
-                qty = 0
-                errors.append(f"Invalid quantity for {kit_type.name}")
+                messages.error(request, f'Enter a whole-number quantity for {kit_type.name}.')
+                return redirect('add_items')
+            if qty < 0:
+                messages.error(request, f'Quantity for {kit_type.name} cannot be negative.')
+                return redirect('add_items')
+            if qty == 0:
                 continue
-            if qty <= 0:
-                continue
-            # Validate condition choice
-            condition_val = request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW)
-            if condition_val not in dict(Kit.CONDITION_CHOICES):
-                condition_val = Kit.CONDITION_NEW
-            # Parse expiration date safely
-            exp_raw = (request.POST.get(f'expiration_{kit_type.id}') or '').strip()
-            exp_date = None
-            if exp_raw:
-                try:
-                    from datetime import datetime
-                    exp_date = datetime.strptime(exp_raw, '%Y-%m-%d').date()
-                except ValueError:
-                    errors.append(f"Invalid expiration date for {kit_type.name}: {exp_raw}")
-                    continue
-            Kit.objects.create(
-                user=target,
-                kit_type_fk=kit_type,
-                kit_type_string=kit_type.name[:20],
-                quantity=qty,
-                condition=condition_val,
-                location=(request.POST.get(f'location_{kit_type.id}', '') or '').strip() or None,
-                notes=(request.POST.get(f'notes_{kit_type.id}', '') or '').strip() or None,
-                expiration_date=exp_date,
-                created_by=request.user,
-            )
-            created += 1
-        if errors:
-            for err in errors:
-                messages.warning(request, err)
-        if created:
-            messages.success(request, f'{created} kit type(s) added for {target.username}.')
-        else:
+
+            condition = request.POST.get(f'condition_{kit_type.id}', Kit.CONDITION_NEW)
+            if condition not in valid_conditions:
+                messages.error(request, f'Choose a valid condition for {kit_type.name}.')
+                return redirect('add_items')
+            location = (request.POST.get(f'location_{kit_type.id}', '') or '').strip()
+            if len(location) > 100:
+                messages.error(request, f'Location for {kit_type.name} must be 100 characters or fewer.')
+                return redirect('add_items')
+            expiration_raw = (request.POST.get(f'expiration_{kit_type.id}') or '').strip()
+            expiration_date = parse_date(expiration_raw) if expiration_raw else None
+            if expiration_raw and expiration_date is None:
+                messages.error(request, f'Enter a valid expiry date for {kit_type.name}.')
+                return redirect('add_items')
+
+            entries.append({
+                'kit_type': kit_type,
+                'quantity': qty,
+                'condition': condition,
+                'location': location or None,
+                'notes': (request.POST.get(f'notes_{kit_type.id}', '') or '').strip() or None,
+                'expiration_date': expiration_date,
+            })
+
+        if not entries:
             messages.warning(request, 'No quantities were entered, nothing was added.')
+            return redirect('add_items')
+
+        with transaction.atomic():
+            for entry in entries:
+                kit_type = entry['kit_type']
+                Kit.objects.create(
+                    user=target,
+                    kit_type_fk=kit_type,
+                    kit_type_string=kit_type.name[:20],
+                    quantity=entry['quantity'],
+                    condition=entry['condition'],
+                    location=entry['location'],
+                    notes=entry['notes'],
+                    expiration_date=entry['expiration_date'],
+                    created_by=request.user,
+                    workspace=workspace,
+                )
+        created = len(entries)
+        messages.success(request, f'{created} kit type(s) added for {target.username}.')
         return redirect('add_items')
 
     return render(request, 'add_items.html', {
@@ -1087,50 +1101,45 @@ def user_profile(request, user_id):
 @login_required
 def stock_usage_tracking(request):
     """Log stock usage at /tracking/."""
-    kit_types = KitType.objects.filter(is_active=True).order_by('name')
-    recent = StockUsage.objects.filter(user=request.user).select_related('kit_type', 'kit')[:8]
-    form = StockUsageForm(request.POST or None)
+    workspace = _ws(request)
+    kit_types = _ws_kit_types(workspace).filter(is_active=True).order_by('name')
+    recent = _ws_rows(
+        StockUsage.objects.filter(user=request.user, deleted_at__isnull=True), workspace,
+    )[:8]
+
+    # Pre-select a type for the one-click "Track" action on the dashboard
+    # (`?kit_type=<id>`), and keep the documented legacy `?kit_id=` link
+    # working by mapping that kit to its type.
+    initial = {}
+    preselect_type = request.GET.get('kit_type', '')
+    preselect_kit = request.GET.get('kit_id', '')
+    if preselect_kit.isdigit():
+        source_kit = _ws_rows(Kit.objects.filter(is_active=True), workspace).filter(
+            id=int(preselect_kit),
+        ).first()
+        if source_kit and source_kit.kit_type_fk_id:
+            initial['kit_type'] = source_kit.kit_type_fk_id
+    elif preselect_type.isdigit():
+        if kit_types.filter(id=int(preselect_type)).exists():
+            initial['kit_type'] = int(preselect_type)
+
+    form = StockUsageForm(request.POST or None, initial=initial)
+    form.fields['kit_type'].queryset = kit_types
 
     if request.method == 'POST':
         if form.is_valid():
             usage = form.save(commit=False)
             usage.user = request.user
+            usage.workspace = workspace
             usage.clock_number = request.user.clock_number or ''
             usage.kit_type_name = usage.kit_type.name if usage.kit_type else ''
             usage.status = StockUsage.STATUS_PENDING
-
-            # LOGIC FIX: Automatically link to one of the user's kits of this type
-            # Find the best candidate kit (most quantity, newest first) belonging to user
-            candidate_kit = None
-            if usage.kit_type:
-                # Prefer explicit kit selection if provided (future-proof)
-                kit_id = request.POST.get('kit') or request.POST.get('kit_id')
-                if kit_id:
-                    try:
-                        candidate_kit = Kit.objects.get(id=kit_id, user=request.user, is_active=True)
-                    except (Kit.DoesNotExist, ValueError):
-                        candidate_kit = None
-                # Fallback: auto-find by kit_type
-                if not candidate_kit:
-                    candidate_kit = Kit.objects.filter(
-                        user=request.user,
-                        kit_type_fk=usage.kit_type,
-                        is_active=True
-                    ).order_by('-quantity', '-timestamp').first()
-                # Validation: user must have stock to use
-                if not candidate_kit:
-                    messages.error(request, f'You have no active stock for "{usage.kit_type.name}". Usage cannot be logged.')
-                    return render(request, 'stock_usage_tracking.html', {
-                        'form': form,
-                        'kit_types': kit_types,
-                        'recent': recent,
-                    })
-                # Validation: enough quantity available (if not, still allow but warn - manager will decide)
-                # We enforce quantity_used <= kit.quantity to avoid negative stock; manager can still deduct partially
-                if candidate_kit.quantity < usage.quantity_used:
-                    messages.warning(request, f'You only have {candidate_kit.quantity} {candidate_kit.kit_type_name} available, but you requested {usage.quantity_used}. Manager will review.')
-
-            usage.kit = candidate_kit
+            kit_id = request.POST.get('kit') or request.POST.get('kit_id')
+            if kit_id:
+                try:
+                    usage.kit = Kit.objects.get(id=kit_id, user=request.user, is_active=True)
+                except (Kit.DoesNotExist, ValueError):
+                    pass
             usage.save()
             messages.success(request, 'Usage submitted for review.')
             return redirect('stock_usage_tracking')
