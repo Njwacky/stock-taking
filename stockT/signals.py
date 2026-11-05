@@ -2,7 +2,7 @@
 Signal receivers for the stockT application.
 
 - handle_stock_usage_approval: automatically reduces/deletes stock when a
-  StockUsage request is approved.
+StockUsage request is approved.
 - log_kit_deletion: keeps the audit trail consistent when a Kit is deleted.
 """
 import logging
